@@ -85,7 +85,7 @@ public class ApmHandler {
      */
     @ApiOperation(value = "Deletes application package", response = String.class)
     @RequestMapping(value = "/tenants/{tenant_id}/packages/{app_package_id}", method = RequestMethod.DELETE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
+            produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> deleteAppPackage(@PathVariable("tenant_id") String tenantId,
                                                    @PathVariable("app_package_id") String appPackageId) {
         // TODO: implementation
@@ -101,7 +101,7 @@ public class ApmHandler {
      */
     @ApiOperation(value = "Download application package CSAR", response = InputStreamResource.class)
     @RequestMapping(value = "/tenants/{tenant_id}/packages/{app_package_id}/download", method = RequestMethod.GET,
-            produces = "application/octet-stream")
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<InputStreamResource> downloadAppPackage(@PathVariable("tenant_id") String tenantId,
                                                                   @PathVariable("app_package_id") String appPackageId) {
         // TODO: implementation
@@ -133,7 +133,7 @@ public class ApmHandler {
     @ApiOperation(value = "Deletes an application packages", response = String.class)
     @RequestMapping(value = "/tenants/{tenant_id}/packages/{app_package_id}/hosts/{host_ip}",
             method = RequestMethod.DELETE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
+            produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> deleteAppPackageInHost(@PathVariable("tenant_id") String tenantId,
                                                          @PathVariable("app_package_id") String appPackageId,
                                                          @PathVariable("host_ip") String hostIp){

@@ -136,7 +136,7 @@ public class ApmHandler {
             produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> deleteAppPackageInHost(@PathVariable("tenant_id") String tenantId,
                                                          @PathVariable("app_package_id") String appPackageId,
-                                                         @PathVariable("host_ip") String hostIp){
+                                                         @PathVariable("host_ip") String hostIp) {
         // TODO: implementation
         return new ResponseEntity<>(HttpStatus.OK);
     }

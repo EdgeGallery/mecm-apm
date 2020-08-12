@@ -39,7 +39,7 @@ RUN chmod 750 $APP_HOME &&\
     chown -R app:app $APP_HOME
 
 # Exposed port
-EXPOSE 8181
+EXPOSE 8383
 
 # Change to the app user.
 USER $USER_NAME

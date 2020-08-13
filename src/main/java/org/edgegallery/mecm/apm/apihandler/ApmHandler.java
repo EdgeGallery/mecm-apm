@@ -18,6 +18,8 @@ package org.edgegallery.mecm.apm.apihandler;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.util.List;
+import java.util.Map;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
@@ -29,9 +31,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Application package management API handler.
@@ -45,9 +44,9 @@ public class ApmHandler {
     // TODO pre authorization & parameter validations
 
     /**
-     * On-boards application package
+     * On-boards application package.
      *
-     * @param tenantId tenant ID
+     * @param tenantId   tenant ID
      * @param appPackage application package
      * @return application package identifier on success, error code on failure
      */
@@ -63,7 +62,7 @@ public class ApmHandler {
     /**
      * Retrieves application package information.
      *
-     * @param tenantId tenant identifier
+     * @param tenantId     tenant identifier
      * @param appPackageId application package identifier
      * @return application package on success, error code on failure
      */
@@ -79,7 +78,7 @@ public class ApmHandler {
     /**
      * Deletes application package.
      *
-     * @param tenantId tenant identifier
+     * @param tenantId     tenant identifier
      * @param appPackageId application package identifier
      * @return status code 200 on success, error code on failure
      */
@@ -95,7 +94,7 @@ public class ApmHandler {
     /**
      * Downloads application package CSAR for a given package identifier.
      *
-     * @param tenantId tenant identifier
+     * @param tenantId     tenant identifier
      * @param appPackageId application package identifier
      * @return application package
      */
@@ -109,7 +108,7 @@ public class ApmHandler {
     }
 
     /**
-     * Retrieves all application packages
+     * Retrieves all application packages.
      *
      * @param tenantId tenant ID
      * @return application packages
@@ -123,11 +122,11 @@ public class ApmHandler {
     }
 
     /**
-     * Deletes application package for a given host
+     * Deletes application package for a given host.
      *
-     * @param tenantId tenant ID
+     * @param tenantId     tenant ID
      * @param appPackageId application package identifier which needs to be deleted
-     * @param hostIp host IP for which package needs to be deleted
+     * @param hostIp       host IP for which package needs to be deleted
      * @return status code 200 on success, error code on failure
      */
     @ApiOperation(value = "Deletes an application packages", response = String.class)

@@ -18,24 +18,28 @@ package org.edgegallery.mecm.apm.apihandler;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import java.util.List;
 import java.util.Map;
-import org.edgegallery.mecm.apm.model.AppPackage;
+import javax.validation.Valid;
+import org.edgegallery.mecm.apm.model.AppPackageDto;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Application package management API handler.
  */
-@Api(value = "APM api system")
+@Api(tags = {"APM rest controller"})
 @Validated
 @RequestMapping("/apm/v1")
 @RestController
@@ -47,14 +51,15 @@ public class ApmHandler {
      * On-boards application package.
      *
      * @param tenantId   tenant ID
-     * @param appPackage application package
+     * @param appPackageDto application package
      * @return application package identifier on success, error code on failure
      */
     @ApiOperation(value = "Onboard application package", response = Map.class)
-    @RequestMapping(value = "/apm/v1/tenants/{tenant_id}/packages", method = RequestMethod.POST,
+    @PostMapping(path = "/apm/v1/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, String>> onBoardAppPackage(@PathVariable("tenant_id") String tenantId,
-                                                                 @RequestBody AppPackage appPackage) {
+    public ResponseEntity<Map<String, String>> onBoardAppPackage(
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
+            @Valid @ApiParam(value = "app package info") @RequestBody AppPackageDto appPackageDto) {
         // TODO: implementation
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -66,11 +71,12 @@ public class ApmHandler {
      * @param appPackageId application package identifier
      * @return application package on success, error code on failure
      */
-    @ApiOperation(value = "Retrieves application package information", response = AppPackage.class)
-    @RequestMapping(value = "/tenants/{tenant_id}/packages/{app_package_id}", method = RequestMethod.GET,
+    @ApiOperation(value = "Retrieves application package information", response = AppPackageDto.class)
+    @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AppPackage> getAppPackageInfo(@PathVariable("tenant_id") String tenantId,
-                                                        @PathVariable("app_package_id") String appPackageId) {
+    public ResponseEntity<AppPackageDto> getAppPackageInfo(
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
         // TODO: implementation
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -83,10 +89,11 @@ public class ApmHandler {
      * @return status code 200 on success, error code on failure
      */
     @ApiOperation(value = "Deletes application package", response = String.class)
-    @RequestMapping(value = "/tenants/{tenant_id}/packages/{app_package_id}", method = RequestMethod.DELETE,
+    @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> deleteAppPackage(@PathVariable("tenant_id") String tenantId,
-                                                   @PathVariable("app_package_id") String appPackageId) {
+    public ResponseEntity<String> deleteAppPackage(
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
         // TODO: implementation
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -99,10 +106,11 @@ public class ApmHandler {
      * @return application package
      */
     @ApiOperation(value = "Download application package CSAR", response = InputStreamResource.class)
-    @RequestMapping(value = "/tenants/{tenant_id}/packages/{app_package_id}/download", method = RequestMethod.GET,
+    @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/download",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<InputStreamResource> downloadAppPackage(@PathVariable("tenant_id") String tenantId,
-                                                                  @PathVariable("app_package_id") String appPackageId) {
+    public ResponseEntity<InputStreamResource> downloadAppPackage(
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
         // TODO: implementation
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -114,9 +122,10 @@ public class ApmHandler {
      * @return application packages
      */
     @ApiOperation(value = "Retrieves all application packages", response = List.class)
-    @RequestMapping(value = "/tenants/{tenant_id}/packages", method = RequestMethod.GET,
+    @GetMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AppPackage>> getAllAppPackageInfo(@PathVariable("tenant_id") String tenantId) {
+    public ResponseEntity<List<AppPackageDto>> getAllAppPackageInfo(
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId) {
         // TODO: implementation
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -130,12 +139,12 @@ public class ApmHandler {
      * @return status code 200 on success, error code on failure
      */
     @ApiOperation(value = "Deletes an application packages", response = String.class)
-    @RequestMapping(value = "/tenants/{tenant_id}/packages/{app_package_id}/hosts/{host_ip}",
-            method = RequestMethod.DELETE,
+    @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/hosts/{host_ip}",
             produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> deleteAppPackageInHost(@PathVariable("tenant_id") String tenantId,
-                                                         @PathVariable("app_package_id") String appPackageId,
-                                                         @PathVariable("host_ip") String hostIp) {
+    public ResponseEntity<String> deleteAppPackageInHost(
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId,
+            @ApiParam(value = "host ip") @PathVariable("host_ip") String hostIp) {
         // TODO: implementation
         return new ResponseEntity<>(HttpStatus.OK);
     }

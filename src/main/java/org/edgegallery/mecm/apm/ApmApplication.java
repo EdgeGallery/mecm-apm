@@ -29,7 +29,7 @@ import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServic
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
 public class ApmApplication {
 
-    private static final Logger logger = LoggerFactory.getLogger(ApmApplication.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApmApplication.class);
 
     /**
      * Application package management entry function.
@@ -38,8 +38,7 @@ public class ApmApplication {
      */
     public static void main(String[] args) {
         // TODO: Token & https based support.
-        logger.info("APM application starting----");
+        LOGGER.info("APM application starting----");
         SpringApplication.run(ApmApplication.class, args);
     }
-
 }

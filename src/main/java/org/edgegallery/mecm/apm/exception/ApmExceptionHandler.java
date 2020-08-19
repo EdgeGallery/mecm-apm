@@ -16,8 +16,8 @@
 
 package org.edgegallery.mecm.apm.exception;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +51,8 @@ public class ApmExceptionHandler {
         if (ex.getBindingResult().hasErrors()) {
             ex.getBindingResult().getAllErrors().forEach(error -> errorMsg.add(error.getDefaultMessage()));
         }
-        ApmExceptionResponse response = new ApmExceptionResponse(new Date(), "input validation failed", errorMsg);
+        ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(), "input validation failed",
+                errorMsg);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

@@ -16,7 +16,7 @@
 
 package org.edgegallery.mecm.apm.exception;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -24,7 +24,7 @@ import java.util.List;
  */
 public class ApmExceptionResponse {
 
-    private Date timestamp;
+    private LocalDateTime timestamp;
     private String message;
     private List<String> details;
 
@@ -35,9 +35,9 @@ public class ApmExceptionResponse {
      * @param message message
      * @param details details
      */
-    public ApmExceptionResponse(Date timestamp, String message, List<String> details) {
+    public ApmExceptionResponse(LocalDateTime timestamp, String message, List<String> details) {
         super();
-        this.timestamp = (Date) timestamp.clone();
+        this.timestamp = timestamp;
         this.message = message;
         this.details = details;
     }
@@ -65,7 +65,7 @@ public class ApmExceptionResponse {
      *
      * @return timestamp
      */
-    public Date getTimestamp() {
-        return timestamp == null ? null : (Date) this.timestamp.clone();
+    public LocalDateTime getTimestamp() {
+        return timestamp;
     }
 }

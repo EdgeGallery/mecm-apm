@@ -19,6 +19,7 @@ package org.edgegallery.mecm.apm.model;
 import java.util.LinkedList;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -43,16 +44,22 @@ public class AppPackageDto {
     @NotEmpty(message = "appPkgPath is empty")
     private String appPkgPath;
 
+    @NotNull(message = "appProvider is null")
     private String appProvider;
 
+    @NotNull(message = "appPkgDesc is null")
     private String appPkgDesc;
 
+    @NotNull(message = "appPkgAffinity is null")
     private String appPkgAffinity;
 
+    @NotNull(message = "appIconUrl is null")
     private String appIconUrl;
 
+    @NotNull(message = "createdTime is null")
     private String createdTime;
 
+    @NotNull(message = "modifiedTime is null")
     private String modifiedTime;
 
     @NotEmpty(message = "appId is empty")
@@ -61,5 +68,6 @@ public class AppPackageDto {
     @NotEmpty(message = "mecHost is empty")
     private List<String> mecHost = new LinkedList<>();
 
+    @NotNull(message = "mecHostInfo is null")
     private List<MecHostDto> mecHostInfo = new LinkedList<>();
 }

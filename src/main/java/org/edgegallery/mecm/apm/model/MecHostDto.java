@@ -16,9 +16,8 @@
 
 package org.edgegallery.mecm.apm.model;
 
-import lombok.AllArgsConstructor;
+import javax.validation.constraints.NotEmpty;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -28,11 +27,23 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@NoArgsConstructor
-@AllArgsConstructor
 public class MecHostDto {
 
+    @NotEmpty(message = "hostIp is empty")
     private String hostIp;
 
+    @NotEmpty(message = "status is empty")
     private String status;
+
+    /**
+     * Constructor to create MecHostDto.
+     *
+     * @param hostIp host ip
+     * @param status distribution status
+     */
+    public MecHostDto(@NotEmpty(message = "hostIp is empty") String hostIp,
+                      @NotEmpty(message = "status is empty") String status) {
+        this.hostIp = hostIp;
+        this.status = status;
+    }
 }

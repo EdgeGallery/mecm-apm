@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Application package management API handler.
  */
-@Api(tags = {"APM rest controller"})
+@Api(tags = {"APM api system"})
 @Validated
 @RequestMapping("/apm/v1")
 @RestController

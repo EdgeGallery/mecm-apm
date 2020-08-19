@@ -42,11 +42,11 @@ public class ApmExceptionHandler {
     /**
      * Returns response entity with error details when input validation is failed.
      *
-     * @param ex exception  input validation
+     * @param ex exception while validating input
      * @return response entity with error details
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected ResponseEntity<ApmExceptionResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApmExceptionResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         List<String> errorMsg = new ArrayList<>();
         if (ex.getBindingResult().hasErrors()) {
             ex.getBindingResult().getAllErrors().forEach(error -> errorMsg.add(error.getDefaultMessage()));

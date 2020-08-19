@@ -14,11 +14,21 @@
  *  limitations under the License.
  */
 
-package org.edgegallery.mecm.apm.model;
+package org.edgegallery.mecm.apm.exception;
 
 /**
- * Application package schema.
+ * Application package manager custom exception.
  */
-public class AppPackage {
-    // TODO implementation
+public class ApmException extends RuntimeException {
+
+    private static final long serialVersionUID = 1311109258952411164L;
+
+    /**
+     * Constructor to create ApmException with message.
+     *
+     * @param msg exception message
+     */
+    public ApmException(String msg) {
+        super(msg);
+    }
 }

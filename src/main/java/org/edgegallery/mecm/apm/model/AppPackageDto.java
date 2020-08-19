@@ -20,7 +20,9 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -30,6 +32,8 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class AppPackageDto {
 
     @NotEmpty(message = "appPkgId is empty")
@@ -70,49 +74,4 @@ public class AppPackageDto {
 
     @NotNull(message = "mecHostInfo is null")
     private List<MecHostDto> mecHostInfo = new LinkedList<>();
-
-    /**
-     * Constructor to create appPkgDto.
-     *
-     * @param appPkgId app package id
-     * @param appPkgName app package name
-     * @param appPkgVersion app package version
-     * @param appPkgPath app package path
-     * @param appProvider app package provider
-     * @param appPkgDesc app package description
-     * @param appPkgAffinity app package affinity
-     * @param appIconUrl app package path to download icon
-     * @param createdTime created time
-     * @param modifiedTime modified time
-     * @param appId app id
-     * @param mecHost mec host ip
-     * @param mecHostInfo mec host info
-     */
-    public AppPackageDto(@NotEmpty(message = "appPkgId is empty") String appPkgId,
-                         @NotEmpty(message = "appPkgName is empty") String appPkgName,
-                         @NotEmpty(message = "appPkgVersion is empty") String appPkgVersion,
-                         @NotEmpty(message = "appPkgPath is empty") String appPkgPath,
-                         @NotNull(message = "appProvider is null") String appProvider,
-                         @NotNull(message = "appPkgDesc is null") String appPkgDesc,
-                         @NotNull(message = "appPkgAffinity is null") String appPkgAffinity,
-                         @NotNull(message = "appIconUrl is null") String appIconUrl,
-                         @NotNull(message = "createdTime is null") String createdTime,
-                         @NotNull(message = "modifiedTime is null") String modifiedTime,
-                         @NotEmpty(message = "appId is empty") String appId,
-                         @NotEmpty(message = "mecHost is empty") List<String> mecHost,
-                         @NotNull(message = "mecHostInfo is null") List<MecHostDto> mecHostInfo) {
-        this.appPkgId = appPkgId;
-        this.appPkgName = appPkgName;
-        this.appPkgVersion = appPkgVersion;
-        this.appPkgPath = appPkgPath;
-        this.appProvider = appProvider;
-        this.appPkgDesc = appPkgDesc;
-        this.appPkgAffinity = appPkgAffinity;
-        this.appIconUrl = appIconUrl;
-        this.createdTime = createdTime;
-        this.modifiedTime = modifiedTime;
-        this.appId = appId;
-        this.mecHost = mecHost;
-        this.mecHostInfo = mecHostInfo;
-    }
 }

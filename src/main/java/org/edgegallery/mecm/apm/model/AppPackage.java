@@ -16,62 +16,63 @@
 
 package org.edgegallery.mecm.apm.model;
 
-import java.util.LinkedList;
-import java.util.List;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
-/**
- * Application package schema.
- */
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppPackageDto {
+@Entity
+@Table(name = "apppackage")
+public class AppPackage {
 
-    @NotEmpty(message = "appPkgId is empty")
+    @Id
+    @Column(name = "id")
+    private String id;
+
+    @Column(name = "app_pkg_id")
     private String appPkgId;
 
-    @NotEmpty(message = "appPkgName is empty")
+    @Column(name = "app_pkg_name")
     private String appPkgName;
 
-    @NotEmpty(message = "appPkgVersion is empty")
+    @Column(name = "app_pkg_version")
     private String appPkgVersion;
 
-    @NotEmpty(message = "appPkgPath is empty")
+    @Column(name = "app_pkg_path")
     private String appPkgPath;
 
-    @NotNull(message = "appProvider is null")
+    @Column(name = "app_provider")
     private String appProvider;
 
-    @NotNull(message = "appPkgDesc is null")
+    @Column(name = "app_pkg_desc")
     private String appPkgDesc;
 
-    @NotNull(message = "appPkgAffinity is null")
+    @Column(name = "app_pkg_affinity")
     private String appPkgAffinity;
 
-    @NotNull(message = "appIconUrl is null")
+    @Column(name = "app_icon_url")
     private String appIconUrl;
 
-    @NotNull(message = "createdTime is null")
+    @Column(name = "created_time")
     private String createdTime;
 
-    @NotNull(message = "modifiedTime is null")
+    @Column(name = "modified_time")
     private String modifiedTime;
 
-    @NotEmpty(message = "appId is empty")
+    @Column(name = "app_id")
     private String appId;
 
-    @NotEmpty(message = "mecHost is empty")
-    private List<String> mecHost = new LinkedList<>();
+    @Column(name = "tenant_id")
+    private String tenantId;
 
-    @NotNull(message = "mecHostInfo is null")
-    private List<MecHostDto> mecHostInfo = new LinkedList<>();
+    @Column(name = "local_file_path")
+    private String localFilePath;
 }

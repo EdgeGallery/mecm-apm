@@ -16,36 +16,42 @@
 
 package org.edgegallery.mecm.apm.model;
 
-import javax.validation.constraints.NotEmpty;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
-/**
- * Mec host schema.
- */
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
-public class MecHostDto {
+@AllArgsConstructor
+@Entity
+@Table(name = "apppackagehost")
+public class MecHost {
 
-    @NotEmpty(message = "hostIp is empty")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+
+    @Column(name = "pkg_host_key")
+    private String pkgHostKey;
+
+    @Column(name = "host_ip")
     private String hostIp;
 
-    @NotEmpty(message = "status is empty")
-    private String status;
+    @Column(name = "app_pkg_id")
+    private String appPkgId;
 
-    /**
-     * Constructor to create MecHostDto.
-     *
-     * @param hostIp host ip
-     * @param status distribution status
-     */
-    public MecHostDto(@NotEmpty(message = "hostIp is empty") String hostIp,
-                      @NotEmpty(message = "status is empty") String status) {
-        this.hostIp = hostIp;
-        this.status = status;
-    }
+    @Column(name = "distribution_status")
+    private String distributionStatus;
+
+    @Column(name = "tenant_id")
+    private String tenantId;
 }

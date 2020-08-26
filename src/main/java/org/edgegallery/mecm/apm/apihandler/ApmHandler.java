@@ -22,7 +22,7 @@ import io.swagger.annotations.ApiParam;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
-import org.edgegallery.mecm.apm.model.AppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

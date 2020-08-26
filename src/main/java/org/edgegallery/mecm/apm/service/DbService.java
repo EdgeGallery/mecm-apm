@@ -85,7 +85,7 @@ public class DbService {
 
         List<MecHostDto> mecHostDtoList = new LinkedList<>();
         List<String> mecHost = new LinkedList<>();
-        mecHostRepository.findAll().forEach(host -> {
+        mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)) {
                 mecHostDtoList.add(new MecHostDto(host.getHostIp(), host.getDistributionStatus()));
                 mecHost.add(host.getHostIp());
@@ -104,7 +104,7 @@ public class DbService {
      */
     public List<AppPackageDto> getAllAppPackage(String tenantId) {
         List<AppPackage> packageList = new LinkedList<>();
-        appPackageRepository.findAll().forEach(appPackage -> {
+        appPackageRepository.findAll().forEach((AppPackage appPackage) -> {
             if (appPackage.getTenantId().equals(tenantId)) {
                 packageList.add(appPackage);
             }
@@ -117,7 +117,7 @@ public class DbService {
 
             List<MecHostDto> mecHostDtoList = new LinkedList<>();
             List<String> mecHost = new LinkedList<>();
-            mecHostRepository.findAll().forEach(host -> {
+            mecHostRepository.findAll().forEach((MecHost host) -> {
                 if (host.getPkgHostKey().equals(appPackage.getAppPkgId() + tenantId)) {
                     mecHostDtoList.add(new MecHostDto(host.getHostIp(), host.getDistributionStatus()));
                     mecHost.add(host.getHostIp());
@@ -156,7 +156,7 @@ public class DbService {
      * @param packageId package ID
      */
     public void deleteHost(String tenantId, String packageId) {
-        mecHostRepository.findAll().forEach(host -> {
+        mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)) {
                 mecHostRepository.delete(host);
             }
@@ -171,7 +171,7 @@ public class DbService {
      * @param hostIp host ip
      */
     public void deleteHostWithIp(String tenantId, String packageId, String hostIp) {
-        mecHostRepository.findAll().forEach(host -> {
+        mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)
                     && host.getHostIp().equals(hostIp)) {
                 mecHostRepository.delete(host);
@@ -207,7 +207,7 @@ public class DbService {
      */
     public void updateDistributionStatusOfAllHost(String tenantId, String packageId,
                                                 String status) {
-        mecHostRepository.findAll().forEach(host -> {
+        mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)) {
                 host.setDistributionStatus(status);
                 mecHostRepository.save(host);
@@ -225,7 +225,7 @@ public class DbService {
      */
     public void updateDistributionStatusOfHost(String tenantId, String packageId,
                                                String hostIp, String status) {
-        mecHostRepository.findAll().forEach(host -> {
+        mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)
                     && host.getHostIp().equals(hostIp)) {
                 host.setDistributionStatus(status);

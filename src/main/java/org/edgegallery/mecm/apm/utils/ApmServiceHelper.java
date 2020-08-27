@@ -144,7 +144,7 @@ public final class ApmServiceHelper {
 
         Set<Entry<String, JsonElement>> entrySet = nodeTemplates.entrySet();
         List<JsonObject> vdus = new LinkedList<>();
-        for (Map.Entry<String,JsonElement> entry : entrySet) {
+        for (Map.Entry<String, JsonElement> entry : entrySet) {
             String type = entry.getValue().getAsJsonObject().get("type").getAsString();
             if ("tosca.nodes.nfv.Vdu.Compute".equals(type)) {
                 vdus.add(entry.getValue().getAsJsonObject());

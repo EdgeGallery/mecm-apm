@@ -95,4 +95,13 @@ public class ApmService {
         return edgeRepoIp + ":" + edgeRepoPort;
     }
 
+    /**
+     * Downloads app image from repo.
+     *
+     * @param repoAddress edge repository address
+     * @param imageInfoList list of images
+     */
+    public void downloadAppImage(String repoAddress, List<ImageInfo> imageInfoList) {
+        // TODO: download image from repo
+    }
 }

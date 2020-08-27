@@ -186,7 +186,7 @@ public class DbService {
      * @param packageId package ID
      * @param localFilePath local file path
      */
-    public void updateLocalFilePathInAppPackage(String tenantId, String packageId,
+    public void updateLocalFilePathOfAppPackage(String tenantId, String packageId,
                                                 String localFilePath) {
         String id = packageId + tenantId;
         Optional<AppPackage> info = appPackageRepository.findById(id);

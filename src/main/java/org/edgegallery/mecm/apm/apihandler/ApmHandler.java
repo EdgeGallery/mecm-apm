@@ -19,10 +19,13 @@ package org.edgegallery.mecm.apm.apihandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
+import org.edgegallery.mecm.apm.service.ApmServiceFacade;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -47,6 +50,9 @@ public class ApmHandler {
 
     // TODO pre authorization & parameter validations
 
+    @Autowired
+    private ApmServiceFacade service;
+
     /**
      * On-boards application package.
      *
@@ -55,13 +61,16 @@ public class ApmHandler {
      * @return application package identifier on success, error code on failure
      */
     @ApiOperation(value = "Onboard application package", response = Map.class)
-    @PostMapping(path = "/apm/v1/tenants/{tenant_id}/packages",
+    @PostMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> onBoardAppPackage(
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
+            @ApiParam(value = "tenant id", required = true) @PathVariable("tenant_id") String tenantId,
             @Valid @ApiParam(value = "app package info") @RequestBody AppPackageDto appPackageDto) {
-        // TODO: implementation
-        return new ResponseEntity<>(HttpStatus.OK);
+        service.onboardApplication(tenantId, appPackageDto);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("packageId", appPackageDto.getAppPkgId());
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
@@ -77,8 +86,8 @@ public class ApmHandler {
     public ResponseEntity<AppPackageDto> getAppPackageInfo(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
-        // TODO: implementation
-        return new ResponseEntity<>(HttpStatus.OK);
+        AppPackageDto response = service.getAppPackageInfo(tenantId, appPackageId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
@@ -94,8 +103,8 @@ public class ApmHandler {
     public ResponseEntity<String> deleteAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
-        // TODO: implementation
-        return new ResponseEntity<>(HttpStatus.OK);
+        service.deleteAppPackage(tenantId, appPackageId);
+        return new ResponseEntity<>("success", HttpStatus.OK);
     }
 
     /**
@@ -126,8 +135,8 @@ public class ApmHandler {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AppPackageDto>> getAllAppPackageInfo(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId) {
-        // TODO: implementation
-        return new ResponseEntity<>(HttpStatus.OK);
+        List<AppPackageDto> response = service.getAllAppPackageInfo(tenantId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
@@ -145,7 +154,7 @@ public class ApmHandler {
             @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId,
             @ApiParam(value = "host ip") @PathVariable("host_ip") String hostIp) {
-        // TODO: implementation
-        return new ResponseEntity<>(HttpStatus.OK);
+        service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
+        return new ResponseEntity<>("success", HttpStatus.OK);
     }
 }

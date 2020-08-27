@@ -32,3 +32,11 @@ spring:
         ddl-auto: validate
     open-in-view: false
 
+apm:
+  async:
+    corepool-size: 50
+    maxpool-size: 50
+    queue-capacity: 500
+  esr-ip: ${ESR_IP:}
+  esr-port: ${ESR_PORT:}
+

@@ -16,20 +16,36 @@
 
 package org.edgegallery.mecm.apm;
 
+import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * Application package management application.
  */
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
+@EnableAsync
 public class ApmApplication {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmApplication.class);
+
+    @Value("${apm.async.corepool-size}")
+    private int corePoolSize;
+
+    @Value("${apm.async.maxpool-size}")
+    private int maxPoolSize;
+
+    @Value("${apm.async.queue-capacity}")
+    private int queueCapacity;
 
     /**
      * Application package management entry function.
@@ -40,5 +56,22 @@ public class ApmApplication {
         // TODO: Token & https based support.
         LOGGER.info("APM application starting----");
         SpringApplication.run(ApmApplication.class, args);
+    }
+
+    /**
+     * Asychronous configurations.
+     *
+     * @return thread tool task executor
+     */
+    @Bean
+    @Primary
+    public Executor asyncExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
+        executor.setThreadNamePrefix("apm-");
+        executor.initialize();
+        return executor;
     }
 }

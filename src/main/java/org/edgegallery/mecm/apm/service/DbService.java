@@ -16,6 +16,9 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.edgegallery.mecm.apm.utils.Constants.ERROR_IN_UPDATING_LOCAL_FILE_PATH;
+import static org.edgegallery.mecm.apm.utils.Constants.RECORD_NOT_FOUND;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -27,11 +30,15 @@ import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.repository.AppPackageRepository;
 import org.edgegallery.mecm.apm.repository.MecHostRepository;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service("DbService")
 public class DbService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DbService.class);
 
     @Autowired
     private AppPackageRepository appPackageRepository;
@@ -46,6 +53,9 @@ public class DbService {
      * @param appPackageDto appPackageDto
      */
     public void createAppPackage(String tenantId, AppPackageDto appPackageDto) {
+        if (appPackageRepository.existsById(appPackageDto.getAppPkgId() + tenantId)) {
+            throw new IllegalArgumentException("Record already exist");
+        }
         ModelMapper mapper = new ModelMapper();
         AppPackage appPackage = mapper.map(appPackageDto, AppPackage.class);
         appPackage.setId(appPackageDto.getAppPkgId() + tenantId);
@@ -74,11 +84,12 @@ public class DbService {
      * @param packageId package ID
      * @return app package record with mec host
      */
-    public AppPackageDto getAppPackage(String tenantId, String packageId) {
+    public AppPackageDto getAppPackageWithHost(String tenantId, String packageId) {
         String id = packageId + tenantId;
         Optional<AppPackage> info = appPackageRepository.findById(id);
         if (!info.isPresent()) {
-            throw new ApmException("Record does not exist with package id " + packageId);
+            LOGGER.error(RECORD_NOT_FOUND);
+            throw new IllegalArgumentException(RECORD_NOT_FOUND);
         }
         ModelMapper mapper = new ModelMapper();
         AppPackageDto appPackageDto = mapper.map(info.get(), AppPackageDto.class);
@@ -87,13 +98,30 @@ public class DbService {
         List<String> mecHost = new LinkedList<>();
         mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)) {
-                mecHostDtoList.add(new MecHostDto(host.getHostIp(), host.getDistributionStatus()));
+                mecHostDtoList.add(new MecHostDto(host.getHostIp(), host.getDistributionStatus(),
+                        host.getError()));
                 mecHost.add(host.getHostIp());
             }
         });
         appPackageDto.setMecHostInfo(mecHostDtoList);
-        appPackageDto.setMecHost(mecHost);
         return appPackageDto;
+    }
+
+    /**
+     * Returns app package record.
+     *
+     * @param tenantId tenant ID
+     * @param packageId package ID
+     * @return app package record
+     */
+    public AppPackage getAppPackage(String tenantId, String packageId) {
+        String id = packageId + tenantId;
+        Optional<AppPackage> info = appPackageRepository.findById(id);
+        if (!info.isPresent()) {
+            LOGGER.error(RECORD_NOT_FOUND);
+            throw new IllegalArgumentException(RECORD_NOT_FOUND);
+        }
+        return info.get();
     }
 
     /**
@@ -116,15 +144,13 @@ public class DbService {
             AppPackageDto appPackageDto = mapper.map(appPackage, AppPackageDto.class);
 
             List<MecHostDto> mecHostDtoList = new LinkedList<>();
-            List<String> mecHost = new LinkedList<>();
             mecHostRepository.findAll().forEach((MecHost host) -> {
                 if (host.getPkgHostKey().equals(appPackage.getAppPkgId() + tenantId)) {
-                    mecHostDtoList.add(new MecHostDto(host.getHostIp(), host.getDistributionStatus()));
-                    mecHost.add(host.getHostIp());
+                    mecHostDtoList.add(new MecHostDto(host.getHostIp(), host.getDistributionStatus(),
+                            host.getError()));
                 }
             });
             appPackageDto.setMecHostInfo(mecHostDtoList);
-            appPackageDto.setMecHost(mecHost);
             appPackageDtoList.add(appPackageDto);
         }
         return appPackageDtoList;
@@ -137,12 +163,13 @@ public class DbService {
      * @param appPackageDto app package Dto
      */
     public void createHost(String tenantId, AppPackageDto appPackageDto) {
-        List<String> hostIpList = appPackageDto.getMecHost();
-        for (String hostIp : hostIpList) {
+        List<MecHostDto> hostList = appPackageDto.getMecHostInfo();
+        for (MecHostDto mecHostDto : hostList) {
+
             MecHost host = new MecHost();
             host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
-            host.setDistributionStatus("PROCESSING");
-            host.setHostIp(hostIp);
+            host.setDistributionStatus("Processing");
+            host.setHostIp(mecHostDto.getHostIp());
             host.setAppPkgId(appPackageDto.getAppPkgId());
             host.setTenantId(tenantId);
             mecHostRepository.save(host);
@@ -191,7 +218,8 @@ public class DbService {
         String id = packageId + tenantId;
         Optional<AppPackage> info = appPackageRepository.findById(id);
         if (!info.isPresent()) {
-            throw new ApmException("error occurred while updating local file path in db" + packageId);
+            LOGGER.error(ERROR_IN_UPDATING_LOCAL_FILE_PATH, packageId);
+            throw new ApmException("error occurred while updating local file path in db for package " + packageId);
         }
         AppPackage appPackage = info.get();
         appPackage.setLocalFilePath(localFilePath);
@@ -204,12 +232,14 @@ public class DbService {
      * @param tenantId tenant ID
      * @param packageId package ID
      * @param status distribution status
+     * @param error reason for failure
      */
     public void updateDistributionStatusOfAllHost(String tenantId, String packageId,
-                                                String status) {
+                                                String status, String error) {
         mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)) {
                 host.setDistributionStatus(status);
+                host.setError(error);
                 mecHostRepository.save(host);
             }
         });
@@ -222,13 +252,15 @@ public class DbService {
      * @param packageId package ID
      * @param hostIp host ip
      * @param status distribution status
+     * @param error reason for failure
      */
     public void updateDistributionStatusOfHost(String tenantId, String packageId,
-                                               String hostIp, String status) {
+                                               String hostIp, String status, String error) {
         mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)
                     && host.getHostIp().equals(hostIp)) {
                 host.setDistributionStatus(status);
+                host.setError(error);
                 mecHostRepository.save(host);
             }
         });

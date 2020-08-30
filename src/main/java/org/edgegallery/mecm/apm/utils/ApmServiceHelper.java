@@ -16,6 +16,14 @@
 
 package org.edgegallery.mecm.apm.utils;
 
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CONVERT_YAML_TO_JSON;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CREATE_CSAR;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CREATE_DIR;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_GET_FAIL_PATH;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_READ_INPUTSTREAM;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_UNZIP_CSAR;
+import static org.edgegallery.mecm.apm.utils.Constants.SERVICE_YAML_NOT_FOUND;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -25,7 +33,6 @@ import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.LinkedList;
@@ -39,11 +46,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 
 public final class ApmServiceHelper {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceHelper.class);
     private static final String APM_ROOT = "/home";
     private static final String SLASH = "/";
+    static final int TOO_MANY = 1024;
+    static final int TOO_BIG = 104857600;
 
     private ApmServiceHelper() {
     }
@@ -57,13 +69,15 @@ public final class ApmServiceHelper {
     public static String createDir(String dirPath) {
         File localFileDir = new File(dirPath);
         if (!localFileDir.mkdir()) {
-            throw new ApmException("failed to create local directory");
+            LOGGER.info(FAILED_TO_CREATE_DIR);
+            throw new ApmException(FAILED_TO_CREATE_DIR);
         }
 
         try {
             return localFileDir.getCanonicalPath();
         } catch (IOException e) {
-            throw new ApmException("failed to get local directory path");
+            LOGGER.info(FAILED_TO_GET_FAIL_PATH, e.getMessage());
+            throw new ApmException(FAILED_TO_GET_FAIL_PATH);
         }
     }
 
@@ -77,16 +91,19 @@ public final class ApmServiceHelper {
      */
     public static String saveInputStreamToFile(InputStreamResource resourceStream, String packageId, String tenantId) {
         if (resourceStream == null) {
-            throw new ApmException("failed to read input stream from app store");
+            LOGGER.info(FAILED_TO_READ_INPUTSTREAM, packageId);
+            throw new ApmException("failed to read input stream from app store for package " + packageId);
         }
         String localDirPath = createDir(APM_ROOT + SLASH + packageId + tenantId);
         String localFilePath = localDirPath + SLASH + packageId;
         File file = new File(localFilePath);
         try {
             FileUtils.copyInputStreamToFile(resourceStream.getInputStream(), file);
+            FileChecker.check(file);
             return file.getCanonicalPath();
         } catch (IOException e) {
-            throw new ApmException("failed to create csar file");
+            LOGGER.error(FAILED_TO_CREATE_CSAR, packageId, e.getMessage());
+            throw new ApmException("failed to create csar file for package " + packageId);
         }
     }
 
@@ -100,25 +117,34 @@ public final class ApmServiceHelper {
         ZipEntry mainServiceYaml = null;
         try (ZipFile zipFile = new ZipFile(localFilePath)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            int entriesCount = 0;
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
-                if (entry.getName().contains("/Definitions/MainServiceTemplate.yaml")) {
+                entriesCount++;
+                if (!entry.isDirectory() && entry.getName().contains("/Definitions/MainServiceTemplate.yaml")) {
                     mainServiceYaml = entry;
                     break;
+                }
+                if (entriesCount > TOO_MANY) {
+                    throw new IllegalStateException("too many files to unzip");
                 }
             }
 
             if (mainServiceYaml == null) {
-                throw new ApmException("Main Service Yaml not found in CSAR");
+                LOGGER.error(SERVICE_YAML_NOT_FOUND);
+                throw new ApmException(SERVICE_YAML_NOT_FOUND);
             }
 
             try (InputStream inputStream = zipFile.getInputStream(mainServiceYaml)) {
-                StringWriter writer = new StringWriter();
-                IOUtils.copy(inputStream, writer, StandardCharsets.UTF_8);
-                return writer.toString();
+                byte[] byteArray = IOUtils.toByteArray(inputStream);
+                if (byteArray.length > TOO_BIG) {
+                    throw new IllegalStateException("file being unzipped is too big");
+                }
+                return new String(byteArray, StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
-            throw new ApmException("failed to unzip the csar file");
+            LOGGER.error(FAILED_TO_UNZIP_CSAR, e.getMessage());
+            throw new ApmException(FAILED_TO_UNZIP_CSAR);
         }
     }
 
@@ -135,7 +161,8 @@ public final class ApmServiceHelper {
         try {
             response = jsonWriter.writeValueAsString(om.readValue(mainServiceYaml, Object.class));
         } catch (JsonProcessingException e) {
-            throw new ApmException("failed to convert main service yaml to json");
+            LOGGER.error(FAILED_TO_CONVERT_YAML_TO_JSON, e.getMessage());
+            throw new ApmException(FAILED_TO_CONVERT_YAML_TO_JSON);
         }
 
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();

@@ -19,27 +19,54 @@ package org.edgegallery.mecm.apm.service;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
+import static org.edgegallery.mecm.apm.utils.Constants.CSAR_DOWNLOAD_FAILED;
+import static org.edgegallery.mecm.apm.utils.Constants.CSAR_NOT_EXIST;
+import static org.edgegallery.mecm.apm.utils.Constants.CSAR_READ_FAILED;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CONNECT_APPSTORE;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CONNECT_INVENTORY;
+import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_GET_REPO_INFO;
+import static org.edgegallery.mecm.apm.utils.Constants.LOCAL_FILE_PATH_NULL;
+import static org.edgegallery.mecm.apm.utils.Constants.REPO_INFO_NULL;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.PullImageResultCallback;
+import com.github.dockerjava.core.DockerClientBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 @Service("ApmService")
 public class ApmService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApmService.class);
 
     @Value("${apm.esr-ip}")
     private String esrIp;
 
     @Value("${apm.esr-port}")
     private String esrPort;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     /**
      * Downloads app package csar from app store and stores it locally.
@@ -49,11 +76,17 @@ public class ApmService {
      * @param tenantId   tenant ID
      */
     public String downloadAppPackage(String appPkgPath, String packageId, String tenantId) {
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<InputStreamResource> response = restTemplate
-                .getForEntity(appPkgPath, InputStreamResource.class);
+        ResponseEntity<InputStreamResource> response;
+        try {
+            response = restTemplate.getForEntity(appPkgPath, InputStreamResource.class);
+        } catch (ResourceAccessException ex) {
+            LOGGER.error(FAILED_TO_CONNECT_APPSTORE);
+            throw new ApmException(FAILED_TO_CONNECT_APPSTORE);
+        }
+
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            throw new ApmException("failed to download app package from app store");
+            LOGGER.error(CSAR_DOWNLOAD_FAILED, packageId);
+            throw new ApmException("failed to download app package for package " + packageId);
         }
         return saveInputStreamToFile(response.getBody(), packageId, tenantId);
     }
@@ -78,19 +111,29 @@ public class ApmService {
      * @throws ApmException exception if failed to get edge repository details
      */
     public String getRepoInfoOfHost(String hostIp, String tenantId) {
-        RestTemplate restTemplate = new RestTemplate();
         String url = new StringBuilder("https://").append(esrIp).append(":")
                 .append(esrPort).append("/tenants/").append(tenantId)
                 .append("/mechosts/").append(hostIp).toString();
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-        if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            throw new ApmException("failed to get repository information from host");
+
+        ResponseEntity<String> response;
+        try {
+            response = restTemplate.getForEntity(url, String.class);
+        } catch (ResourceAccessException ex) {
+            LOGGER.error(FAILED_TO_CONNECT_INVENTORY, ex.getMessage());
+            throw new ApmException(FAILED_TO_CONNECT_INVENTORY);
         }
+
+        if (!HttpStatus.OK.equals(response.getStatusCode())) {
+            LOGGER.error(FAILED_TO_GET_REPO_INFO, hostIp);
+            throw new ApmException("failed to get repository information of host " + hostIp);
+        }
+
         JsonObject jsonObject = new JsonParser().parse(response.getBody()).getAsJsonObject();
         String edgeRepoIp = jsonObject.get("edgeRepoIp").getAsString();
         String edgeRepoPort = jsonObject.get("edgeRepoPort").getAsString();
         if (edgeRepoIp == null || edgeRepoPort == null) {
-            throw new ApmException("edge repository address is null");
+            LOGGER.error(REPO_INFO_NULL, hostIp);
+            throw new ApmException("edge nexus repository information is null for host " + hostIp);
         }
         return edgeRepoIp + ":" + edgeRepoPort;
     }
@@ -102,6 +145,53 @@ public class ApmService {
      * @param imageInfoList list of images
      */
     public void downloadAppImage(String repoAddress, List<ImageInfo> imageInfoList) {
-        // TODO: download image from repo
+        for (ImageInfo image : imageInfoList) {
+            DockerClient dockerClient = DockerClientBuilder.getInstance().build();
+            String imageName = new StringBuilder(repoAddress)
+                    .append("/").append(image.getName()).append(":")
+                    .append(image.getVersion()).toString();
+            try {
+                dockerClient.pullImageCmd(imageName)
+                            .exec(new PullImageResultCallback()).awaitCompletion();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ApmException("failed to download image");
+            }
+        }
+    }
+
+    /**
+     * Returns app package csar file.
+     *
+     * @param localFilePath local file path
+     * @return app package csar file
+     */
+    public InputStream getAppPackageFile(String localFilePath) {
+        try (FileInputStream inputStream = new FileInputStream(localFilePath)) {
+            return new BufferedInputStream(inputStream);
+        } catch (FileNotFoundException e) {
+            LOGGER.error(CSAR_NOT_EXIST);
+            throw new ApmException(CSAR_NOT_EXIST);
+        } catch (IOException e) {
+            LOGGER.error(CSAR_READ_FAILED);
+            throw new ApmException(CSAR_READ_FAILED);
+        }
+    }
+
+    /**
+     * Returns app package csar file.
+     *
+     * @param localFilePath local file path
+     */
+    public void deleteAppPackageFile(String localFilePath) {
+        if (localFilePath == null) {
+            LOGGER.error(LOCAL_FILE_PATH_NULL);
+            throw new ApmException(LOCAL_FILE_PATH_NULL);
+        }
+        try {
+            Files.deleteIfExists(Paths.get(localFilePath));
+        } catch (IOException e) {
+            LOGGER.error("failed to delete csar file");
+        }
     }
 }

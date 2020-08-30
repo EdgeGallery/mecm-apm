@@ -24,5 +24,6 @@
         app_pkg_id varchar(255) not null,
         distribution_status varchar(200) not null,
         tenant_id varchar(200) not null,
+        error varchar(2000),
         primary key (id)
     );

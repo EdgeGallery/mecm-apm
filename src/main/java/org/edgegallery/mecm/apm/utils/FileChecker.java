@@ -19,7 +19,6 @@ package org.edgegallery.mecm.apm.utils;
 import com.google.common.io.Files;
 import java.io.File;
 import java.text.Normalizer;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 
@@ -29,8 +28,9 @@ public final class FileChecker {
             = "[^\\s\\\\/:*?\"<>|](\\x20|[^\\s\\\\/:*?\"<>|])*[^\\s\\\\/:*?\"<>|.]$";
 
     private static final int MAX_LENGTH_FILE_NAME = 255;
-
     private static final long MAX_ZIP_FILE_SIZE = 50 * 1024 * 1024L;
+    private static final Pattern fileNamePattern = Pattern.compile(REG);
+    private static final String WHITESPACE = "\\s";
 
     private FileChecker() {
     }
@@ -44,7 +44,7 @@ public final class FileChecker {
         String fileName = file.getName();
 
         // file name should not contains blank.
-        if (fileName != null && fileName.split("\\s").length > 1) {
+        if (fileName != null && fileName.split(WHITESPACE).length > 1) {
             throw new IllegalArgumentException(fileName + " :fileName contain blank");
         }
 
@@ -67,7 +67,6 @@ public final class FileChecker {
             return false;
         }
         fileName = Normalizer.normalize(fileName, Normalizer.Form.NFKC);
-        Matcher matcher = Pattern.compile(REG).matcher(fileName);
-        return matcher.matches();
+        return fileNamePattern.matcher(fileName).matches();
     }
 }

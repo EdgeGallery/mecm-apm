@@ -61,6 +61,8 @@ public class DbService {
         appPackage.setId(appPackageDto.getAppPkgId() + tenantId);
         appPackage.setTenantId(tenantId);
         appPackageRepository.save(appPackage);
+        LOGGER.info("app package record for tenant {} and package {} created successfully",
+                tenantId, appPackageDto.getAppPkgId());
     }
 
     /**
@@ -75,6 +77,8 @@ public class DbService {
             return;
         }
         appPackageRepository.delete(info.get());
+        LOGGER.info("app package record for tenant {} and package {} deleted successfully",
+                tenantId, packageId);
     }
 
     /**
@@ -165,7 +169,6 @@ public class DbService {
     public void createHost(String tenantId, AppPackageDto appPackageDto) {
         List<MecHostDto> hostList = appPackageDto.getMecHostInfo();
         for (MecHostDto mecHostDto : hostList) {
-
             MecHost host = new MecHost();
             host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
             host.setDistributionStatus("Processing");
@@ -173,6 +176,8 @@ public class DbService {
             host.setAppPkgId(appPackageDto.getAppPkgId());
             host.setTenantId(tenantId);
             mecHostRepository.save(host);
+            LOGGER.info("host record for tenant {}, package {} and host {} created successfully",
+                    tenantId, appPackageDto.getAppPkgId(), mecHostDto.getHostIp());
         }
     }
 
@@ -186,6 +191,8 @@ public class DbService {
         mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)) {
                 mecHostRepository.delete(host);
+                LOGGER.info("host record for tenant {} and package {} deleted successfully",
+                        tenantId, packageId);
             }
         });
     }
@@ -202,6 +209,8 @@ public class DbService {
             if (host.getPkgHostKey().equals(packageId + tenantId)
                     && host.getHostIp().equals(hostIp)) {
                 mecHostRepository.delete(host);
+                LOGGER.info("host record for tenant {}, package {} and host ip {} deleted successfully",
+                        tenantId, packageId, hostIp);
             }
         });
     }
@@ -224,6 +233,7 @@ public class DbService {
         AppPackage appPackage = info.get();
         appPackage.setLocalFilePath(localFilePath);
         appPackageRepository.save(appPackage);
+        LOGGER.info("local file path updated for tenant {} and package {}", tenantId, packageId);
     }
 
     /**

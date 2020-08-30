@@ -151,6 +151,7 @@ public class ApmService {
                 throw new ApmException("failed to download image");
             }
         }
+        LOGGER.info("image download successfully");
     }
 
     /**

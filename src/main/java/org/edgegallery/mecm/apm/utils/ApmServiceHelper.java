@@ -92,6 +92,7 @@ public final class ApmServiceHelper {
         try {
             FileUtils.copyInputStreamToFile(resourceStream.getInputStream(), file);
             FileChecker.check(file);
+            LOGGER.info("app package {} downloaded from appstore successfully", packageId);
             return file.getCanonicalPath();
         } catch (IOException e) {
             LOGGER.error(Constants.FAILED_TO_CREATE_CSAR, packageId);

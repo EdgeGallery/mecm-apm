@@ -68,7 +68,7 @@ public final class ApmServiceHelper {
         try {
             return localFileDir.getCanonicalPath();
         } catch (IOException e) {
-            LOGGER.info(Constants.FAILED_TO_GET_FAIL_PATH, e.getMessage());
+            LOGGER.info(Constants.FAILED_TO_GET_FAIL_PATH);
             throw new ApmException(Constants.FAILED_TO_GET_FAIL_PATH);
         }
     }
@@ -94,7 +94,7 @@ public final class ApmServiceHelper {
             FileChecker.check(file);
             return file.getCanonicalPath();
         } catch (IOException e) {
-            LOGGER.error(Constants.FAILED_TO_CREATE_CSAR, packageId, e.getMessage());
+            LOGGER.error(Constants.FAILED_TO_CREATE_CSAR, packageId);
             throw new ApmException("failed to create csar file for package " + packageId);
         }
     }
@@ -135,7 +135,7 @@ public final class ApmServiceHelper {
                 return new String(byteArray, StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
-            LOGGER.error(Constants.FAILED_TO_UNZIP_CSAR, e.getMessage());
+            LOGGER.error(Constants.FAILED_TO_UNZIP_CSAR);
             throw new ApmException(Constants.FAILED_TO_UNZIP_CSAR);
         }
     }

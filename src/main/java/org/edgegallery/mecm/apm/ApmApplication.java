@@ -16,7 +16,15 @@
 
 package org.edgegallery.mecm.apm;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.Executor;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,13 +67,38 @@ public class ApmApplication {
      * @param args arguments
      */
     public static void main(String[] args) {
-        // TODO: Token & https based support.
         LOGGER.info("APM application starting----");
-        SpringApplication.run(ApmApplication.class, args);
+        // do not check host name
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                LOGGER.info("checks client trusted");
+            }
+
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                LOGGER.info("checks server trusted");
+            }
+        }
+        };
+
+        SSLContext sc;
+        try {
+            sc = SSLContext.getInstance("TLSv1.2");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+
+            SpringApplication.run(ApmApplication.class, args);
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            LOGGER.info("SSL context init error... exiting system {}", e.getMessage());
+        }
     }
 
     /**
-     * Asychronous configurations.
+     * Asynchronous configurations.
      *
      * @return thread tool task executor
      */

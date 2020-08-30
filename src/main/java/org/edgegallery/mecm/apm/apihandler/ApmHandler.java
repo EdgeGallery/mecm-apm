@@ -55,8 +55,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ApmHandler {
 
-    // TODO pre authorization & parameter validations
-
     @Autowired
     private ApmServiceFacade service;
 

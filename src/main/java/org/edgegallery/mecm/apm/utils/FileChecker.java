@@ -29,8 +29,8 @@ public final class FileChecker {
 
     private static final int MAX_LENGTH_FILE_NAME = 255;
     private static final long MAX_ZIP_FILE_SIZE = 50 * 1024 * 1024L;
-    private static final Pattern fileNamePattern = Pattern.compile(REG);
-    private static final String WHITESPACE = "\\s";
+    private static final Pattern FILE_NAME_PATTERN = Pattern.compile(REG);
+    private static final Pattern WHITE_SPACE_PATTERN = Pattern.compile("\\s");
 
     private FileChecker() {
     }
@@ -44,7 +44,7 @@ public final class FileChecker {
         String fileName = file.getName();
 
         // file name should not contains blank.
-        if (fileName != null && fileName.split(WHITESPACE).length > 1) {
+        if (fileName != null && WHITE_SPACE_PATTERN.split(fileName).length > 1) {
             throw new IllegalArgumentException(fileName + " :fileName contain blank");
         }
 
@@ -67,6 +67,6 @@ public final class FileChecker {
             return false;
         }
         fileName = Normalizer.normalize(fileName, Normalizer.Form.NFKC);
-        return fileNamePattern.matcher(fileName).matches();
+        return FILE_NAME_PATTERN.matcher(fileName).matches();
     }
 }

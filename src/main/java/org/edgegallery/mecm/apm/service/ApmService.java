@@ -19,14 +19,6 @@ package org.edgegallery.mecm.apm.service;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
-import static org.edgegallery.mecm.apm.utils.Constants.CSAR_DOWNLOAD_FAILED;
-import static org.edgegallery.mecm.apm.utils.Constants.CSAR_NOT_EXIST;
-import static org.edgegallery.mecm.apm.utils.Constants.CSAR_READ_FAILED;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CONNECT_APPSTORE;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CONNECT_INVENTORY;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_GET_REPO_INFO;
-import static org.edgegallery.mecm.apm.utils.Constants.LOCAL_FILE_PATH_NULL;
-import static org.edgegallery.mecm.apm.utils.Constants.REPO_INFO_NULL;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
@@ -43,6 +35,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
+import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,12 +73,12 @@ public class ApmService {
         try {
             response = restTemplate.getForEntity(appPkgPath, InputStreamResource.class);
         } catch (ResourceAccessException ex) {
-            LOGGER.error(FAILED_TO_CONNECT_APPSTORE);
-            throw new ApmException(FAILED_TO_CONNECT_APPSTORE);
+            LOGGER.error(Constants.FAILED_TO_CONNECT_APPSTORE);
+            throw new ApmException(Constants.FAILED_TO_CONNECT_APPSTORE);
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            LOGGER.error(CSAR_DOWNLOAD_FAILED, packageId);
+            LOGGER.error(Constants.CSAR_DOWNLOAD_FAILED, packageId);
             throw new ApmException("failed to download app package for package " + packageId);
         }
         return saveInputStreamToFile(response.getBody(), packageId, tenantId);
@@ -119,12 +112,12 @@ public class ApmService {
         try {
             response = restTemplate.getForEntity(url, String.class);
         } catch (ResourceAccessException ex) {
-            LOGGER.error(FAILED_TO_CONNECT_INVENTORY, ex.getMessage());
-            throw new ApmException(FAILED_TO_CONNECT_INVENTORY);
+            LOGGER.error(Constants.FAILED_TO_CONNECT_INVENTORY, ex.getMessage());
+            throw new ApmException(Constants.FAILED_TO_CONNECT_INVENTORY);
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            LOGGER.error(FAILED_TO_GET_REPO_INFO, hostIp);
+            LOGGER.error(Constants.FAILED_TO_GET_REPO_INFO, hostIp);
             throw new ApmException("failed to get repository information of host " + hostIp);
         }
 
@@ -132,7 +125,7 @@ public class ApmService {
         String edgeRepoIp = jsonObject.get("edgeRepoIp").getAsString();
         String edgeRepoPort = jsonObject.get("edgeRepoPort").getAsString();
         if (edgeRepoIp == null || edgeRepoPort == null) {
-            LOGGER.error(REPO_INFO_NULL, hostIp);
+            LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
             throw new ApmException("edge nexus repository information is null for host " + hostIp);
         }
         return edgeRepoIp + ":" + edgeRepoPort;
@@ -170,11 +163,11 @@ public class ApmService {
         try (FileInputStream inputStream = new FileInputStream(localFilePath)) {
             return new BufferedInputStream(inputStream);
         } catch (FileNotFoundException e) {
-            LOGGER.error(CSAR_NOT_EXIST);
-            throw new ApmException(CSAR_NOT_EXIST);
+            LOGGER.error(Constants.CSAR_NOT_EXIST);
+            throw new ApmException(Constants.CSAR_NOT_EXIST);
         } catch (IOException e) {
-            LOGGER.error(CSAR_READ_FAILED);
-            throw new ApmException(CSAR_READ_FAILED);
+            LOGGER.error(Constants.CSAR_READ_FAILED);
+            throw new ApmException(Constants.CSAR_READ_FAILED);
         }
     }
 
@@ -185,8 +178,8 @@ public class ApmService {
      */
     public void deleteAppPackageFile(String localFilePath) {
         if (localFilePath == null) {
-            LOGGER.error(LOCAL_FILE_PATH_NULL);
-            throw new ApmException(LOCAL_FILE_PATH_NULL);
+            LOGGER.error(Constants.LOCAL_FILE_PATH_NULL);
+            throw new ApmException(Constants.LOCAL_FILE_PATH_NULL);
         }
         try {
             Files.deleteIfExists(Paths.get(localFilePath));

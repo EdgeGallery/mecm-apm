@@ -36,13 +36,14 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.WebUtils;
 
-public class ApmTraceLogFilter extends OncePerRequestFilter implements Ordered {
+class ApmTraceLogFilter extends OncePerRequestFilter implements Ordered {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmTraceLogFilter.class);
+    public static final int OFFSET = 10;
 
     @Override
     public int getOrder() {
-        return Ordered.LOWEST_PRECEDENCE - 10;
+        return Ordered.LOWEST_PRECEDENCE - OFFSET;
     }
 
     @Override
@@ -99,6 +100,7 @@ public class ApmTraceLogFilter extends OncePerRequestFilter implements Ordered {
     @NoArgsConstructor
     @ToString
     private static class HttpRequestTraceLog {
+
         private String accessId;
         private String path;
         private String method;
@@ -111,6 +113,7 @@ public class ApmTraceLogFilter extends OncePerRequestFilter implements Ordered {
     @NoArgsConstructor
     @ToString
     private static class HttpResponseTraceLog {
+
         private String accessId;
         private Integer status;
         private String time;

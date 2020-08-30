@@ -16,14 +16,6 @@
 
 package org.edgegallery.mecm.apm.utils;
 
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CONVERT_YAML_TO_JSON;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CREATE_CSAR;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_CREATE_DIR;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_GET_FAIL_PATH;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_READ_INPUTSTREAM;
-import static org.edgegallery.mecm.apm.utils.Constants.FAILED_TO_UNZIP_CSAR;
-import static org.edgegallery.mecm.apm.utils.Constants.SERVICE_YAML_NOT_FOUND;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -69,15 +61,15 @@ public final class ApmServiceHelper {
     public static String createDir(String dirPath) {
         File localFileDir = new File(dirPath);
         if (!localFileDir.mkdir()) {
-            LOGGER.info(FAILED_TO_CREATE_DIR);
-            throw new ApmException(FAILED_TO_CREATE_DIR);
+            LOGGER.info(Constants.FAILED_TO_CREATE_DIR);
+            throw new ApmException(Constants.FAILED_TO_CREATE_DIR);
         }
 
         try {
             return localFileDir.getCanonicalPath();
         } catch (IOException e) {
-            LOGGER.info(FAILED_TO_GET_FAIL_PATH, e.getMessage());
-            throw new ApmException(FAILED_TO_GET_FAIL_PATH);
+            LOGGER.info(Constants.FAILED_TO_GET_FAIL_PATH, e.getMessage());
+            throw new ApmException(Constants.FAILED_TO_GET_FAIL_PATH);
         }
     }
 
@@ -91,7 +83,7 @@ public final class ApmServiceHelper {
      */
     public static String saveInputStreamToFile(InputStreamResource resourceStream, String packageId, String tenantId) {
         if (resourceStream == null) {
-            LOGGER.info(FAILED_TO_READ_INPUTSTREAM, packageId);
+            LOGGER.info(Constants.FAILED_TO_READ_INPUTSTREAM, packageId);
             throw new ApmException("failed to read input stream from app store for package " + packageId);
         }
         String localDirPath = createDir(APM_ROOT + SLASH + packageId + tenantId);
@@ -102,7 +94,7 @@ public final class ApmServiceHelper {
             FileChecker.check(file);
             return file.getCanonicalPath();
         } catch (IOException e) {
-            LOGGER.error(FAILED_TO_CREATE_CSAR, packageId, e.getMessage());
+            LOGGER.error(Constants.FAILED_TO_CREATE_CSAR, packageId, e.getMessage());
             throw new ApmException("failed to create csar file for package " + packageId);
         }
     }
@@ -131,8 +123,8 @@ public final class ApmServiceHelper {
             }
 
             if (mainServiceYaml == null) {
-                LOGGER.error(SERVICE_YAML_NOT_FOUND);
-                throw new ApmException(SERVICE_YAML_NOT_FOUND);
+                LOGGER.error(Constants.SERVICE_YAML_NOT_FOUND);
+                throw new ApmException(Constants.SERVICE_YAML_NOT_FOUND);
             }
 
             try (InputStream inputStream = zipFile.getInputStream(mainServiceYaml)) {
@@ -143,8 +135,8 @@ public final class ApmServiceHelper {
                 return new String(byteArray, StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
-            LOGGER.error(FAILED_TO_UNZIP_CSAR, e.getMessage());
-            throw new ApmException(FAILED_TO_UNZIP_CSAR);
+            LOGGER.error(Constants.FAILED_TO_UNZIP_CSAR, e.getMessage());
+            throw new ApmException(Constants.FAILED_TO_UNZIP_CSAR);
         }
     }
 
@@ -161,8 +153,8 @@ public final class ApmServiceHelper {
         try {
             response = jsonWriter.writeValueAsString(om.readValue(mainServiceYaml, Object.class));
         } catch (JsonProcessingException e) {
-            LOGGER.error(FAILED_TO_CONVERT_YAML_TO_JSON, e.getMessage());
-            throw new ApmException(FAILED_TO_CONVERT_YAML_TO_JSON);
+            LOGGER.error(Constants.FAILED_TO_CONVERT_YAML_TO_JSON, e.getMessage());
+            throw new ApmException(Constants.FAILED_TO_CONVERT_YAML_TO_JSON);
         }
 
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();

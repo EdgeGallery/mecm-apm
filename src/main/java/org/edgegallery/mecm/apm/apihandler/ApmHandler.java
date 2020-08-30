@@ -16,17 +16,24 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
+import static org.edgegallery.mecm.apm.utils.Constants.APP_PKG_ID_REGX;
+import static org.edgegallery.mecm.apm.utils.Constants.HOST_IP_REGX;
+import static org.edgegallery.mecm.apm.utils.Constants.TENENT_ID_REGEX;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
+import javax.validation.constraints.Pattern;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -64,13 +71,14 @@ public class ApmHandler {
     @PostMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> onBoardAppPackage(
-            @ApiParam(value = "tenant id", required = true) @PathVariable("tenant_id") String tenantId,
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @Valid @ApiParam(value = "app package info") @RequestBody AppPackageDto appPackageDto) {
         service.onboardApplication(tenantId, appPackageDto);
 
         Map<String, String> response = new HashMap<>();
         response.put("packageId", appPackageDto.getAppPkgId());
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
 
     /**
@@ -84,8 +92,10 @@ public class ApmHandler {
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AppPackageDto> getAppPackageInfo(
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
-            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id")
+            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
         AppPackageDto response = service.getAppPackageInfo(tenantId, appPackageId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -101,8 +111,10 @@ public class ApmHandler {
     @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> deleteAppPackage(
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
-            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id")
+            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
         service.deleteAppPackage(tenantId, appPackageId);
         return new ResponseEntity<>("success", HttpStatus.OK);
     }
@@ -118,10 +130,14 @@ public class ApmHandler {
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/download",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<InputStreamResource> downloadAppPackage(
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
-            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId) {
-        // TODO: implementation
-        return new ResponseEntity<>(HttpStatus.OK);
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id")
+            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+        InputStream resource = service.getAppPackageFile(tenantId, appPackageId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/octet-stream");
+        return new ResponseEntity<>(new InputStreamResource(resource), headers, HttpStatus.OK);
     }
 
     /**
@@ -134,7 +150,8 @@ public class ApmHandler {
     @GetMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AppPackageDto>> getAllAppPackageInfo(
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId) {
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Pattern(regexp = TENENT_ID_REGEX) String tenantId) {
         List<AppPackageDto> response = service.getAllAppPackageInfo(tenantId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -151,9 +168,12 @@ public class ApmHandler {
     @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/hosts/{host_ip}",
             produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> deleteAppPackageInHost(
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id") String tenantId,
-            @ApiParam(value = "app package id") @PathVariable("app_package_id") String appPackageId,
-            @ApiParam(value = "host ip") @PathVariable("host_ip") String hostIp) {
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id")
+            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId,
+            @ApiParam(value = "host ip") @PathVariable("host_ip")
+            @Pattern(regexp = HOST_IP_REGX) String hostIp) {
         service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
         return new ResponseEntity<>("success", HttpStatus.OK);
     }

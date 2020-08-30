@@ -16,16 +16,26 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
+import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
+
+import java.io.InputStream;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service("ApmServiceFacade")
 public class ApmServiceFacade {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceFacade.class);
 
     @Autowired
     private ApmService apmService;
@@ -51,20 +61,24 @@ public class ApmServiceFacade {
             dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
 
             imageInfoList = apmService.getAppImageInfo(localFilePath);
-        } catch (ApmException e) {
-            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, "Error");
+        } catch (ApmException | IllegalArgumentException e) {
+            LOGGER.error(DISTRIBUTION_FAILED, packageId);
+            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, "Error", e.getMessage());
             return;
         }
 
-        for (String hostIp : appPackageDto.getMecHost()) {
+        for (MecHostDto host : appPackageDto.getMecHostInfo()) {
             String distributionStatus = "Distributed";
+            String error = "";
             try {
-                String repoAddress = apmService.getRepoInfoOfHost(hostIp, tenantId);
+                String repoAddress = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId);
                 apmService.downloadAppImage(repoAddress, imageInfoList);
             }  catch (ApmException e) {
                 distributionStatus = "Error";
+                error = e.getMessage();
             }
-            dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, distributionStatus);
+            LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
+            dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus, error);
         }
     }
 
@@ -76,7 +90,7 @@ public class ApmServiceFacade {
      * @return app package info
      */
     public AppPackageDto getAppPackageInfo(String tenantId, String appPackageId) {
-        return dbService.getAppPackage(tenantId, appPackageId);
+        return dbService.getAppPackageWithHost(tenantId, appPackageId);
     }
 
     /**
@@ -86,9 +100,10 @@ public class ApmServiceFacade {
      * @param appPackageId app package ID
      */
     public void deleteAppPackage(String tenantId, String appPackageId) {
+        AppPackage appPackage = dbService.getAppPackage(tenantId, appPackageId);
         dbService.deleteAppPackage(tenantId, appPackageId);
         dbService.deleteHost(tenantId, appPackageId);
-        // TODO: delete local file stored
+        apmService.deleteAppPackageFile(appPackage.getLocalFilePath());
     }
 
     /**
@@ -111,5 +126,17 @@ public class ApmServiceFacade {
     public void deleteAppPackageInHost(String tenantId, String appPackageId,
                                        String hostIp) {
         dbService.deleteHostWithIp(tenantId, appPackageId, hostIp);
+    }
+
+    /**
+     * Returns app package csar file.
+     *
+     * @param tenantId tenant ID
+     * @param packageId package ID
+     * @return app package csar file
+     */
+    public InputStream getAppPackageFile(String tenantId, String packageId) {
+        AppPackage appPackage = dbService.getAppPackage(tenantId, packageId);
+        return apmService.getAppPackageFile(appPackage.getLocalFilePath());
     }
 }

@@ -18,13 +18,16 @@ package org.edgegallery.mecm.apm.model.dto;
 
 import java.util.LinkedList;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.edgegallery.mecm.apm.utils.Constants;
 
 /**
  * Application package schema.
@@ -36,42 +39,52 @@ import lombok.ToString;
 @AllArgsConstructor
 public class AppPackageDto {
 
-    @NotEmpty(message = "appPkgId is empty")
+    @NotEmpty(message = "appPkgId must not be empty")
+    @Pattern(regexp = Constants.APP_PKG_ID_REGX, message = "appPkgId must match pattern [0-9a-f]{32}")
     private String appPkgId;
 
-    @NotEmpty(message = "appPkgName is empty")
+    @NotEmpty(message = "appPkgName must not be empty")
+    @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
+    @Pattern(regexp = Constants.APP_NAME_REGEX, message = "appPkgName must match pattern ^[a-zA-Z0-9]*$|^[a-zA-Z0-9]"
+            + "[a-zA-Z0-9_\\\\-]*[a-zA-Z0-9]$\"")
     private String appPkgName;
 
-    @NotEmpty(message = "appPkgVersion is empty")
+    @NotEmpty(message = "appPkgVersion must not be empty")
+    @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
     private String appPkgVersion;
 
-    @NotEmpty(message = "appPkgPath is empty")
+    @NotEmpty(message = "appPkgPath must not be empty")
+    @Pattern(regexp = Constants.URI_REGEX, message = "appPkgPath must match pattern ^(([^:/?#]+):)?(//([^/?#]*))?"
+            + "([^?#]*)(\\?([^#]*))?(#(.*))?")
     private String appPkgPath;
 
-    @NotNull(message = "appProvider is null")
+    @NotEmpty(message = "appProvider must not be empty")
+    @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appProvider must not exceed more than 1024 characters")
     private String appProvider;
 
-    @NotNull(message = "appPkgDesc is null")
+    @NotEmpty(message = "appPkgDesc must not be empty")
+    @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appPkgDesc must not exceed more than 1024 characters")
     private String appPkgDesc;
 
-    @NotNull(message = "appPkgAffinity is null")
+    @NotEmpty(message = "appPkgAffinity must not be empty")
+    @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgAffinity must not exceed more than 255 characters")
     private String appPkgAffinity;
 
-    @NotNull(message = "appIconUrl is null")
+    @NotEmpty(message = "appIconUrl must not be empty")
+    @Pattern(regexp = Constants.URI_REGEX, message = "Url must match pattern ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)"
+            + "(\\?([^#]*))?(#(.*))?")
     private String appIconUrl;
 
-    @NotNull(message = "createdTime is null")
+    @NotEmpty(message = "createdTime must not be empty")
     private String createdTime;
 
-    @NotNull(message = "modifiedTime is null")
+    @NotEmpty(message = "modifiedTime must not be empty")
     private String modifiedTime;
 
-    @NotEmpty(message = "appId is empty")
+    @NotEmpty(message = "appId must not be empty")
+    @Pattern(regexp = Constants.APPD_ID_REGEX, message = "appId must match pattern [0-9a-f]{32}")
     private String appId;
 
-    @NotEmpty(message = "mecHost is empty")
-    private List<String> mecHost = new LinkedList<>();
-
-    @NotNull(message = "mecHostInfo is null")
-    private List<MecHostDto> mecHostInfo = new LinkedList<>();
+    @NotEmpty(message = "mecHost info must not be empty")
+    private List<@Valid MecHostDto> mecHostInfo = new LinkedList<>();
 }

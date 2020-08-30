@@ -16,7 +16,14 @@
 
 package org.edgegallery.mecm.apm.model.dto;
 
+import static org.edgegallery.mecm.apm.utils.Constants.HOST_IP_REGX;
+import static org.edgegallery.mecm.apm.utils.Constants.MAX_COMMON_STRING_LENGTH;
+import static org.edgegallery.mecm.apm.utils.Constants.MAX_DETAILS_STRING_LENGTH;
+
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -29,23 +36,17 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
+@AllArgsConstructor
 public class MecHostDto {
 
-    @NotEmpty(message = "hostIp is empty")
+    @NotEmpty(message = "hostIp must not be empty")
+    @Pattern(regexp = HOST_IP_REGX, message = "host ip must match pattern ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]"
+            + "|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
     private String hostIp;
 
-    @NotEmpty(message = "status is empty")
+    @Size(max = MAX_COMMON_STRING_LENGTH, message = "status must not exceed more than 255 characters")
     private String status;
 
-    /**
-     * Constructor to create MecHostDto.
-     *
-     * @param hostIp host ip
-     * @param status distribution status
-     */
-    public MecHostDto(@NotEmpty(message = "hostIp is empty") String hostIp,
-                      @NotEmpty(message = "status is empty") String status) {
-        this.hostIp = hostIp;
-        this.status = status;
-    }
+    @Size(max = MAX_DETAILS_STRING_LENGTH, message = "error must not exceed more than 1024 characters")
+    private String error;
 }

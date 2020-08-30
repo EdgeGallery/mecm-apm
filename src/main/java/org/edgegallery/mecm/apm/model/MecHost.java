@@ -54,4 +54,7 @@ public class MecHost {
 
     @Column(name = "tenant_id")
     private String tenantId;
+
+    @Column(name = "error")
+    private String error;
 }

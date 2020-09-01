@@ -52,11 +52,11 @@ public class ApmService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmService.class);
 
-    @Value("${apm.esr-ip}")
-    private String esrIp;
+    @Value("${apm.inventory-endpoint}")
+    private String inventoryIp;
 
-    @Value("${apm.esr-port}")
-    private String esrPort;
+    @Value("${apm.inventory-port}")
+    private String inventoryPort;
 
     @Autowired
     private RestClientService restClientService;
@@ -106,8 +106,8 @@ public class ApmService {
      * @throws ApmException exception if failed to get edge repository details
      */
     public String getRepoInfoOfHost(String hostIp, String tenantId) {
-        String url = new StringBuilder("https://").append(esrIp).append(":")
-                .append(esrPort).append("/tenants/").append(tenantId)
+        String url = new StringBuilder("https://").append(inventoryIp).append(":")
+                .append(inventoryPort).append("/tenants/").append(tenantId)
                 .append("/mechosts/").append(hostIp).toString();
 
         ResponseEntity<String> response;

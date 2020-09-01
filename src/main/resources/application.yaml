@@ -17,25 +17,29 @@
 ### Server port #########
 server:
   port: 8092
-  address: ${LISTEN_IP:0.0.0.0}
+  address: ${LISTEN_IP:}
   contextPath: /home
 
   ssl:
-    enabled: ${SSL_ENABLED:}
+    enabled: true
     protocol: TLS
     enabled-Protocols: [TLSv1.2]
+    ciphers: [TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+              TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384]
 
     # Keystore
-    key-store: ${SSL_KEY_STORE_PATH:}
+    key-store: /usr/app/ssl/keystore.p12
     key-store-password: ${SSL_KEY_STORE_PASSWORD:}
-    key-store-type: ${SSL_KEY_STORE_TYPE:}
-    key-alias: ${SSL_KEY_ALIAS:}
+    key-store-type: ${SSL_KEY_STORE_TYPE:PKCS12}
+    key-alias: ${SSL_KEY_ALIAS:edgegallery}
+    trust-store: /usr/app/ssl/keystore.jks
+    trust-store-password: ${SSL_TRUST_PASSWORD:}
 
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/apmdb
-    username: apm
-    password: ${DB_PASSWORD:}
+    url: jdbc:postgresql://${APM_DB_HOST:postgres}:${APM_DB_PORT:5432}/${APM_DB:apmdb}
+    username: ${APM_DB_USER:apm}
+    password: ${APM_DB_PASSWORD:}
   jpa:
     properties:
       hibernate:
@@ -48,6 +52,13 @@ apm:
     corepool-size: 50
     maxpool-size: 50
     queue-capacity: 500
-  esr-ip: ${ESR_IP:}
-  esr-port: ${ESR_PORT:}
+  inventory-endpoint: ${INVENTORY_ENDPOINT:}
+  inventory-port: ${INVENTORY_PORT:}
+
+#### security config ####
+security:
+  oauth2:
+    resource:
+      jwt:
+        key-uri: ${AUTH_SERVER_ADDRESS:http://user-mgmt-svc:8067}/oauth/token_key
 

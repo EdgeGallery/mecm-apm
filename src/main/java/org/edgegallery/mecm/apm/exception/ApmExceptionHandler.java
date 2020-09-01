@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,6 +31,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class ApmExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApmExceptionHandler.class);
 
     /**
      * Returns error code and message for APM exception.
@@ -55,6 +59,7 @@ public class ApmExceptionHandler {
         }
         ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(), "input validation failed",
                 errorMsg);
+        LOGGER.info("Method argument error: {}", response);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
@@ -68,6 +73,7 @@ public class ApmExceptionHandler {
     public ResponseEntity<ApmExceptionResponse> handleConstraintViolationException(ConstraintViolationException ex) {
         ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(), "input validation failed",
                 Collections.singletonList("URL validation failed"));
+        LOGGER.info("Constraint violation error: {}", response);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
@@ -80,5 +86,19 @@ public class ApmExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgException(IllegalArgumentException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Returns error code and message when record not found.
+     *
+     * @param ex exception while processing request
+     * @return response entity with error code and message
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApmExceptionResponse> handleRuntimeException(RuntimeException ex) {
+        ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(),
+                "Error while processing request", Collections.singletonList("Error while process request"));
+        LOGGER.info("Internal server error: {}", response);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

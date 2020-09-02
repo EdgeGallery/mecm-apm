@@ -23,12 +23,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.ApmTenant;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.MecHost;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.repository.ApmTenantRepository;
 import org.edgegallery.mecm.apm.repository.AppPackageRepository;
 import org.edgegallery.mecm.apm.repository.MecHostRepository;
+import org.edgegallery.mecm.apm.utils.Constants;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +49,9 @@ public class DbService {
     @Autowired
     private MecHostRepository mecHostRepository;
 
+    @Autowired
+    private ApmTenantRepository tenantRepository;
+
     /**
      * Create app package record.
      *
@@ -53,6 +59,9 @@ public class DbService {
      * @param appPackageDto appPackageDto
      */
     public void createAppPackage(String tenantId, AppPackageDto appPackageDto) {
+
+        boolean addTenant = false;
+
         if (appPackageRepository.existsById(appPackageDto.getAppPkgId() + tenantId)) {
             throw new IllegalArgumentException("Record already exist");
         }
@@ -60,7 +69,31 @@ public class DbService {
         AppPackage appPackage = mapper.map(appPackageDto, AppPackage.class);
         appPackage.setId(appPackageDto.getAppPkgId() + tenantId);
         appPackage.setTenantId(tenantId);
+
+        Optional<ApmTenant> info = tenantRepository.findById(tenantId);
+        if (info.isPresent()) {
+            List<AppPackage> record = appPackageRepository.findByTenantId(tenantId);
+            if (record.size() == Constants.MAX_ENTRY_PER_TENANT_PER_MODEL) {
+                LOGGER.error("Max app instance's limit {} reached", Constants.MAX_ENTRY_PER_TENANT_PER_MODEL);
+                throw new ApmException(Constants.MAX_LIMIT_REACHED_ERROR);
+            }
+        } else {
+            if (tenantRepository.count() == Constants.MAX_TENANTS) {
+                LOGGER.error("Max tenant limit {} reached", Constants.MAX_TENANTS);
+                throw new ApmException(Constants.MAX_LIMIT_REACHED_ERROR);
+            }
+            addTenant = true;
+        }
+
         appPackageRepository.save(appPackage);
+
+        if (addTenant) {
+            LOGGER.info("Add tenant {}", tenantId);
+            ApmTenant tenant = new ApmTenant();
+            tenant.setTenant(tenantId);
+            tenantRepository.save(tenant);
+        }
+
         LOGGER.info("app package record for tenant {} and package {} created successfully",
                 tenantId, appPackageDto.getAppPkgId());
     }
@@ -77,8 +110,15 @@ public class DbService {
             return;
         }
         appPackageRepository.delete(info.get());
+
         LOGGER.info("app package record for tenant {} and package {} deleted successfully",
                 tenantId, packageId);
+
+        List<AppPackage> record = appPackageRepository.findByTenantId(tenantId);
+        if (record.isEmpty()) {
+            LOGGER.info("Delete tenant {}", tenantId);
+            tenantRepository.deleteById(tenantId);
+        }
     }
 
     /**

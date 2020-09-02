@@ -25,9 +25,4 @@ import org.springframework.data.repository.query.Param;
 public interface AppPackageRepository extends CrudRepository<AppPackage, String> {
     @Query(value = "SELECT * FROM apppackage m WHERE m.tenant_id=:tenant", nativeQuery = true)
     List<AppPackage> findByTenantId(@Param("tenant_id") String tenant);
-
-    @Query(value = "SELECT * FROM apppackage m WHERE m.tenant_id=:tenant and m.app_pkg_id=:appPackageId",
-            nativeQuery = true)
-    AppPackage findByTenantIdAndAppInstanceId(@Param("tenant_id") String tenant,
-                                                   @Param("app_pkg_id") String appPackageId);
 }

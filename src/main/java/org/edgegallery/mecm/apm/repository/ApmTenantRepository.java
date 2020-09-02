@@ -17,7 +17,6 @@
 package org.edgegallery.mecm.apm.repository;
 
 import org.edgegallery.mecm.apm.model.ApmTenant;
-import org.edgegallery.mecm.apm.model.MecHost;
 import org.springframework.data.repository.CrudRepository;
 
 public interface ApmTenantRepository extends CrudRepository<ApmTenant, String> {

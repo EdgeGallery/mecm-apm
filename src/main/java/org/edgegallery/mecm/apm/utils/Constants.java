@@ -50,6 +50,11 @@ public final class Constants {
     public static final String FAILED_TO_CREATE_DIR = "failed to create local directory";
     public static final String FAILED_TO_GET_FAIL_PATH = "failed to get local directory path";
 
+
+    public static final int MAX_ENTRY_PER_TENANT_PER_MODEL = 50;
+    public static final int MAX_TENANTS = 10;
+    public static final String MAX_LIMIT_REACHED_ERROR = "Max record limit exceeded";
+
     private Constants() {
     }
 }

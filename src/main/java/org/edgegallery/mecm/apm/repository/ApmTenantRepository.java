@@ -16,13 +16,9 @@
 
 package org.edgegallery.mecm.apm.repository;
 
-import java.util.List;
-import org.edgegallery.mecm.apm.model.AppPackage;
-import org.springframework.data.jpa.repository.Query;
+import org.edgegallery.mecm.apm.model.ApmTenant;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
 
-public interface AppPackageRepository extends CrudRepository<AppPackage, String> {
-    @Query(value = "SELECT * FROM apppackage m WHERE m.tenant_id=:tenant", nativeQuery = true)
-    List<AppPackage> findByTenantId(@Param("tenant_id") String tenant);
+public interface ApmTenantRepository extends CrudRepository<ApmTenant, String> {
+
 }

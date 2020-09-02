@@ -14,15 +14,26 @@
  *  limitations under the License.
  */
 
-package org.edgegallery.mecm.apm.repository;
+package org.edgegallery.mecm.apm.model;
 
-import java.util.List;
-import org.edgegallery.mecm.apm.model.AppPackage;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-public interface AppPackageRepository extends CrudRepository<AppPackage, String> {
-    @Query(value = "SELECT * FROM apppackage m WHERE m.tenant_id=:tenant", nativeQuery = true)
-    List<AppPackage> findByTenantId(@Param("tenant_id") String tenant);
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "apmtenant")
+public final class ApmTenant {
+
+    @Id
+    @Column(name = "tenant")
+    private String tenant;
 }

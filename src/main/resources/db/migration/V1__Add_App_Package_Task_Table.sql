@@ -27,3 +27,8 @@
         error varchar(2000),
         primary key (id)
     );
+
+    create table apmtenant (
+        tenant  varchar(255) not null,
+        primary key (tenant)
+    );

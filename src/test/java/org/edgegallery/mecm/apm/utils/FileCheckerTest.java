@@ -14,15 +14,20 @@
  *  limitations under the License.
  */
 
-package org.edgegallery.mecm.apm.repository;
+package org.edgegallery.mecm.apm.utils;
 
-import java.util.List;
-import org.edgegallery.mecm.apm.model.AppPackage;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.query.Param;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-public interface AppPackageRepository extends CrudRepository<AppPackage, String> {
-    @Query(value = "SELECT * FROM apppackage m WHERE m.tenant_id=:tenant_id", nativeQuery = true)
-    List<AppPackage> findByTenantId(@Param("tenant_id") String tenant);
+import java.io.File;
+import java.io.FileNotFoundException;
+import org.junit.jupiter.api.Test;
+import org.springframework.util.ResourceUtils;
+
+class FileCheckerTest {
+
+    @Test
+    void testValidFile() throws FileNotFoundException {
+        File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
+        assertDoesNotThrow(() -> FileChecker.check(file));
+    }
 }

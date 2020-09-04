@@ -20,5 +20,4 @@ import org.edgegallery.mecm.apm.model.MecHost;
 import org.springframework.data.repository.CrudRepository;
 
 public interface MecHostRepository extends CrudRepository<MecHost, String> {
-
 }

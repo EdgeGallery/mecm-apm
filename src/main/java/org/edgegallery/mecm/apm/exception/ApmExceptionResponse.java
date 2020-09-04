@@ -32,8 +32,8 @@ public class ApmExceptionResponse {
      * Constructor to create exception response.
      *
      * @param timestamp timestamp
-     * @param message   message
-     * @param details   details
+     * @param message message
+     * @param details details
      */
     public ApmExceptionResponse(LocalDateTime timestamp, String message, List<String> details) {
         super();

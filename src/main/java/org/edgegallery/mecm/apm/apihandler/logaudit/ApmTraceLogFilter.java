@@ -38,8 +38,8 @@ import org.springframework.web.util.WebUtils;
 
 class ApmTraceLogFilter extends OncePerRequestFilter implements Ordered {
 
-    public static final int OFFSET = 10;
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmTraceLogFilter.class);
+    public static final int OFFSET = 10;
 
     @Override
     public int getOrder() {

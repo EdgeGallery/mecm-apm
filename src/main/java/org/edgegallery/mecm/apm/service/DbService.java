@@ -55,7 +55,7 @@ public class DbService {
     /**
      * Create app package record.
      *
-     * @param tenantId      tenant ID
+     * @param tenantId tenant ID
      * @param appPackageDto appPackageDto
      */
     public void createAppPackage(String tenantId, AppPackageDto appPackageDto) {
@@ -101,7 +101,7 @@ public class DbService {
     /**
      * Deletes app package record.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package ID
      */
     public void deleteAppPackage(String tenantId, String packageId) {
@@ -124,7 +124,7 @@ public class DbService {
     /**
      * Returns app package record.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package ID
      * @return app package record with mec host
      */
@@ -154,7 +154,7 @@ public class DbService {
     /**
      * Returns app package record.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package ID
      * @return app package record
      */
@@ -203,7 +203,7 @@ public class DbService {
     /**
      * Creates host record.
      *
-     * @param tenantId      tenant ID
+     * @param tenantId tenant ID
      * @param appPackageDto app package Dto
      */
     public void createHost(String tenantId, AppPackageDto appPackageDto) {
@@ -224,7 +224,7 @@ public class DbService {
     /**
      * Delete host record.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package ID
      */
     public void deleteHost(String tenantId, String packageId) {
@@ -240,9 +240,9 @@ public class DbService {
     /**
      * Deletes host record which matches host ip.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package ID
-     * @param hostIp    host ip
+     * @param hostIp host ip
      */
     public void deleteHostWithIp(String tenantId, String packageId, String hostIp) {
         mecHostRepository.findAll().forEach((MecHost host) -> {
@@ -258,8 +258,8 @@ public class DbService {
     /**
      * Updates local file path in app package.
      *
-     * @param tenantId      tenant ID
-     * @param packageId     package ID
+     * @param tenantId tenant ID
+     * @param packageId package ID
      * @param localFilePath local file path
      */
     public void updateLocalFilePathOfAppPackage(String tenantId, String packageId,
@@ -279,13 +279,13 @@ public class DbService {
     /**
      * Update distribution status of all hosts.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package ID
-     * @param status    distribution status
-     * @param error     reason for failure
+     * @param status distribution status
+     * @param error reason for failure
      */
     public void updateDistributionStatusOfAllHost(String tenantId, String packageId,
-                                                  String status, String error) {
+                                                String status, String error) {
         mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(packageId + tenantId)) {
                 host.setDistributionStatus(status);
@@ -298,11 +298,11 @@ public class DbService {
     /**
      * Updates distribution status of host which matches host ip.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package ID
-     * @param hostIp    host ip
-     * @param status    distribution status
-     * @param error     reason for failure
+     * @param hostIp host ip
+     * @param status distribution status
+     * @param error reason for failure
      */
     public void updateDistributionStatusOfHost(String tenantId, String packageId,
                                                String hostIp, String status, String error) {

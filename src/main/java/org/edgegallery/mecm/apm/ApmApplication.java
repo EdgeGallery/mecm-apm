@@ -69,6 +69,20 @@ public class ApmApplication {
     private String trustStorePasswd;
 
     /**
+     * Returns new instance of restTemplate with required configuration.
+     *
+     * @return restTemplate with required configuration
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        RestClientHelper builder =
+                new RestClientHelper(Boolean.parseBoolean(isSslEnabled), trustStorePath, trustStorePasswd);
+        CloseableHttpClient client = builder.buildHttpClient();
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(client);
+        return new RestTemplate(factory);
+    }
+
+    /**
      * Application package management entry function.
      *
      * @param args arguments
@@ -102,20 +116,6 @@ public class ApmApplication {
         } catch (KeyManagementException | NoSuchAlgorithmException e) {
             LOGGER.info("SSL context init error... exiting system {}", e.getMessage());
         }
-    }
-
-    /**
-     * Returns new instance of restTemplate with required configuration.
-     *
-     * @return restTemplate with required configuration
-     */
-    @Bean
-    public RestTemplate restTemplate() {
-        RestClientHelper builder =
-                new RestClientHelper(Boolean.parseBoolean(isSslEnabled), trustStorePath, trustStorePasswd);
-        CloseableHttpClient client = builder.buildHttpClient();
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(client);
-        return new RestTemplate(factory);
     }
 
     /**

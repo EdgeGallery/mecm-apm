@@ -98,7 +98,7 @@ public class ApmService {
     /**
      * Returns edge repository address.
      *
-     * @param hostIp   host ip
+     * @param hostIp host ip
      * @param tenantId tenant ID
      * @return edge repository address
      * @throws ApmException exception if failed to get edge repository details
@@ -135,7 +135,7 @@ public class ApmService {
     /**
      * Downloads app image from repo.
      *
-     * @param repoAddress   edge repository address
+     * @param repoAddress edge repository address
      * @param imageInfoList list of images
      */
     public void downloadAppImage(String repoAddress, List<ImageInfo> imageInfoList) {
@@ -146,7 +146,7 @@ public class ApmService {
                     .append(image.getVersion()).toString();
             try {
                 dockerClient.pullImageCmd(imageName)
-                        .exec(new PullImageResultCallback()).awaitCompletion();
+                            .exec(new PullImageResultCallback()).awaitCompletion();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ApmException("failed to download image");

@@ -59,7 +59,7 @@ public class ApmService {
     private String inventoryPort;
 
     @Autowired
-    private RestClientService restClientService;
+    private RestTemplate restTemplate;
 
     /**
      * Downloads app package csar from app store and stores it locally.
@@ -70,10 +70,8 @@ public class ApmService {
      */
     public String downloadAppPackage(String appPkgPath, String packageId, String tenantId) {
         ResponseEntity<InputStreamResource> response;
-        // Get Rest Template
-        RestTemplate template = restClientService.getRestTemplate();
         try {
-            response = template.getForEntity(appPkgPath, InputStreamResource.class);
+            response = restTemplate.getForEntity(appPkgPath, InputStreamResource.class);
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_APPSTORE);
             throw new ApmException(Constants.FAILED_TO_CONNECT_APPSTORE);
@@ -107,14 +105,13 @@ public class ApmService {
      */
     public String getRepoInfoOfHost(String hostIp, String tenantId) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
-                .append(inventoryPort).append("/tenants/").append(tenantId)
+                .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
                 .append("/mechosts/").append(hostIp).toString();
 
         ResponseEntity<String> response;
-        // Get Rest Template
-        RestTemplate template = restClientService.getRestTemplate();
+
         try {
-            response = template.getForEntity(url, String.class);
+            response = restTemplate.getForEntity(url, String.class);
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_INVENTORY, ex.getMessage());
             throw new ApmException(Constants.FAILED_TO_CONNECT_INVENTORY);

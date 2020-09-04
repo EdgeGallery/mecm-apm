@@ -25,6 +25,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.edgegallery.mecm.apm.service.RestClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,8 +36,10 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Application package management application.
@@ -54,6 +58,29 @@ public class ApmApplication {
 
     @Value("${apm.async.queue-capacity}")
     private int queueCapacity;
+
+    @Value("${ssl.enabled:false}")
+    private String isSslEnabled;
+
+    @Value("${ssl.trust-store:}")
+    private String trustStorePath;
+
+    @Value("${ssl.trust-store-password:}")
+    private String trustStorePasswd;
+
+    /**
+     * Returns new instance of restTemplate with required configuration.
+     *
+     * @return restTemplate with required configuration
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        RestClientHelper builder =
+                new RestClientHelper(Boolean.parseBoolean(isSslEnabled), trustStorePath, trustStorePasswd);
+        CloseableHttpClient client = builder.buildHttpClient();
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(client);
+        return new RestTemplate(factory);
+    }
 
     /**
      * Application package management entry function.

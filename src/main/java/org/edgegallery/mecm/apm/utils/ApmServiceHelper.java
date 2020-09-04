@@ -43,11 +43,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 
 public final class ApmServiceHelper {
+
+    static final int TOO_MANY = 1024;
+    static final int TOO_BIG = 104857600;
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceHelper.class);
     private static final String APM_ROOT = "/home";
     private static final String SLASH = "/";
-    static final int TOO_MANY = 1024;
-    static final int TOO_BIG = 104857600;
 
     private ApmServiceHelper() {
     }
@@ -77,8 +78,8 @@ public final class ApmServiceHelper {
      * Saves input stream to file.
      *
      * @param resourceStream input resource stream
-     * @param packageId package ID
-     * @param tenantId tenant ID
+     * @param packageId      package ID
+     * @param tenantId       tenant ID
      * @return file path
      */
     public static String saveInputStreamToFile(InputStreamResource resourceStream, String packageId, String tenantId) {

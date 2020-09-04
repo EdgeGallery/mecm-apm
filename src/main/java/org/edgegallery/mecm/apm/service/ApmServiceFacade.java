@@ -46,7 +46,7 @@ public class ApmServiceFacade {
     /**
      * Updates Db and distributes docker application image to host.
      *
-     * @param tenantId tenant ID
+     * @param tenantId      tenant ID
      * @param appPackageDto appPackage details
      */
     @Async
@@ -73,7 +73,7 @@ public class ApmServiceFacade {
             try {
                 String repoAddress = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId);
                 apmService.downloadAppImage(repoAddress, imageInfoList);
-            }  catch (ApmException e) {
+            } catch (ApmException e) {
                 distributionStatus = "Error";
                 error = e.getMessage();
             }
@@ -85,7 +85,7 @@ public class ApmServiceFacade {
     /**
      * Returns app package info.
      *
-     * @param tenantId tenant ID
+     * @param tenantId     tenant ID
      * @param appPackageId app package ID
      * @return app package info
      */
@@ -96,7 +96,7 @@ public class ApmServiceFacade {
     /**
      * Deletes app package.
      *
-     * @param tenantId tenant ID
+     * @param tenantId     tenant ID
      * @param appPackageId app package ID
      */
     public void deleteAppPackage(String tenantId, String appPackageId) {
@@ -119,9 +119,9 @@ public class ApmServiceFacade {
     /**
      * Deletes app package in host.
      *
-     * @param tenantId tenant ID
+     * @param tenantId     tenant ID
      * @param appPackageId app package ID
-     * @param hostIp host Ip
+     * @param hostIp       host Ip
      */
     public void deleteAppPackageInHost(String tenantId, String appPackageId,
                                        String hostIp) {
@@ -131,7 +131,7 @@ public class ApmServiceFacade {
     /**
      * Returns app package csar file.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
      * @return app package csar file
      */

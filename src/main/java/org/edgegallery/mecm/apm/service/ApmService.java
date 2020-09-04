@@ -23,6 +23,7 @@ import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToF
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.core.DockerClientBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedInputStream;
@@ -123,13 +124,13 @@ public class ApmService {
         }
 
         JsonObject jsonObject = new JsonParser().parse(response.getBody()).getAsJsonObject();
-        String edgeRepoIp = jsonObject.get("edgeRepoIp").getAsString();
-        String edgeRepoPort = jsonObject.get("edgeRepoPort").getAsString();
+        JsonElement edgeRepoIp = jsonObject.get("edgeRepoIp");
+        JsonElement edgeRepoPort = jsonObject.get("edgeRepoPort");
         if (edgeRepoIp == null || edgeRepoPort == null) {
             LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
             throw new ApmException("edge nexus repository information is null for host " + hostIp);
         }
-        return edgeRepoIp + ":" + edgeRepoPort;
+        return edgeRepoIp.getAsString() + ":" + edgeRepoPort.getAsString();
     }
 
     /**

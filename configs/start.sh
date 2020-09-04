@@ -261,4 +261,4 @@ fi
 echo "Running APM"
 umask 0027
 cd /usr/app || exit
-java -jar apm-0.0.1-SNAPSHOT.jar
+java -jar bin/apm-0.0.1-SNAPSHOT.jar

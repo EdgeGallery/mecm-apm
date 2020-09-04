@@ -37,6 +37,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,13 +62,14 @@ public class ApmHandler {
     /**
      * On-boards application package.
      *
-     * @param tenantId   tenant ID
+     * @param tenantId      tenant ID
      * @param appPackageDto application package
      * @return application package identifier on success, error code on failure
      */
     @ApiOperation(value = "Onboard application package", response = Map.class)
     @PostMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<Map<String, String>> onBoardAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -89,6 +91,7 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieves application package information", response = AppPackageDto.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<AppPackageDto> getAppPackageInfo(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -108,6 +111,7 @@ public class ApmHandler {
     @ApiOperation(value = "Deletes application package", response = String.class)
     @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.TEXT_PLAIN_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<String> deleteAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -127,6 +131,7 @@ public class ApmHandler {
     @ApiOperation(value = "Download application package CSAR", response = InputStreamResource.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/download",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<InputStreamResource> downloadAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -147,6 +152,7 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieves all application packages", response = List.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<List<AppPackageDto>> getAllAppPackageInfo(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId) {
@@ -165,6 +171,7 @@ public class ApmHandler {
     @ApiOperation(value = "Deletes an application packages", response = String.class)
     @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/hosts/{host_ip}",
             produces = MediaType.TEXT_PLAIN_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<String> deleteAppPackageInHost(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId,

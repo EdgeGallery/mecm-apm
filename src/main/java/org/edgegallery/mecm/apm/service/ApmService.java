@@ -107,7 +107,7 @@ public class ApmService {
      */
     public String getRepoInfoOfHost(String hostIp, String tenantId) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
-                .append(inventoryPort).append("/tenants/").append(tenantId)
+                .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
                 .append("/mechosts/").append(hostIp).toString();
 
         ResponseEntity<String> response;

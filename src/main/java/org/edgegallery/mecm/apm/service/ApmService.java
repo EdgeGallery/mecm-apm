@@ -41,6 +41,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -66,13 +69,16 @@ public class ApmService {
      *
      * @param appPkgPath app package path
      * @param packageId  package ID
-     * @param tenantId   tenant ID
+     * @param accessToken access token
      * @return downloaded input stream
      */
-    public InputStream downloadAppPackage(String appPkgPath, String packageId, String tenantId) {
+    public InputStream downloadAppPackage(String appPkgPath, String packageId, String accessToken) {
         ResponseEntity<Resource> response;
         try {
-            response = restTemplate.getForEntity(appPkgPath, Resource.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("access_token", accessToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            response = restTemplate.exchange(appPkgPath, HttpMethod.GET, entity, Resource.class);
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_APPSTORE);
             throw new ApmException(Constants.FAILED_TO_CONNECT_APPSTORE);
@@ -108,10 +114,11 @@ public class ApmService {
      *
      * @param hostIp host ip
      * @param tenantId tenant ID
+     * @param accessToken access token
      * @return edge repository address
      * @throws ApmException exception if failed to get edge repository details
      */
-    public String getRepoInfoOfHost(String hostIp, String tenantId) {
+    public String getRepoInfoOfHost(String hostIp, String tenantId, String accessToken) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
                 .append("/mechosts/").append(hostIp).toString();
@@ -119,7 +126,10 @@ public class ApmService {
         ResponseEntity<String> response;
 
         try {
-            response = restTemplate.getForEntity(url, String.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("access_token", accessToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_INVENTORY, ex.getMessage());
             throw new ApmException(Constants.FAILED_TO_CONNECT_INVENTORY);

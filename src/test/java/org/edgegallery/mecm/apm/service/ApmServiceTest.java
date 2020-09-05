@@ -73,7 +73,7 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(inputStreamResource, MediaType.APPLICATION_OCTET_STREAM));
 
-        InputStream response = apmService.downloadAppPackage(url, PACKAGE_ID, TENANT_ID);
+        InputStream response = apmService.downloadAppPackage(url, PACKAGE_ID, "access token");
         assertNotNull(response);
         mockServer.verify();
     }
@@ -87,7 +87,7 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        String response = apmService.getRepoInfoOfHost("1.1.1.1",  TENANT_ID);
+        String response = apmService.getRepoInfoOfHost("1.1.1.1",  TENANT_ID, "access token");
         assertEquals("2.2.2.2:1234", response);
         mockServer.verify();
     }

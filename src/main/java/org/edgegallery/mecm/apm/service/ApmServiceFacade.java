@@ -51,11 +51,12 @@ public class ApmServiceFacade {
     /**
      * Updates Db and distributes docker application image to host.
      *
+     * @param accessToken access token
      * @param tenantId tenant ID
      * @param appPackageDto appPackage details
      */
     @Async
-    public void onboardApplication(String tenantId, AppPackageDto appPackageDto) {
+    public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto) {
         dbService.createAppPackage(tenantId, appPackageDto);
         dbService.createHost(tenantId, appPackageDto);
 
@@ -63,7 +64,7 @@ public class ApmServiceFacade {
         List<ImageInfo> imageInfoList;
         try {
             InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(), packageId,
-                    tenantId);
+                    accessToken);
             String localFilePath = saveInputStreamToFile(stream, packageId, tenantId, localDirPath);
             dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
 
@@ -78,7 +79,7 @@ public class ApmServiceFacade {
             String distributionStatus = "Distributed";
             String error = "";
             try {
-                String repoAddress = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId);
+                String repoAddress = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
                 apmService.downloadAppImage(repoAddress, imageInfoList);
             }  catch (ApmException e) {
                 distributionStatus = "Error";

@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -71,10 +72,11 @@ public class ApmHandler {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<Map<String, String>> onBoardAppPackage(
+            @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @Valid @ApiParam(value = "app package info") @RequestBody AppPackageDto appPackageDto) {
-        service.onboardApplication(tenantId, appPackageDto);
+        service.onboardApplication(accessToken, tenantId, appPackageDto);
 
         Map<String, String> response = new HashMap<>();
         response.put("packageId", appPackageDto.getAppPkgId());

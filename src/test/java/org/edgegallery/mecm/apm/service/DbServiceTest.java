@@ -51,7 +51,8 @@ public class DbServiceTest {
         packageDto.setAppPkgAffinity("GPU");
         packageDto.setAppPkgDesc("face recognition application");
         packageDto.setAppPkgName("codelab-demo1");
-        packageDto.setAppPkgPath("http://159.138.61.155:8099/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download");
+        packageDto.setAppPkgPath("http://1.1.1.1:1234/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2"
+                + "/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download");
         packageDto.setAppPkgVersion("1.0");
         packageDto.setAppProvider("Huawei");
         packageDto.setCreatedTime(TIME);
@@ -80,7 +81,7 @@ public class DbServiceTest {
         assertEquals("GPU", response.getAppPkgAffinity());
         assertEquals("face recognition application", response.getAppPkgDesc());
         assertEquals("codelab-demo1", response.getAppPkgName());
-        assertEquals("http://159.138.61.155:8099/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2/packages"
+        assertEquals("http://1.1.1.1:1234/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2/packages"
                 + "/0fb274f2-213b-4a66-accc-ab218470caa3/action/download", response.getAppPkgPath());
         assertEquals("1.0", response.getAppPkgVersion());
         assertEquals("Huawei", response.getAppProvider());

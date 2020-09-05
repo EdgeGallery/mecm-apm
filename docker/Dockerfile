@@ -26,6 +26,7 @@ RUN apk update &&\
     groupadd -r -g $GID $GROUP_NAME &&\
     useradd -r -u $UID -g $GID -d $APP_HOME -s /sbin/nologin -c "Docker image user" $USER_NAME
 
+RUN apk add docker
 # Set the working directory.
 WORKDIR $APP_HOME
 
@@ -37,6 +38,7 @@ RUN chmod 750 $APP_HOME &&\
     chmod -R 550 $APP_HOME/bin &&\
     mkdir -p -m 750 $HOME/config &&\
     mkdir -p -m 750 $HOME/log &&\
+    mkdir -p -m 750 $HOME/packages &&\
     mkdir -p -m 700 $HOME/ssl &&\
     mkdir -p -m 700 $HOME/.postgresql &&\
     chown -R $USER_NAME:$GROUP_NAME $APP_HOME

@@ -54,5 +54,6 @@ public class ApmServiceTest {
 
         String response = apmService.getRepoInfoOfHost("1.1.1.1",  "18db0283-3c67-4042-a708-a8e4a10c6b32");
         assertEquals("2.2.2.2:1234", response);
+        mockServer.verify();
     }
 }

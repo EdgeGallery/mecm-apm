@@ -54,6 +54,7 @@ apm:
     queue-capacity: 500
   inventory-endpoint: ${INVENTORY_ENDPOINT:}
   inventory-port: ${INVENTORY_PORT:}
+  package-dir: /usr/app/packages
 
 #### security config ####
 security:

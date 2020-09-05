@@ -67,6 +67,7 @@ public class ApmService {
      * @param appPkgPath app package path
      * @param packageId  package ID
      * @param tenantId   tenant ID
+     * @return downloaded input stream
      */
     public InputStream downloadAppPackage(String appPkgPath, String packageId, String tenantId) {
         ResponseEntity<Resource> response;

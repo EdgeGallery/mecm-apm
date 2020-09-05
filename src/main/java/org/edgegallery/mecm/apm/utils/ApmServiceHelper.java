@@ -40,12 +40,11 @@ import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.InputStreamResource;
 
 public final class ApmServiceHelper {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceHelper.class);
-    private static final String APM_ROOT = "/home";
-    private static final String SLASH = "/";
+
     static final int TOO_MANY = 1024;
     static final int TOO_BIG = 104857600;
 
@@ -60,12 +59,14 @@ public final class ApmServiceHelper {
      */
     public static String createDir(String dirPath) {
         File localFileDir = new File(dirPath);
-        if (!localFileDir.mkdir()) {
-            LOGGER.info(Constants.FAILED_TO_CREATE_DIR);
-            throw new ApmException(Constants.FAILED_TO_CREATE_DIR);
-        }
-
         try {
+            if (localFileDir.exists() && localFileDir.isDirectory()) {
+                return localFileDir.getCanonicalPath();
+            }
+            if (!localFileDir.mkdir()) {
+                LOGGER.info(Constants.FAILED_TO_CREATE_DIR);
+                throw new ApmException(Constants.FAILED_TO_CREATE_DIR);
+            }
             return localFileDir.getCanonicalPath();
         } catch (IOException e) {
             LOGGER.info(Constants.FAILED_TO_GET_FAIL_PATH);
@@ -79,18 +80,20 @@ public final class ApmServiceHelper {
      * @param resourceStream input resource stream
      * @param packageId package ID
      * @param tenantId tenant ID
+     * @param localDirBasePath local dir path
      * @return file path
      */
-    public static String saveInputStreamToFile(InputStreamResource resourceStream, String packageId, String tenantId) {
+    public static String saveInputStreamToFile(InputStream resourceStream, String packageId, String tenantId,
+                                               String localDirBasePath) {
         if (resourceStream == null) {
             LOGGER.info(Constants.FAILED_TO_READ_INPUTSTREAM, packageId);
             throw new ApmException("failed to read input stream from app store for package " + packageId);
         }
-        String localDirPath = createDir(APM_ROOT + SLASH + packageId + tenantId);
-        String localFilePath = localDirPath + SLASH + packageId;
+        String localDirPath = createDir(localDirBasePath + File.separator + packageId + tenantId);
+        String localFilePath = localDirPath + File.separator + packageId + ".csar";
         File file = new File(localFilePath);
         try {
-            FileUtils.copyInputStreamToFile(resourceStream.getInputStream(), file);
+            FileUtils.copyInputStreamToFile(resourceStream, file);
             FileChecker.check(file);
             LOGGER.info("app package {} downloaded from appstore successfully", packageId);
             return file.getCanonicalPath();

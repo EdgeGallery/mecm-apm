@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
 
@@ -29,6 +30,7 @@ import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +44,9 @@ public class ApmServiceFacade {
 
     @Autowired
     private DbService dbService;
+
+    @Value("${apm.package-dir:/usr/app/packages}")
+    private String localDirPath;
 
     /**
      * Updates Db and distributes docker application image to host.
@@ -57,7 +62,9 @@ public class ApmServiceFacade {
         String packageId = appPackageDto.getAppPkgId();
         List<ImageInfo> imageInfoList;
         try {
-            String localFilePath = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(), packageId, tenantId);
+            InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(), packageId,
+                    tenantId);
+            String localFilePath = saveInputStreamToFile(stream, packageId, tenantId, localDirPath);
             dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
 
             imageInfoList = apmService.getAppImageInfo(localFilePath);

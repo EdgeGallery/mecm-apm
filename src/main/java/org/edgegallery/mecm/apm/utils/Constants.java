@@ -35,6 +35,8 @@ public final class Constants {
     public static final String CSAR_NOT_EXIST = "csar package file does not exists";
     public static final String CSAR_READ_FAILED = "failed to read the csar file";
     public static final String CSAR_DOWNLOAD_FAILED = "failed to download app package for package {}";
+    public static final String GET_INPUTSTREAM_FAILED = "failed to get input stream from app store response for "
+            + "package {}";
     public static final String FAILED_TO_GET_REPO_INFO = "failed to get repository information of host {}";
     public static final String REPO_INFO_NULL = "edge nexus repository information is null for host {}";
     public static final String LOCAL_FILE_PATH_NULL = "local file path is null";

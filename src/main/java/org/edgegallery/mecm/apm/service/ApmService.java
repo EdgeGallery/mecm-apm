@@ -18,7 +18,6 @@ package org.edgegallery.mecm.apm.service;
 
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
@@ -41,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -68,21 +67,29 @@ public class ApmService {
      * @param appPkgPath app package path
      * @param packageId  package ID
      * @param tenantId   tenant ID
+     * @return downloaded input stream
      */
-    public String downloadAppPackage(String appPkgPath, String packageId, String tenantId) {
-        ResponseEntity<InputStreamResource> response;
+    public InputStream downloadAppPackage(String appPkgPath, String packageId, String tenantId) {
+        ResponseEntity<Resource> response;
         try {
-            response = restTemplate.getForEntity(appPkgPath, InputStreamResource.class);
+            response = restTemplate.getForEntity(appPkgPath, Resource.class);
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_APPSTORE);
             throw new ApmException(Constants.FAILED_TO_CONNECT_APPSTORE);
         }
 
-        if (!HttpStatus.OK.equals(response.getStatusCode())) {
+        Resource responseBody = response.getBody();
+        if (!HttpStatus.OK.equals(response.getStatusCode()) || responseBody == null) {
             LOGGER.error(Constants.CSAR_DOWNLOAD_FAILED, packageId);
             throw new ApmException("failed to download app package for package " + packageId);
         }
-        return saveInputStreamToFile(response.getBody(), packageId, tenantId);
+
+        try {
+            return responseBody.getInputStream();
+        } catch (IOException e) {
+            LOGGER.error(Constants.GET_INPUTSTREAM_FAILED, packageId);
+            throw new ApmException("failed to get input stream from app store response for package " + packageId);
+        }
     }
 
     /**

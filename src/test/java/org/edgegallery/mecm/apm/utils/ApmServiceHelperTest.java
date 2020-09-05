@@ -18,16 +18,24 @@ package org.edgegallery.mecm.apm.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.ResourceUtils;
 
 class ApmServiceHelperTest {
+
+    private static final String TENANT_ID = "18db0283-3c67-4042-a708-a8e4a10c6b32";
+    private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
 
     @Test
     void testGetMainServiceYaml() throws IOException {
@@ -46,5 +54,18 @@ class ApmServiceHelperTest {
         ImageInfo imageInfo = imageInfoList.get(0);
         assertEquals("template_app", imageInfo.getName());
         assertEquals("v1.4", imageInfo.getVersion());
+    }
+
+    @Test
+    void testSaveInputStreamToFile() throws IOException {
+        File file = ResourceUtils.getFile("classpath:packages");
+        InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
+        String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, TENANT_ID, file.getPath());
+        assertNotNull(response);
+        File responseFile = new File(response);
+        assertTrue(responseFile.exists());
+
+        // clean up
+        Files.deleteIfExists(Paths.get(response));
     }
 }

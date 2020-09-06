@@ -33,7 +33,6 @@ public final class Constants {
     public static final String FAILED_TO_CONNECT_APPSTORE = "failed to connect to app store";
     public static final String FAILED_TO_CONNECT_INVENTORY = "failed to connect to inventory";
     public static final String CSAR_NOT_EXIST = "csar package file does not exists";
-    public static final String CSAR_READ_FAILED = "failed to read the csar file";
     public static final String CSAR_DOWNLOAD_FAILED = "failed to download app package for package {}";
     public static final String GET_INPUTSTREAM_FAILED = "failed to get input stream from app store response for "
             + "package {}";

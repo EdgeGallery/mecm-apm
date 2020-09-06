@@ -180,14 +180,11 @@ public class ApmService {
      * @return app package csar file
      */
     public InputStream getAppPackageFile(String localFilePath) {
-        try (FileInputStream inputStream = new FileInputStream(localFilePath)) {
-            return new BufferedInputStream(inputStream);
+        try {
+            return new BufferedInputStream(new FileInputStream(localFilePath));
         } catch (FileNotFoundException e) {
             LOGGER.error(Constants.CSAR_NOT_EXIST);
             throw new ApmException(Constants.CSAR_NOT_EXIST);
-        } catch (IOException e) {
-            LOGGER.error(Constants.CSAR_READ_FAILED);
-            throw new ApmException(Constants.CSAR_READ_FAILED);
         }
     }
 

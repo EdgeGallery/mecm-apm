@@ -141,8 +141,8 @@ public class ApmService {
         }
 
         JsonObject jsonObject = new JsonParser().parse(response.getBody()).getAsJsonObject();
-        JsonElement edgeRepoIp = jsonObject.get("edgeRepoIp");
-        JsonElement edgeRepoPort = jsonObject.get("edgeRepoPort");
+        JsonElement edgeRepoIp = jsonObject.get("edgerepoIp");
+        JsonElement edgeRepoPort = jsonObject.get("edgerepoPort");
         if (edgeRepoIp == null || edgeRepoPort == null) {
             LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
             throw new ApmException("edge nexus repository information is null for host " + hostIp);

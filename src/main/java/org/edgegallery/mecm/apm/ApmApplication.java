@@ -59,13 +59,13 @@ public class ApmApplication {
     @Value("${apm.async.queue-capacity}")
     private int queueCapacity;
 
-    @Value("${ssl.enabled:false}")
+    @Value("${server.ssl.enabled:false}")
     private String isSslEnabled;
 
-    @Value("${ssl.trust-store:}")
+    @Value("${server.ssl.trust-store:}")
     private String trustStorePath;
 
-    @Value("${ssl.trust-store-password:}")
+    @Value("${server.ssl.trust-store-password:}")
     private String trustStorePasswd;
 
     /**

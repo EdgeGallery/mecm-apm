@@ -81,7 +81,7 @@ public class ApmServiceTest {
     @Test
     public void getRepoInfoOfHostTest() {
         String url = "https://1.1.1.1:8080/inventory/v1/tenants/18db0283-3c67-4042-a708-a8e4a10c6b32/mechosts/1.1.1.1";
-        String serviceResponseBody = "{'edgeRepoIp': '2.2.2.2', 'edgeRepoPort': 1234 }";
+        String serviceResponseBody = "{'edgerepoIp': '2.2.2.2', 'edgerepoPort': 1234 }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))

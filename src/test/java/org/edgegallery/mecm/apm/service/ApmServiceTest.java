@@ -31,13 +31,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
+import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -46,7 +46,7 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = ApmApplicationTest.class)
 public class ApmServiceTest {
 
     private static final String TENANT_ID = "18db0283-3c67-4042-a708-a8e4a10c6b32";

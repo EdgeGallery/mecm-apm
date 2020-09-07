@@ -18,6 +18,7 @@ package org.edgegallery.mecm.apm.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
+import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.ResourceUtils;
@@ -67,5 +69,20 @@ class ApmServiceHelperTest {
 
         // clean up
         Files.deleteIfExists(Paths.get(response));
+    }
+
+    @Test
+    void testSaveNullInputStreamToFile() throws IOException {
+        File file = ResourceUtils.getFile("classpath:packages");
+        String localFilePath = file.getPath();
+        assertThrows(ApmException.class, () -> ApmServiceHelper.saveInputStreamToFile(null,
+                PACKAGE_ID, TENANT_ID, localFilePath));
+    }
+
+    @Test
+    void testGetMainServiceYamlInvalid() throws IOException {
+        File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913b.csar");
+        String localFilePath = file.getPath();
+        assertThrows(ApmException.class, () -> ApmServiceHelper.getMainServiceYaml(localFilePath));
     }
 }

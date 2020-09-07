@@ -16,10 +16,15 @@
 
 package org.edgegallery.mecm.apm.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.LinkedList;
 import java.util.List;
+import org.edgegallery.mecm.apm.ApmApplicationTest;
+import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
@@ -31,7 +36,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = ApmApplicationTest.class)
 public class DbServiceTest {
 
     private static final String TENANT_ID = "18db0283-3c67-4042-a708-a8e4a10c6b32";
@@ -169,5 +174,27 @@ public class DbServiceTest {
         assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
         assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
         assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
+    }
+
+    @Test
+    public void testUpdateAppPackageRecordIfNotExist() {
+        assertThrows(ApmException.class, () -> dbService.updateLocalFilePathOfAppPackage(TENANT_ID,
+                PACKAGE_ID, "local file path"));
+    }
+
+    @Test
+    public void testCreateAppPackageRecordIfNotExist() {
+        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
+        assertThrows(IllegalArgumentException.class, () -> dbService.createAppPackage(TENANT_ID, packageDto));
+
+        // clean up
+        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage("18db0283-3c67-4042-a708"
+                + "-a8e4a10c6b32",PACKAGE_ID));
+    }
+
+    @Test
+    public void testDeleteAppPackageRecordIfNotExist() {
+        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
 }

@@ -98,7 +98,7 @@ public class ApmExceptionHandler {
     public ResponseEntity<ApmExceptionResponse> handleRuntimeException(RuntimeException ex) {
         ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(),
                 "Error while processing request", Collections.singletonList("Error while process request"));
-        LOGGER.info("Internal server error: {}", response);
+        LOGGER.info("Internal server error: {}", response.toString());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

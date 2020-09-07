@@ -17,6 +17,7 @@
 package org.edgegallery.mecm.apm.utils;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,5 +30,29 @@ class FileCheckerTest {
     void testValidFile() throws FileNotFoundException {
         File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
         assertDoesNotThrow(() -> FileChecker.check(file));
+    }
+
+    @Test
+    void testWhiteSpaceInFileName()  {
+        File file = new File("ab c.txt");
+        assertThrows(IllegalArgumentException.class, () -> FileChecker.check(file));
+
+        File newfile = new File("abcccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                + "ccccccccccccccc.txt");
+        assertThrows(IllegalArgumentException.class, () -> FileChecker.check(newfile));
     }
 }

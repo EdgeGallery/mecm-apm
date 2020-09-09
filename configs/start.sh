@@ -244,18 +244,23 @@ if [ ! "$valid_apmdb_password" -eq "0" ] ; then
 fi
 
 # app parameters validation
-validate_host_name "$INVENTORY_ENDPOINT"
-valid_inventory_host_name="$?"
-if [ ! "$valid_inventory_host_name" -eq "0" ] ; then
-   echo "invalid inventory end point"
-   exit 1
+if [ ! -z "$INVENTORY_ENDPOINT" ] ; then
+  validate_host_name "$INVENTORY_ENDPOINT"
+  valid_inventory_host_name="$?"
+  if [ ! "$valid_inventory_host_name" -eq "0" ] ; then
+     echo "invalid inventory end point"
+     exit 1
+  fi
 fi
 
-validate_port_num "$INVENTORY_PORT"
-valid_inventory_port="$?"
-if [ ! "$valid_inventory_port" -eq "0" ] ; then
-   echo "invalid inventory port number"
-   exit 1
+
+if [ ! -z "$INVENTORY_PORT" ] ; then
+  validate_port_num "$INVENTORY_PORT"
+  valid_inventory_port="$?"
+  if [ ! "$valid_inventory_port" -eq "0" ] ; then
+     echo "invalid inventory port number"
+     exit 1
+  fi
 fi
 
 echo "Running APM"

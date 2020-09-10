@@ -24,20 +24,25 @@ public final class Constants {
     public static final String APP_PKG_ID_REGX = APPD_ID_REGEX;
     public static final String TENENT_ID_REGEX = "[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}";
     public static final String APP_NAME_REGEX = "^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\\-]*[a-zA-Z0-9]$";
-    public static final String RECORD_NOT_FOUND = "Record not found";
-    public static final String EMPTY_STRING = "";
+    public static final String RECORD_NOT_FOUND = "record not found";
     public static final int MAX_COMMON_STRING_LENGTH = 255;
     public static final int MAX_DETAILS_STRING_LENGTH = 1024;
-    public static final String URI_REGEX = "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?";
+    public static final String IP_REGEX = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.)"
+            + "{3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$";
+    public static final String PORT_REGEX = "^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d"
+            + "|6553[0-5])$";
 
     public static final String FAILED_TO_CONNECT_APPSTORE = "failed to connect to app store";
     public static final String FAILED_TO_CONNECT_INVENTORY = "failed to connect to inventory";
+    public static final String ERROR_FROM_INVENTORY = "error while fetching host {} record from inventory ";
     public static final String CSAR_NOT_EXIST = "csar package file does not exists";
     public static final String CSAR_DOWNLOAD_FAILED = "failed to download app package for package {}";
     public static final String GET_INPUTSTREAM_FAILED = "failed to get input stream from app store response for "
             + "package {}";
     public static final String FAILED_TO_GET_REPO_INFO = "failed to get repository information of host {}";
-    public static final String REPO_INFO_NULL = "edge nexus repository information is null for host {}";
+    public static final String REPO_INFO_NULL = "edge repository information is null for host {}";
+    public static final String REPO_IP_INVALID = "edge repository ip is invalid for host {}";
+    public static final String REPO_PORT_INVALID = "edge repository port is invalid for host {}";
     public static final String LOCAL_FILE_PATH_NULL = "local file path is null";
     public static final String DISTRIBUTION_FAILED = "failed to distribute the package {}";
     public static final String DISTRIBUTION_IN_HOST_FAILED = "failed to distribute the package {} in host {}";

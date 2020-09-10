@@ -18,6 +18,7 @@ package org.edgegallery.mecm.apm.service;
 
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
@@ -48,6 +49,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -134,6 +136,9 @@ public class ApmService {
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_INVENTORY, ex.getMessage());
             throw new ApmException(Constants.FAILED_TO_CONNECT_INVENTORY);
+        } catch (HttpClientErrorException ex) {
+            LOGGER.error(Constants.ERROR_FROM_INVENTORY, hostIp, ex.getMessage());
+            throw new ApmException("error while fetching host record from inventory");
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
@@ -146,7 +151,17 @@ public class ApmService {
         JsonElement edgeRepoPort = jsonObject.get("edgerepoPort");
         if (edgeRepoIp == null || edgeRepoPort == null) {
             LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
-            throw new ApmException("edge nexus repository information is null for host " + hostIp);
+            throw new ApmException("edge repository information is null for host " + hostIp);
+        }
+
+        if (!isRegexMatched(Constants.IP_REGEX, edgeRepoIp.getAsString())) {
+            LOGGER.error(Constants.REPO_IP_INVALID, hostIp);
+            throw new ApmException("edge repo ip is invalid for host " + hostIp);
+        }
+
+        if (!isRegexMatched(Constants.PORT_REGEX, edgeRepoPort.getAsString())) {
+            LOGGER.error(Constants.REPO_PORT_INVALID, hostIp);
+            throw new ApmException("edge repo port is invalid for host " + hostIp);
         }
         return edgeRepoIp.getAsString() + ":" + edgeRepoPort.getAsString();
     }

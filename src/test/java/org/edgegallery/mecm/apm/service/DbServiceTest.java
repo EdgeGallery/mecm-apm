@@ -52,7 +52,7 @@ public class DbServiceTest {
     public void setUp() {
         packageDto.setAppPkgId(PACKAGE_ID);
         packageDto.setAppId("f50358433cf8eb4719a62a49ed118c9c");
-        packageDto.setAppIconUrl("app icon url");
+        packageDto.setAppIconUrl("http://1.1.1.1:1234/mec");
         packageDto.setAppPkgAffinity("GPU");
         packageDto.setAppPkgDesc("face recognition application");
         packageDto.setAppPkgName("codelab-demo1");
@@ -82,7 +82,7 @@ public class DbServiceTest {
         assertNotNull(response);
         assertEquals(PACKAGE_ID, response.getAppPkgId());
         assertEquals("f50358433cf8eb4719a62a49ed118c9c", response.getAppId());
-        assertEquals("app icon url", response.getAppIconUrl());
+        assertEquals("http://1.1.1.1:1234/mec", response.getAppIconUrl());
         assertEquals("GPU", response.getAppPkgAffinity());
         assertEquals("face recognition application", response.getAppPkgDesc());
         assertEquals("codelab-demo1", response.getAppPkgName());

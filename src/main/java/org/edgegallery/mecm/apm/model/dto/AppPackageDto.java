@@ -27,6 +27,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.edgegallery.mecm.apm.apihandler.validator.ConstraintType;
+import org.edgegallery.mecm.apm.apihandler.validator.CustomConstraint;
 import org.edgegallery.mecm.apm.utils.Constants;
 
 /**
@@ -54,8 +56,7 @@ public class AppPackageDto {
     private String appPkgVersion;
 
     @NotEmpty(message = "appPkgPath must not be empty")
-    @Pattern(regexp = Constants.URI_REGEX, message = "appPkgPath must match pattern ^(([^:/?#]+):)?(//([^/?#]*))?"
-            + "([^?#]*)(\\?([^#]*))?(#(.*))?")
+    @CustomConstraint(value = ConstraintType.URL, message = "invalid app package path")
     private String appPkgPath;
 
     @NotEmpty(message = "appProvider must not be empty")
@@ -71,8 +72,7 @@ public class AppPackageDto {
     private String appPkgAffinity;
 
     @NotEmpty(message = "appIconUrl must not be empty")
-    @Pattern(regexp = Constants.URI_REGEX, message = "Url must match pattern ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)"
-            + "(\\?([^#]*))?(#(.*))?")
+    @CustomConstraint(value = ConstraintType.URL, message = "invalid app icon path")
     private String appIconUrl;
 
     @NotEmpty(message = "createdTime must not be empty")

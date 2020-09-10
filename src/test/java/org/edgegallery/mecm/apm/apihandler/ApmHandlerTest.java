@@ -86,7 +86,7 @@ public class ApmHandlerTest {
     public void mockAppPackageDto(String packageId, AppPackageDto packageDto) {
         packageDto.setAppPkgId(packageId);
         packageDto.setAppId("f50358433cf8eb4719a62a49ed118c9c");
-        packageDto.setAppIconUrl("app icon url");
+        packageDto.setAppIconUrl("http://1.1.1.1:1234/mec");
         packageDto.setAppPkgAffinity("GPU");
         packageDto.setAppPkgDesc("face recognition application");
         packageDto.setAppPkgName("codelab-demo1");
@@ -125,7 +125,7 @@ public class ApmHandlerTest {
     @WithMockUser(roles = "MECM_TENANT")
     public void onBoardAppPackage() throws Exception {
         String request = "{\n"
-                + "  \"appIconUrl\": \"app icon url\",\n"
+                + "  \"appIconUrl\": \"http://1.1.1.1:1234/mec\",\n"
                 + "  \"appId\": \"f40358433cf8eb4719a62a49ed118c9c\",\n"
                 + "  \"appPkgAffinity\": \"GPU\",\n"
                 + "  \"appPkgDesc\": \"face recognition application\",\n"
@@ -160,6 +160,40 @@ public class ApmHandlerTest {
 
     @Test
     @WithMockUser(roles = "MECM_TENANT")
+    public void onBoardAppPackageWithInvalidAppPackagePath() throws Exception {
+        String request = "{\n"
+                + "  \"appIconUrl\": \"app icon url\",\n"
+                + "  \"appId\": \"f40358433cf8eb4719a62a49ed118c9c\",\n"
+                + "  \"appPkgAffinity\": \"GPU\",\n"
+                + "  \"appPkgDesc\": \"face recognition application\",\n"
+                + "  \"appPkgId\": \"f40358433cf8eb4719a62a49ed118c9b\",\n"
+                + "  \"appPkgName\": \"codelab-demo1\",\n"
+                + "  \"appPkgPath\": \"app pkg path\",\n"
+                + "  \"appPkgVersion\": \"1.0\",\n"
+                + "  \"appProvider\": \"huawei\",\n"
+                + "  \"createdTime\": \"Thu Nov 21 16:02:24 CST 2019\",\n"
+                + "  \"mecHostInfo\": [\n"
+                + "    { \"hostIp\" : \"1.1.1.1\"}\n"
+                + "  ],\n"
+                + "  \"modifiedTime\": \"Thu Nov 21 16:02:24 CST 2019\"\n"
+                + "}";
+
+        ResultActions resultActions =
+                mvc.perform(MockMvcRequestBuilders.post("/apm/v1/tenants/" + TENANT_ID
+                        + "/packages")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("access_token", "aasdjk")
+                        .content(request))
+                        .andExpect(MockMvcResultMatchers.status().isBadRequest());
+        MvcResult result = resultActions.andReturn();
+        MockHttpServletResponse obj = result.getResponse();
+        assertTrue(obj.getContentAsString().contains("invalid app package path"));
+;
+    }
+
+    @Test
+    @WithMockUser(roles = "MECM_TENANT")
     public void getAppPackageInfo() throws Exception {
         ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.get("/apm/v1/tenants/" + TENANT_ID
@@ -173,7 +207,7 @@ public class ApmHandlerTest {
                 + ":\"http://1.1.1.1:1234/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2/"
                 + "packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download\",\"appProvider\":"
                 + "\"Huawei\",\"appPkgDesc\":\"face recognition application\",\"appPkgAffinity\":"
-                + "\"GPU\",\"appIconUrl\":\"app icon url\",\"createdTime\":\"Thu Nov 21 16:02:24"
+                + "\"GPU\",\"appIconUrl\":\"http://1.1.1.1:1234/mec\",\"createdTime\":\"Thu Nov 21 16:02:24"
                 + " CST 2019\",\"modifiedTime\":\"Thu Nov 21 16:02:24 CST 2019\",\"appId\":"
                 + "\"f50358433cf8eb4719a62a49ed118c9c\",\"mecHostInfo\":[{\"hostIp\":"
                 + "\"1.1.1.1\",\"status\":\"Processing\",\"error\":null},{\"hostIp\":\"2.2.2.2\","
@@ -227,7 +261,7 @@ public class ApmHandlerTest {
                 + ":\"http://1.1.1.1:1234/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2"
                 + "/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download\",\"appProvider\""
                 + ":\"Huawei\",\"appPkgDesc\":\"face recognition application\",\"appPkgAffinity\":"
-                + "\"GPU\",\"appIconUrl\":\"app icon url\",\"createdTime\":\"Thu Nov 21 16:02:24 "
+                + "\"GPU\",\"appIconUrl\":\"http://1.1.1.1:1234/mec\",\"createdTime\":\"Thu Nov 21 16:02:24 "
                 + "CST 2019\",\"modifiedTime\":\"Thu Nov 21 16:02:24 CST 2019\",\"appId\":\""
                 + "f50358433cf8eb4719a62a49ed118c9c\",\"mecHostInfo\":[{\"hostIp\":\"1.1.1.1\","
                 + "\"status\":\"Processing\",\"error\":null},{\"hostIp\":\"2.2.2.2\",\"status\":"
@@ -236,7 +270,7 @@ public class ApmHandlerTest {
                 + "appPkgVersion\":\"1.0\",\"appPkgPath\":\"http://1.1.1.1:1234/mec/appstore/v1/apps/"
                 + "8ec923a8-9e30-4c94-a7ac-c92279488db2/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download"
                 + "\",\"appProvider\":\"Huawei\",\"appPkgDesc\":\"face recognition application\",\"appPkgAffinity\":"
-                + "\"GPU\",\"appIconUrl\":\"app icon url\",\"createdTime\":\"Thu Nov 21 16:02:24 CST 2019\","
+                + "\"GPU\",\"appIconUrl\":\"http://1.1.1.1:1234/mec\",\"createdTime\":\"Thu Nov 21 16:02:24 CST 2019\","
                 + "\"modifiedTime\":\"Thu Nov 21 16:02:24 CST 2019\",\"appId\":\"f50358433cf8eb4719a62a49ed118c9c\","
                 + "\"mecHostInfo\":[{\"hostIp\":\"1.1.1.1\",\"status\":\"Processing\",\"error\":null},"
                 + "{\"hostIp\":\"2.2.2.2\",\"status\":\"Processing\",\"error\":null}]}]";
@@ -268,7 +302,7 @@ public class ApmHandlerTest {
                 + ":\"http://1.1.1.1:1234/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2/"
                 + "packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download\",\"appProvider\":"
                 + "\"Huawei\",\"appPkgDesc\":\"face recognition application\",\"appPkgAffinity\":"
-                + "\"GPU\",\"appIconUrl\":\"app icon url\",\"createdTime\":\"Thu Nov 21 16:02:24"
+                + "\"GPU\",\"appIconUrl\":\"http://1.1.1.1:1234/mec\",\"createdTime\":\"Thu Nov 21 16:02:24"
                 + " CST 2019\",\"modifiedTime\":\"Thu Nov 21 16:02:24 CST 2019\",\"appId\":"
                 + "\"f50358433cf8eb4719a62a49ed118c9c\",\"mecHostInfo\":[{\"hostIp\":\"2.2.2.2\","
                 + "\"status\":\"Processing\",\"error\":null}]}";
@@ -279,7 +313,7 @@ public class ApmHandlerTest {
     @WithMockUser(roles = "MECM_TENANT")
     public void onBoardAppPackageWithInvalidAppPackageId() throws Exception {
         String request = "{\n"
-                + "  \"appIconUrl\": \"app icon url\",\n"
+                + "  \"appIconUrl\": \"http://1.1.1.1:1234/mec\",\n"
                 + "  \"appId\": \"f40358433cf8eb4719a62a49ed118c9c\",\n"
                 + "  \"appPkgAffinity\": \"GPU\",\n"
                 + "  \"appPkgDesc\": \"face recognition application\",\n"

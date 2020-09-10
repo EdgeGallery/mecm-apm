@@ -18,6 +18,7 @@ apm:
   inventory-endpoint: ${INVENTORY_ENDPOINT:1.1.1.1}
   inventory-port: ${INVENTORY_PORT:8080}
   package-dir: classpath:packages
+  push-image: ${PUSH_IMAGE:true}
 
 security:
   oauth2:

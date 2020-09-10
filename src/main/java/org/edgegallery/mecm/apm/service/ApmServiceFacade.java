@@ -57,8 +57,13 @@ public class ApmServiceFacade {
      */
     @Async
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto) {
-        dbService.createAppPackage(tenantId, appPackageDto);
-        dbService.createHost(tenantId, appPackageDto);
+        try {
+            dbService.createAppPackage(tenantId, appPackageDto);
+            dbService.createHost(tenantId, appPackageDto);
+        } catch (ApmException e) {
+            LOGGER.error(e.getMessage());
+            return;
+        }
 
         String packageId = appPackageDto.getAppPkgId();
         List<ImageInfo> imageInfoList;

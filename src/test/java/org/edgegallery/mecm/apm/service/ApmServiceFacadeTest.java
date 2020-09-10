@@ -58,7 +58,7 @@ public class ApmServiceFacadeTest {
     public void setUp() {
         packageDto.setAppPkgId(PACKAGE_ID);
         packageDto.setAppId("f50358433cf8eb4719a62a49ed118c9c");
-        packageDto.setAppIconUrl("app icon url");
+        packageDto.setAppIconUrl("http://1.1.1.1:1234/mec");
         packageDto.setAppPkgAffinity("GPU");
         packageDto.setAppPkgDesc("face recognition application");
         packageDto.setAppPkgName("codelab-demo1");

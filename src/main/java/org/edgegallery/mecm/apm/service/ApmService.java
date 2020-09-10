@@ -21,6 +21,7 @@ import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -162,12 +163,16 @@ public class ApmService {
             String imageName = new StringBuilder(repoAddress)
                     .append("/").append(image.getName()).append(":")
                     .append(image.getVersion()).toString();
+            LOGGER.info("image name to download {} ", imageName);
             try {
                 dockerClient.pullImageCmd(imageName)
-                            .exec(new PullImageResultCallback()).awaitCompletion();
+                        .exec(new PullImageResultCallback()).awaitCompletion();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ApmException("failed to download image");
+            } catch (NotFoundException e) {
+                LOGGER.error("failed to download image, image not found in repository", e.getMessage());
+                throw new ApmException("failed to download image, image not found in repository");
             }
         }
         LOGGER.info("image download successfully");

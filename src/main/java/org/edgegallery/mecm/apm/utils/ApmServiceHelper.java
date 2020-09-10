@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
@@ -182,5 +184,18 @@ public final class ApmServiceHelper {
             imageInfoList.add(imageInfo);
         }
         return imageInfoList;
+    }
+
+    /**
+     * Validates given string against regex.
+     *
+     * @param pattern pattern to match
+     * @param param stirng to be validated
+     * @return true if param is matched with pattern
+     */
+    public static boolean isRegexMatched(String pattern, String param) {
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(param);
+        return m.matches();
     }
 }

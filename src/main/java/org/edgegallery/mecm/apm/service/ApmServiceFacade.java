@@ -48,6 +48,9 @@ public class ApmServiceFacade {
     @Value("${apm.package-dir:/usr/app/packages}")
     private String localDirPath;
 
+    @Value("${apm.push-image}")
+    private boolean pushImage;
+
     /**
      * Updates Db and distributes docker application image to host.
      *
@@ -83,14 +86,16 @@ public class ApmServiceFacade {
         for (MecHostDto host : appPackageDto.getMecHostInfo()) {
             String distributionStatus = "Distributed";
             String error = "";
-            try {
-                String repoAddress = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
-                apmService.downloadAppImage(repoAddress, imageInfoList);
-            }  catch (ApmException e) {
-                distributionStatus = "Error";
-                error = e.getMessage();
+            if (pushImage) {
+                try {
+                    String repoAddress = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
+                    apmService.downloadAppImage(repoAddress, imageInfoList);
+                }  catch (ApmException e) {
+                    distributionStatus = "Error";
+                    error = e.getMessage();
+                    LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
+                }
             }
-            LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
             dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus, error);
         }
     }

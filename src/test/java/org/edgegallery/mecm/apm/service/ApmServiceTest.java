@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.io.BufferedInputStream;
@@ -43,6 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -93,6 +95,18 @@ public class ApmServiceTest {
 
         String response = apmService.getRepoInfoOfHost("1.1.1.1",  TENANT_ID, "access token");
         assertEquals("2.2.2.2:1234", response);
+        mockServer.verify();
+    }
+
+    @Test
+    public void getRepoInfoOfHostInvalidTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/tenants/18db0283-3c67-4042-a708-a8e4a10c6b32/mechosts/1.1.1.1";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url)).andExpect(method(HttpMethod.GET))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThrows(ApmException.class , () -> apmService.getRepoInfoOfHost("1.1.1.1",
+                TENANT_ID, "access token"));
         mockServer.verify();
     }
 

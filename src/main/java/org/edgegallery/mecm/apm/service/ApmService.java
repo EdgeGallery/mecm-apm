@@ -49,6 +49,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -135,6 +136,9 @@ public class ApmService {
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_INVENTORY, ex.getMessage());
             throw new ApmException(Constants.FAILED_TO_CONNECT_INVENTORY);
+        } catch (HttpClientErrorException ex) {
+            LOGGER.error(Constants.ERROR_FROM_INVENTORY, hostIp, ex.getMessage());
+            throw new ApmException("error while fetching host record from inventory");
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {

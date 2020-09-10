@@ -117,6 +117,44 @@ public class DbServiceTest {
     }
 
     @Test
+    public void testCreateHostDuplicateRecord() {
+        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
+        AppPackageDto response = dbService.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
+        assertNotNull(response);
+
+        assertDoesNotThrow(() -> dbService.updateDistributionStatusOfAllHost(TENANT_ID, PACKAGE_ID,
+                ERROR, FAILED_TO_DISTRIBUTE));
+
+        List<AppPackageDto> packageDtos = dbService.getAllAppPackage(TENANT_ID);
+        assertNotNull(packageDtos);
+        assertEquals(1, packageDtos.size());
+        List<MecHostDto> hostDtos = packageDtos.get(0).getMecHostInfo();
+        assertNotNull(hostDtos);
+        assertEquals(ERROR, hostDtos.get(0).getStatus());
+        assertEquals(ERROR, hostDtos.get(1).getStatus());
+        assertEquals(FAILED_TO_DISTRIBUTE, hostDtos.get(0).getError());
+        assertEquals(FAILED_TO_DISTRIBUTE, hostDtos.get(1).getError());
+
+        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
+        response = dbService.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
+        assertNotNull(response);
+
+        hostDtos = response.getMecHostInfo();
+        assertNotNull(hostDtos);
+        assertEquals(2, hostDtos.size());
+        assertEquals("1.1.1.1", hostDtos.get(0).getHostIp());
+        assertEquals("Processing", hostDtos.get(0).getStatus());
+
+        // clean up
+        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackageWithHost("18db0283-3c67-4042-a708"
+                + "-a8e4a10c6b32",PACKAGE_ID));
+    }
+
+    @Test
     public void testUpdateLocalFilePathOfAppPackage() {
         assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
         assertDoesNotThrow(() -> dbService.updateLocalFilePathOfAppPackage(TENANT_ID,
@@ -185,7 +223,7 @@ public class DbServiceTest {
     @Test
     public void testCreateAppPackageRecordIfNotExist() {
         assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertThrows(IllegalArgumentException.class, () -> dbService.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
 
         // clean up
         assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
@@ -195,6 +233,6 @@ public class DbServiceTest {
 
     @Test
     public void testDeleteAppPackageRecordIfNotExist() {
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
 }

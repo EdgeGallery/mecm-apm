@@ -19,6 +19,7 @@ package org.edgegallery.mecm.apm.service;
 import static org.edgegallery.mecm.apm.utils.Constants.ERROR_IN_UPDATING_LOCAL_FILE_PATH;
 import static org.edgegallery.mecm.apm.utils.Constants.RECORD_NOT_FOUND;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -59,12 +60,8 @@ public class DbService {
      * @param appPackageDto appPackageDto
      */
     public void createAppPackage(String tenantId, AppPackageDto appPackageDto) {
-
         boolean addTenant = false;
 
-        if (appPackageRepository.existsById(appPackageDto.getAppPkgId() + tenantId)) {
-            throw new IllegalArgumentException("Record already exist");
-        }
         ModelMapper mapper = new ModelMapper();
         AppPackage appPackage = mapper.map(appPackageDto, AppPackage.class);
         appPackage.setId(appPackageDto.getAppPkgId() + tenantId);
@@ -107,7 +104,8 @@ public class DbService {
     public void deleteAppPackage(String tenantId, String packageId) {
         Optional<AppPackage> info = appPackageRepository.findById(packageId + tenantId);
         if (!info.isPresent()) {
-            return;
+            LOGGER.error(RECORD_NOT_FOUND);
+            throw new IllegalArgumentException(RECORD_NOT_FOUND);
         }
         appPackageRepository.delete(info.get());
 
@@ -208,13 +206,23 @@ public class DbService {
      */
     public void createHost(String tenantId, AppPackageDto appPackageDto) {
         List<MecHostDto> hostList = appPackageDto.getMecHostInfo();
+        MecHost host;
         for (MecHostDto mecHostDto : hostList) {
-            MecHost host = new MecHost();
-            host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
-            host.setDistributionStatus("Processing");
-            host.setHostIp(mecHostDto.getHostIp());
-            host.setAppPkgId(appPackageDto.getAppPkgId());
-            host.setTenantId(tenantId);
+            MecHost existingHost = findHostWithIp(tenantId, appPackageDto.getAppPkgId(),
+                            mecHostDto.getHostIp());
+            if (existingHost != null) {
+                LOGGER.info("host {} already exists, updating the record", mecHostDto.getHostIp());
+                existingHost.setDistributionStatus("Processing");
+                host = existingHost;
+            } else {
+                host = new MecHost();
+                host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
+                host.setDistributionStatus("Processing");
+                host.setHostIp(mecHostDto.getHostIp());
+                host.setAppPkgId(appPackageDto.getAppPkgId());
+                host.setTenantId(tenantId);
+            }
+
             mecHostRepository.save(host);
             LOGGER.info("host record for tenant {}, package {} and host {} created successfully",
                     tenantId, appPackageDto.getAppPkgId(), mecHostDto.getHostIp());
@@ -253,6 +261,27 @@ public class DbService {
                         tenantId, packageId, hostIp);
             }
         });
+    }
+
+    /**
+     * Returns host record which matches host ip, tenant ID and package ID.
+     *
+     * @param tenantId tenant ID
+     * @param packageId package ID
+     * @param hostIp host ip
+     * @return host record which matches host ip, tenant ID and package ID
+     */
+    public MecHost findHostWithIp(String tenantId, String packageId, String hostIp) {
+        Iterable<MecHost> mecHostIterable = mecHostRepository.findAll();
+        Iterator<MecHost> it = mecHostIterable.iterator();
+        while (it.hasNext()) {
+            MecHost host = (MecHost) it.next();
+            if (host.getPkgHostKey().equals(packageId + tenantId)
+                    && host.getHostIp().equals(hostIp)) {
+                return host;
+            }
+        }
+        return null;
     }
 
     /**

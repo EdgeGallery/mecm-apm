@@ -23,7 +23,7 @@ public final class Constants {
     public static final String APPD_ID_REGEX = "[0-9a-f]{32}";
     public static final String APP_PKG_ID_REGX = APPD_ID_REGEX;
     public static final String TENENT_ID_REGEX = "[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}";
-    public static final String APP_NAME_REGEX = "^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\\-]*[a-zA-Z0-9]$";
+    public static final String APP_NAME_REGEX = "^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\\-\\.]*[a-zA-Z0-9]$";
     public static final String RECORD_NOT_FOUND = "record not found";
     public static final int MAX_COMMON_STRING_LENGTH = 255;
     public static final int MAX_DETAILS_STRING_LENGTH = 1024;

@@ -12,8 +12,8 @@
         app_id varchar(255) not null,
         tenant_id varchar(255) not null,
         local_file_path varchar(2000),
-        created_time varchar(200),
-        modified_time varchar(200),
+        created_time timestamp default current_timestamp,
+        modified_time timestamp default current_timestamp,
         primary key (id)
     );
 

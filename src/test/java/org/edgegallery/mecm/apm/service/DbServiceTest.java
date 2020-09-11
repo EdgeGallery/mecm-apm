@@ -60,8 +60,6 @@ public class DbServiceTest {
                 + "/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download");
         packageDto.setAppPkgVersion("1.0");
         packageDto.setAppProvider("Huawei");
-        packageDto.setCreatedTime(TIME);
-        packageDto.setModifiedTime(TIME);
         MecHostDto hostDto = new MecHostDto();
         hostDto.setHostIp("1.1.1.1");
         MecHostDto hostDto2 = new MecHostDto();
@@ -90,8 +88,6 @@ public class DbServiceTest {
                 + "/0fb274f2-213b-4a66-accc-ab218470caa3/action/download", response.getAppPkgPath());
         assertEquals("1.0", response.getAppPkgVersion());
         assertEquals("Huawei", response.getAppProvider());
-        assertEquals(TIME, response.getCreatedTime());
-        assertEquals(TIME, response.getModifiedTime());
 
         // clean up
         assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));

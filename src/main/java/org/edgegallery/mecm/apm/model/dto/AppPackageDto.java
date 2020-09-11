@@ -16,6 +16,8 @@
 
 package org.edgegallery.mecm.apm.model.dto;
 
+import static org.edgegallery.mecm.apm.utils.Constants.MAX_COMMON_STRING_LENGTH;
+
 import java.util.LinkedList;
 import java.util.List;
 import javax.validation.Valid;
@@ -75,10 +77,10 @@ public class AppPackageDto {
     @CustomConstraint(value = ConstraintType.URL, message = "invalid app icon path")
     private String appIconUrl;
 
-    @NotEmpty(message = "createdTime must not be empty")
+    @Size(max = MAX_COMMON_STRING_LENGTH, message = "createdTime must not exceed more than 255 characters")
     private String createdTime;
 
-    @NotEmpty(message = "modifiedTime must not be empty")
+    @Size(max = MAX_COMMON_STRING_LENGTH, message = "modifiedTime must not exceed more than 255 characters")
     private String modifiedTime;
 
     @NotEmpty(message = "appId must not be empty")

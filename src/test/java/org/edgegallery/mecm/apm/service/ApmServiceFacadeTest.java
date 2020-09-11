@@ -66,8 +66,6 @@ public class ApmServiceFacadeTest {
                 + "/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download");
         packageDto.setAppPkgVersion("1.0");
         packageDto.setAppProvider("Huawei");
-        packageDto.setCreatedTime(TIME);
-        packageDto.setModifiedTime(TIME);
         MecHostDto hostDto = new MecHostDto();
         hostDto.setHostIp("1.1.1.1");
         MecHostDto hostDto2 = new MecHostDto();

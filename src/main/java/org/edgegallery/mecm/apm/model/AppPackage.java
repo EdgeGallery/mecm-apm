@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.model;
 
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -24,6 +25,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Getter
 @Setter
@@ -62,10 +65,12 @@ public class AppPackage {
     private String appIconUrl;
 
     @Column(name = "created_time")
-    private String createdTime;
+    @CreationTimestamp
+    private LocalDateTime createdTime;
 
     @Column(name = "modified_time")
-    private String modifiedTime;
+    @UpdateTimestamp
+    private LocalDateTime modifiedTime;
 
     @Column(name = "app_id")
     private String appId;

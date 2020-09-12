@@ -57,6 +57,7 @@ apm:
   package-dir: /usr/app/packages
   push-image: ${PUSH_IMAGE:true}
   edge-repo-password: ${EDGE_REPO_PASSWORD:}
+  edge-repo-username: ${EDGE_REPO_USERNAME:}
 
 #### security config ####
 security:

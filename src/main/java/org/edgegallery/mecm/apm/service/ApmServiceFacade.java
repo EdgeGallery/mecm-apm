@@ -33,7 +33,6 @@ import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.ImageInfo;
-import org.edgegallery.mecm.apm.model.RepositoryInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
@@ -62,6 +61,9 @@ public class ApmServiceFacade {
 
     @Value("${apm.edge-repo-password}")
     private String edgeRepoPassword;
+
+    @Value("${apm.edge-repo-username:}")
+    private String edgeRepoUsername;
 
     /**
      * Updates Db and distributes docker application image to host.
@@ -100,7 +102,7 @@ public class ApmServiceFacade {
             String error = "";
             if (pushImage) {
                 try {
-                    RepositoryInfo repo = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
+                    String repo = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
                     downloadAppImage(repo, imageInfoList, tenantId, packageId, host.getHostIp());
                 }  catch (ApmException e) {
                     distributionStatus = ERROR;
@@ -179,19 +181,18 @@ public class ApmServiceFacade {
      * @param packageId package ID
      * @param hostIp host IP
      */
-    public void downloadAppImage(RepositoryInfo repositoryInfo, List<ImageInfo> imageInfoList,
+    public void downloadAppImage(String repositoryInfo, List<ImageInfo> imageInfoList,
                                  String tenantId, String packageId, String hostIp) {
         for (ImageInfo image : imageInfoList) {
             DockerClientConfig config = DefaultDockerClientConfig
                     .createDefaultConfigBuilder()
-                    .withRegistryUsername(repositoryInfo.getUserName())
+                    .withRegistryUsername(edgeRepoUsername)
                     .withRegistryPassword(edgeRepoPassword)
                     .build();
 
             DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
 
-            String imageName = new StringBuilder(repositoryInfo.getIp()).append(":")
-                    .append(repositoryInfo.getPort())
+            String imageName = new StringBuilder(repositoryInfo)
                     .append("/").append(image.getName()).append(":")
                     .append(image.getVersion()).toString();
             LOGGER.info("image name to download {} ", imageName);

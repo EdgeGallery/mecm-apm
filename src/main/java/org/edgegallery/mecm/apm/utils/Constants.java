@@ -31,7 +31,6 @@ public final class Constants {
             + "{3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$";
     public static final String PORT_REGEX = "^([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d"
             + "|6553[0-5])$";
-    public static final String NAME_REGEX = "^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\\-]*[a-zA-Z0-9]$";
 
     public static final String FAILED_TO_CONNECT_APPSTORE = "failed to connect to app store";
     public static final String ERROR_IN_DOWNLOADING_CSAR = "error while downloading csar package";
@@ -45,7 +44,6 @@ public final class Constants {
     public static final String REPO_INFO_NULL = "edge repository information is null for host {}";
     public static final String REPO_IP_INVALID = "edge repository ip is invalid for host {}";
     public static final String REPO_PORT_INVALID = "edge repository port is invalid for host {}";
-    public static final String REPO_USERNAME_INVALID = "edge repository user name is invalid for host {}";
     public static final String LOCAL_FILE_PATH_NULL = "local file path is null";
     public static final String DISTRIBUTION_FAILED = "failed to distribute the package {}";
     public static final String DISTRIBUTION_IN_HOST_FAILED = "failed to distribute the package {} in host {}";

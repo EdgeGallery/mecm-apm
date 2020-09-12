@@ -35,7 +35,6 @@ import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
-import org.edgegallery.mecm.apm.model.RepositoryInfo;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -92,10 +91,8 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        RepositoryInfo info = apmService.getRepoInfoOfHost("1.1.1.1",  TENANT_ID, "access token");
-        assertEquals("2.2.2.2", info.getIp());
-        assertEquals("1234", info.getPort());
-        assertEquals("admin", info.getUserName());
+        String info = apmService.getRepoInfoOfHost("1.1.1.1",  TENANT_ID, "access token");
+        assertEquals("2.2.2.2:1234", info);
         mockServer.verify();
     }
 

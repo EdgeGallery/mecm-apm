@@ -33,7 +33,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
-import org.edgegallery.mecm.apm.model.RepositoryInfo;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +124,7 @@ public class ApmService {
      * @return returns edge repository info
      * @throws ApmException exception if failed to get edge repository details
      */
-    public RepositoryInfo getRepoInfoOfHost(String hostIp, String tenantId, String accessToken) {
+    public String getRepoInfoOfHost(String hostIp, String tenantId, String accessToken) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
                 .append("/mechosts/").append(hostIp).toString();
@@ -153,8 +152,7 @@ public class ApmService {
         JsonObject jsonObject = new JsonParser().parse(response.getBody()).getAsJsonObject();
         JsonElement edgeRepoIp = jsonObject.get("edgerepoIp");
         JsonElement edgeRepoPort = jsonObject.get("edgerepoPort");
-        JsonElement edgeRepoUserName = jsonObject.get("edgerepoUsername");
-        if (edgeRepoIp == null || edgeRepoPort == null || edgeRepoUserName == null) {
+        if (edgeRepoIp == null || edgeRepoPort == null) {
             LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
             throw new ApmException("edge repository information is null for host " + hostIp);
         }
@@ -171,12 +169,7 @@ public class ApmService {
             throw new ApmException("edge repo port is invalid for host " + hostIp);
         }
 
-        String userName = edgeRepoUserName.getAsString();
-        if (!isRegexMatched(Constants.NAME_REGEX, userName)) {
-            LOGGER.error(Constants.REPO_USERNAME_INVALID, hostIp);
-            throw new ApmException("edge repo user name is invalid for host " + hostIp);
-        }
-        return new RepositoryInfo(ip, port, userName);
+        return edgeRepoIp.getAsString() + ":" + edgeRepoPort.getAsString();
     }
 
     /**

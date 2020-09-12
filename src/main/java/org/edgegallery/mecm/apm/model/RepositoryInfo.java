@@ -27,8 +27,9 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class ImageInfo {
+public class RepositoryInfo {
 
-    private String name;
-    private String version;
+    private String ip;
+    private String port;
+    private String userName;
 }

@@ -56,6 +56,7 @@ apm:
   inventory-port: ${INVENTORY_PORT:8093}
   package-dir: /usr/app/packages
   push-image: ${PUSH_IMAGE:true}
+  edge-repo-password: ${EDGE_REPO_PASSWORD:}
 
 #### security config ####
 security:

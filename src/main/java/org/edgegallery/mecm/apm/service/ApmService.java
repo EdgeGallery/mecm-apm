@@ -20,10 +20,6 @@ import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.PullImageResultCallback;
-import com.github.dockerjava.api.exception.NotFoundException;
-import com.github.dockerjava.core.DockerClientBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -37,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
+import org.edgegallery.mecm.apm.model.RepositoryInfo;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +47,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -85,6 +83,12 @@ public class ApmService {
         } catch (ResourceAccessException ex) {
             LOGGER.error(Constants.FAILED_TO_CONNECT_APPSTORE);
             throw new ApmException(Constants.FAILED_TO_CONNECT_APPSTORE);
+        } catch (HttpClientErrorException ex) {
+            LOGGER.error("client error while downloading app package", ex.getMessage());
+            throw new ApmException(Constants.ERROR_IN_DOWNLOADING_CSAR);
+        } catch (HttpServerErrorException ex) {
+            LOGGER.error("server error while downloading app package", ex.getMessage());
+            throw new ApmException(Constants.ERROR_IN_DOWNLOADING_CSAR);
         }
 
         Resource responseBody = response.getBody();
@@ -118,10 +122,10 @@ public class ApmService {
      * @param hostIp host ip
      * @param tenantId tenant ID
      * @param accessToken access token
-     * @return edge repository address
+     * @return returns edge repository info
      * @throws ApmException exception if failed to get edge repository details
      */
-    public String getRepoInfoOfHost(String hostIp, String tenantId, String accessToken) {
+    public RepositoryInfo getRepoInfoOfHost(String hostIp, String tenantId, String accessToken) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
                 .append("/mechosts/").append(hostIp).toString();
@@ -149,48 +153,30 @@ public class ApmService {
         JsonObject jsonObject = new JsonParser().parse(response.getBody()).getAsJsonObject();
         JsonElement edgeRepoIp = jsonObject.get("edgerepoIp");
         JsonElement edgeRepoPort = jsonObject.get("edgerepoPort");
-        if (edgeRepoIp == null || edgeRepoPort == null) {
+        JsonElement edgeRepoUserName = jsonObject.get("edgerepoUsername");
+        if (edgeRepoIp == null || edgeRepoPort == null || edgeRepoUserName == null) {
             LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
             throw new ApmException("edge repository information is null for host " + hostIp);
         }
 
-        if (!isRegexMatched(Constants.IP_REGEX, edgeRepoIp.getAsString())) {
+        String ip = edgeRepoIp.getAsString();
+        if (!isRegexMatched(Constants.IP_REGEX, ip)) {
             LOGGER.error(Constants.REPO_IP_INVALID, hostIp);
             throw new ApmException("edge repo ip is invalid for host " + hostIp);
         }
 
-        if (!isRegexMatched(Constants.PORT_REGEX, edgeRepoPort.getAsString())) {
+        String port = edgeRepoPort.getAsString();
+        if (!isRegexMatched(Constants.PORT_REGEX, port)) {
             LOGGER.error(Constants.REPO_PORT_INVALID, hostIp);
             throw new ApmException("edge repo port is invalid for host " + hostIp);
         }
-        return edgeRepoIp.getAsString() + ":" + edgeRepoPort.getAsString();
-    }
 
-    /**
-     * Downloads app image from repo.
-     *
-     * @param repoAddress edge repository address
-     * @param imageInfoList list of images
-     */
-    public void downloadAppImage(String repoAddress, List<ImageInfo> imageInfoList) {
-        for (ImageInfo image : imageInfoList) {
-            DockerClient dockerClient = DockerClientBuilder.getInstance().build();
-            String imageName = new StringBuilder(repoAddress)
-                    .append("/").append(image.getName()).append(":")
-                    .append(image.getVersion()).toString();
-            LOGGER.info("image name to download {} ", imageName);
-            try {
-                dockerClient.pullImageCmd(imageName)
-                        .exec(new PullImageResultCallback()).awaitCompletion();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ApmException("failed to download image");
-            } catch (NotFoundException e) {
-                LOGGER.error("failed to download image, image not found in repository", e.getMessage());
-                throw new ApmException("failed to download image, image not found in repository");
-            }
+        String userName = edgeRepoUserName.getAsString();
+        if (!isRegexMatched(Constants.NAME_REGEX, userName)) {
+            LOGGER.error(Constants.REPO_USERNAME_INVALID, hostIp);
+            throw new ApmException("edge repo user name is invalid for host " + hostIp);
         }
-        LOGGER.info("image download successfully");
+        return new RepositoryInfo(ip, port, userName);
     }
 
     /**

@@ -44,7 +44,6 @@ public class ApmServiceFacadeTest {
 
     private static final String TENANT_ID = "18db0283-3c67-4042-a708-a8e4a10c6b32";
     private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
-    private static final String TIME = "Thu Nov 21 16:02:24 CST 2019";
 
     private AppPackageDto packageDto = new AppPackageDto();
 
@@ -79,6 +78,7 @@ public class ApmServiceFacadeTest {
     @Test
     public void getAppPackageFile() throws IOException {
         assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
         File file = ResourceUtils.getFile("classpath:packages");
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
         String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, TENANT_ID, file.getPath());
@@ -88,5 +88,6 @@ public class ApmServiceFacadeTest {
         dbService.updateLocalFilePathOfAppPackage(TENANT_ID, PACKAGE_ID, response);
         InputStream stream = facade.getAppPackageFile(TENANT_ID, PACKAGE_ID);
         assertNotNull(stream);
+        assertDoesNotThrow(() -> facade.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
 }

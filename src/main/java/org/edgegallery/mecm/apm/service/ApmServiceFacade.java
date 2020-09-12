@@ -19,12 +19,21 @@ package org.edgegallery.mecm.apm.service;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
+import static org.edgegallery.mecm.apm.utils.Constants.ERROR;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.PullImageResultCallback;
+import com.github.dockerjava.api.exception.InternalServerErrorException;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
 import java.io.InputStream;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.ImageInfo;
+import org.edgegallery.mecm.apm.model.RepositoryInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
@@ -50,6 +59,9 @@ public class ApmServiceFacade {
 
     @Value("${apm.push-image}")
     private boolean pushImage;
+
+    @Value("${apm.edge-repo-password}")
+    private String edgeRepoPassword;
 
     /**
      * Updates Db and distributes docker application image to host.
@@ -79,7 +91,7 @@ public class ApmServiceFacade {
             imageInfoList = apmService.getAppImageInfo(localFilePath);
         } catch (ApmException | IllegalArgumentException e) {
             LOGGER.error(DISTRIBUTION_FAILED, packageId);
-            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, "Error", e.getMessage());
+            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
             return;
         }
 
@@ -88,10 +100,10 @@ public class ApmServiceFacade {
             String error = "";
             if (pushImage) {
                 try {
-                    String repoAddress = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
-                    apmService.downloadAppImage(repoAddress, imageInfoList);
+                    RepositoryInfo repo = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
+                    downloadAppImage(repo, imageInfoList, tenantId, packageId, host.getHostIp());
                 }  catch (ApmException e) {
-                    distributionStatus = "Error";
+                    distributionStatus = ERROR;
                     error = e.getMessage();
                     LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
                 }
@@ -156,5 +168,56 @@ public class ApmServiceFacade {
     public InputStream getAppPackageFile(String tenantId, String packageId) {
         AppPackage appPackage = dbService.getAppPackage(tenantId, packageId);
         return apmService.getAppPackageFile(appPackage.getLocalFilePath());
+    }
+
+    /**
+     * Downloads app image from repo.
+     *
+     * @param repositoryInfo edge repository info
+     * @param imageInfoList list of images
+     * @param tenantId tenant ID
+     * @param packageId package ID
+     * @param hostIp host IP
+     */
+    public void downloadAppImage(RepositoryInfo repositoryInfo, List<ImageInfo> imageInfoList,
+                                 String tenantId, String packageId, String hostIp) {
+        for (ImageInfo image : imageInfoList) {
+            DockerClientConfig config = DefaultDockerClientConfig
+                    .createDefaultConfigBuilder()
+                    .withRegistryUsername(repositoryInfo.getUserName())
+                    .withRegistryPassword(edgeRepoPassword)
+                    .build();
+
+            DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
+
+            String imageName = new StringBuilder(repositoryInfo.getIp()).append(":")
+                    .append(repositoryInfo.getPort())
+                    .append("/").append(image.getName()).append(":")
+                    .append(image.getVersion()).toString();
+            LOGGER.info("image name to download {} ", imageName);
+
+            PullImageResultCallback resultCallback = new PullImageResultCallback() {
+                @Override
+                public void onError(Throwable throwable) {
+                    super.onError(throwable);
+                    LOGGER.error("failed to pull image {}, {}", imageName, throwable.getMessage());
+                    dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, ERROR,
+                            "failed to pull image from edge repo");
+                }
+            };
+
+            try {
+                dockerClient.pullImageCmd(imageName)
+                        .exec(resultCallback).awaitCompletion();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ApmException("failed to download image");
+            } catch (NotFoundException e) {
+                LOGGER.error("failed to download image {}, image not found in repository, {}", imageName,
+                        e.getMessage());
+            } catch (InternalServerErrorException e) {
+                LOGGER.error("internal server error while downloading image {},{}", imageName, e.getMessage());
+            }
+        }
     }
 }

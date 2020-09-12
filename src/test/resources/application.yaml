@@ -19,6 +19,7 @@ apm:
   inventory-port: ${INVENTORY_PORT:8080}
   package-dir: classpath:packages
   push-image: ${PUSH_IMAGE:true}
+  edge-repo-password: ${EDGE_REPO_PASSWORD:}
 
 security:
   oauth2:

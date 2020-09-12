@@ -275,7 +275,7 @@ public class DbService {
         Iterable<MecHost> mecHostIterable = mecHostRepository.findAll();
         Iterator<MecHost> it = mecHostIterable.iterator();
         while (it.hasNext()) {
-            MecHost host = (MecHost) it.next();
+            MecHost host = it.next();
             if (host.getPkgHostKey().equals(packageId + tenantId)
                     && host.getHostIp().equals(hostIp)) {
                 return host;

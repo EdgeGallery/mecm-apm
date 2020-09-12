@@ -263,6 +263,16 @@ if [ ! -z "$INVENTORY_PORT" ] ; then
   fi
 fi
 
+
+if [ ! -z "$EDGE_REPO_PASSWORD" ] ; then
+  validate_password "$EDGE_REPO_PASSWORD"
+  valid_edge_repo_password="$?"
+  if [ ! "$valid_edge_repo_password" -eq "0" ] ; then
+    echo "invalid edge repo password"
+    exit 1
+  fi
+fi
+
 echo "Running APM"
 umask 0027
 cd /usr/app || exit

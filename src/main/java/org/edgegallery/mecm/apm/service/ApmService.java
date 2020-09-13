@@ -20,6 +20,13 @@ import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.PullImageResultCallback;
+import com.github.dockerjava.api.exception.InternalServerErrorException;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -60,6 +67,12 @@ public class ApmService {
 
     @Value("${apm.inventory-port}")
     private String inventoryPort;
+
+    @Value("${apm.edge-repo-password:admin123}")
+    private String edgeRepoPassword;
+
+    @Value("${apm.edge-repo-username:admin}")
+    private String edgeRepoUsername;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -202,5 +215,44 @@ public class ApmService {
         } catch (IOException e) {
             LOGGER.error("failed to delete csar file");
         }
+    }
+
+    /**
+     * Downloads app image from repo.
+     *
+     * @param repositoryInfo edge repository info
+     * @param imageInfoList list of images
+     */
+    public void downloadAppImage(String repositoryInfo, List<ImageInfo> imageInfoList) {
+        for (ImageInfo image : imageInfoList) {
+            DockerClientConfig config = DefaultDockerClientConfig
+                    .createDefaultConfigBuilder()
+                    .withRegistryUsername(edgeRepoUsername)
+                    .withRegistryPassword(edgeRepoPassword)
+                    .build();
+
+            DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
+
+            String imageName = new StringBuilder(repositoryInfo)
+                    .append("/").append(image.getName()).append(":")
+                    .append(image.getVersion()).toString();
+            LOGGER.info("image name to download {} ", imageName);
+
+            try {
+                dockerClient.pullImageCmd(imageName)
+                        .exec(new PullImageResultCallback()).awaitCompletion();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ApmException("failed to download image");
+            } catch (NotFoundException e) {
+                LOGGER.error("failed to download image {}, image not found in repository, {}", imageName,
+                        e.getMessage());
+                throw new ApmException("failed to push image to edge repo");
+            } catch (InternalServerErrorException e) {
+                LOGGER.error("internal server error while downloading image {},{}", imageName, e.getMessage());
+                throw new ApmException("failed to push image to edge repo");
+            }
+        }
+        LOGGER.info("images to edge repo downloaded successfully");
     }
 }

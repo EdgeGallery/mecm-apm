@@ -151,9 +151,6 @@ public class ApmHandlerTest {
         MvcResult result = resultActions.andReturn();
         MockHttpServletResponse obj = result.getResponse();
         assertEquals("{\"packageId\":\"f40358433cf8eb4719a62a49ed118c9b\"}", obj.getContentAsString());
-        Thread.sleep(2000);
-        dbService.deleteAppPackage(TENANT_ID, "f40358433cf8eb4719a62a49ed118c9b");
-        dbService.deleteHost(TENANT_ID, "f40358433cf8eb4719a62a49ed118c9b");
     }
 
     @Test

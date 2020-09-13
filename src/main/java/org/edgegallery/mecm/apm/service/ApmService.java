@@ -68,10 +68,10 @@ public class ApmService {
     @Value("${apm.inventory-port}")
     private String inventoryPort;
 
-    @Value("${apm.edge-repo-password:admin123}")
+    @Value("${apm.edge-repo-password:}")
     private String edgeRepoPassword;
 
-    @Value("${apm.edge-repo-username:admin}")
+    @Value("${apm.edge-repo-username:}")
     private String edgeRepoUsername;
 
     @Autowired

@@ -40,8 +40,7 @@ import lombok.ToString;
 public class MecHostDto {
 
     @NotEmpty(message = "hostIp must not be empty")
-    @Pattern(regexp = HOST_IP_REGX, message = "host ip must match pattern ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]"
-            + "|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
+    @Pattern(regexp = HOST_IP_REGX, message = "host ip address is invalid")
     private String hostIp;
 
     @Size(max = MAX_COMMON_STRING_LENGTH, message = "status must not exceed more than 255 characters")

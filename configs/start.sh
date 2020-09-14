@@ -151,6 +151,19 @@ validate_var_not_empty()
    return 0
 }
 
+# Validates if boolean is valid
+validate_bool()
+{
+   env_var="$1"
+
+   if  ! echo "$env_var" | grep -qx 'true'  &&  ! echo "$env_var" | grep -qx 'false' ; then
+     echo "invalid boolean value"
+     return 1
+   fi
+
+   return 0
+}
+
 # ssl parameters validation
 validate_file_exists "/usr/app/ssl/keystore.p12"
 valid_ssl_key_store_path="$?"
@@ -263,6 +276,24 @@ if [ ! -z "$INVENTORY_PORT" ] ; then
   fi
 fi
 
+
+if [ ! -z "$EDGE_REPO_USERNAME" ] ; then
+  validate_name "$EDGE_REPO_USERNAME"
+  valid_edge_repo_username="$?"
+  if [ ! "$valid_edge_repo_username" -eq "0" ] ; then
+    echo "invalid edge repo username"
+    exit 1
+  fi
+fi
+
+if [ ! -z "$PUSH_IMAGE" ] ; then
+  validate_bool "$PUSH_IMAGE"
+  valid_push_image="$?"
+  if [ ! "$valid_push_image" -eq "0" ] ; then
+    echo "invalid push image"
+    exit 1
+  fi
+fi
 
 if [ ! -z "$EDGE_REPO_PASSWORD" ] ; then
   validate_password "$EDGE_REPO_PASSWORD"

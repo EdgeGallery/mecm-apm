@@ -44,13 +44,14 @@ import org.edgegallery.mecm.apm.utils.Constants;
 public class AppPackageDto {
 
     @NotEmpty(message = "appPkgId must not be empty")
-    @Pattern(regexp = Constants.APP_PKG_ID_REGX, message = "appPkgId must match pattern [0-9a-f]{32}")
+    @Pattern(regexp = Constants.APP_PKG_ID_REGX, message = "appPkgId is invalid. It must be smaller case letters or "
+            + "numbers with maximum length of 32 characters.")
     private String appPkgId;
 
     @NotEmpty(message = "appPkgName must not be empty")
     @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
-    @Pattern(regexp = Constants.APP_NAME_REGEX, message = "appPkgName must match pattern ^[a-zA-Z0-9]*$|^[a-zA-Z0-9]"
-            + "[a-zA-Z0-9_\\\\-]*[a-zA-Z0-9]$\"")
+    @Pattern(regexp = Constants.APP_NAME_REGEX, message = "appPkgName is invalid. It must start with alpha numeric "
+            + "characters and special characters allowed are hyphen and underscore.")
     private String appPkgName;
 
     @NotEmpty(message = "appPkgVersion must not be empty")
@@ -84,7 +85,8 @@ public class AppPackageDto {
     private String modifiedTime;
 
     @NotEmpty(message = "appId must not be empty")
-    @Pattern(regexp = Constants.APPD_ID_REGEX, message = "appId must match pattern [0-9a-f]{32}")
+    @Pattern(regexp = Constants.APPD_ID_REGEX, message = "appId is invalid. It must be smaller case letters "
+            + "or numbers with maximum length of 32 characters.")
     private String appId;
 
     @NotEmpty(message = "mecHost info must not be empty")

@@ -25,6 +25,8 @@ public final class Constants {
     public static final String TENENT_ID_REGEX = "[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}";
     public static final String APP_NAME_REGEX = "^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\\-\\.]*[a-zA-Z0-9]$";
     public static final String RECORD_NOT_FOUND = "record not found";
+    public static final int MAX_COMMON_IP_LENGTH = 15;
+    public static final int MAX_COMMON_ID_LENGTH = 64;
     public static final int MAX_COMMON_STRING_LENGTH = 255;
     public static final int MAX_DETAILS_STRING_LENGTH = 1024;
     public static final String IP_REGEX = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.)"

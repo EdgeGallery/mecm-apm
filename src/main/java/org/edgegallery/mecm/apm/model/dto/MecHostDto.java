@@ -16,10 +16,6 @@
 
 package org.edgegallery.mecm.apm.model.dto;
 
-import static org.edgegallery.mecm.apm.utils.Constants.HOST_IP_REGX;
-import static org.edgegallery.mecm.apm.utils.Constants.MAX_COMMON_STRING_LENGTH;
-import static org.edgegallery.mecm.apm.utils.Constants.MAX_DETAILS_STRING_LENGTH;
-
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -28,6 +24,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.edgegallery.mecm.apm.utils.Constants;
 
 /**
  * Mec host schema.
@@ -40,12 +37,13 @@ import lombok.ToString;
 public class MecHostDto {
 
     @NotEmpty(message = "hostIp must not be empty")
-    @Pattern(regexp = HOST_IP_REGX, message = "host ip address is invalid")
+    @Size(max = Constants.MAX_COMMON_IP_LENGTH, message = "host ip address must not exceed more than 15 characters")
+    @Pattern(regexp = Constants.HOST_IP_REGX, message = "host ip address is invalid")
     private String hostIp;
 
-    @Size(max = MAX_COMMON_STRING_LENGTH, message = "status must not exceed more than 255 characters")
+    @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "status must not exceed more than 255 characters")
     private String status;
 
-    @Size(max = MAX_DETAILS_STRING_LENGTH, message = "error must not exceed more than 1024 characters")
+    @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "error must not exceed more than 1024 characters")
     private String error;
 }

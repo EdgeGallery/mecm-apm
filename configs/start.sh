@@ -30,6 +30,16 @@ validate_host_name()
  return 0
 }
 
+validate_url()
+{
+ url="$1"
+ if ! echo "$url" | grep -qE '(https?|http)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' ; then
+   echo "invalid url"
+   return 1
+ fi
+ return 0
+}
+
 validate_name()
 {
  hostname="$1"
@@ -276,6 +286,14 @@ if [ ! -z "$INVENTORY_PORT" ] ; then
   fi
 fi
 
+if [ ! -z "$AUTH_SERVER_ADDRESS" ] ; then
+  validate_url "$AUTH_SERVER_ADDRESS"
+  valid_auth_server_host_name="$?"
+  if [ ! "$valid_auth_server_host_name" -eq "0" ] ; then
+    echo "invalid auth server host name"
+     exit 1
+  fi
+fi
 
 if [ ! -z "$EDGE_REPO_USERNAME" ] ; then
   validate_name "$EDGE_REPO_USERNAME"

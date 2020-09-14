@@ -12,4 +12,4 @@ APM is a Java program written based on jdk1.8 and maven. To compile, you only ne
 #### Build image
 The APM project provides a dockerfile file for mirroring. You can use the following commands when making a mirror
 
-docker build -t mecm-apm:latest -f docker/Dockerfile. 
+docker build -t edgegallery/mecm-apm:latest -f docker/Dockerfile .

@@ -29,8 +29,10 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
+import org.edgegallery.mecm.apm.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -74,7 +76,7 @@ public class ApmHandler {
     public ResponseEntity<Map<String, String>> onBoardAppPackage(
             @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @Valid @ApiParam(value = "app package info") @RequestBody AppPackageDto appPackageDto) {
         service.onboardApplication(accessToken, tenantId, appPackageDto);
 
@@ -96,9 +98,9 @@ public class ApmHandler {
     @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<AppPackageDto> getAppPackageInfo(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
         AppPackageDto response = service.getAppPackageInfo(tenantId, appPackageId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -116,9 +118,9 @@ public class ApmHandler {
     @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<String> deleteAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
         service.deleteAppPackage(tenantId, appPackageId);
         return new ResponseEntity<>("success", HttpStatus.OK);
     }
@@ -136,9 +138,9 @@ public class ApmHandler {
     @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<InputStreamResource> downloadAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
         InputStream resource = service.getAppPackageFile(tenantId, appPackageId);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/octet-stream");
@@ -156,7 +158,7 @@ public class ApmHandler {
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<List<AppPackageDto>> getAllAppPackageInfo(
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId) {
         List<AppPackageDto> response = service.getAllAppPackageInfo(tenantId);
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -176,11 +178,11 @@ public class ApmHandler {
     @PreAuthorize("hasRole('MECM_TENANT')")
     public ResponseEntity<String> deleteAppPackageInHost(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-            @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId,
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId,
             @ApiParam(value = "host ip") @PathVariable("host_ip")
-            @Pattern(regexp = HOST_IP_REGX) String hostIp) {
+            @Size(max = Constants.MAX_COMMON_IP_LENGTH) @Pattern(regexp = HOST_IP_REGX) String hostIp) {
         service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
         return new ResponseEntity<>("success", HttpStatus.OK);
     }

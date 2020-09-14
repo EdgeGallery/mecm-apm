@@ -44,8 +44,9 @@ import org.edgegallery.mecm.apm.utils.Constants;
 public class AppPackageDto {
 
     @NotEmpty(message = "appPkgId must not be empty")
+    @Size(max = Constants.MAX_COMMON_ID_LENGTH, message = "appPkgId must not exceed more than 64 characters")
     @Pattern(regexp = Constants.APP_PKG_ID_REGX, message = "appPkgId is invalid. It must be smaller case letters or "
-            + "numbers with maximum length of 32 characters.")
+            + "numbers with length of 32 characters.")
     private String appPkgId;
 
     @NotEmpty(message = "appPkgName must not be empty")
@@ -59,6 +60,7 @@ public class AppPackageDto {
     private String appPkgVersion;
 
     @NotEmpty(message = "appPkgPath must not be empty")
+    @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appPkgPath must not exceed more than 1024 characters")
     @CustomConstraint(value = ConstraintType.URL, message = "invalid app package path")
     private String appPkgPath;
 
@@ -75,6 +77,7 @@ public class AppPackageDto {
     private String appPkgAffinity;
 
     @NotEmpty(message = "appIconUrl must not be empty")
+    @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appIconUrl must not exceed more than 1024 characters")
     @CustomConstraint(value = ConstraintType.URL, message = "invalid app icon path")
     private String appIconUrl;
 
@@ -85,6 +88,7 @@ public class AppPackageDto {
     private String modifiedTime;
 
     @NotEmpty(message = "appId must not be empty")
+    @Size(max = Constants.MAX_COMMON_ID_LENGTH, message = "appId must not exceed more than 64 characters")
     @Pattern(regexp = Constants.APPD_ID_REGEX, message = "appId is invalid. It must be smaller case letters "
             + "or numbers with maximum length of 32 characters.")
     private String appId;

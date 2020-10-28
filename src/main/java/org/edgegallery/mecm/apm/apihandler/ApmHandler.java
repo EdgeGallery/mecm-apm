@@ -28,11 +28,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.edgegallery.mecm.apm.utils.Constants;
+import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -48,7 +50,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Application package management API handler.
@@ -63,7 +68,37 @@ public class ApmHandler {
     private ApmServiceFacade service;
 
     /**
-     * On-boards application package.
+     * On-boards application with package provided.
+     *
+     * @param accessToken access token
+     * @param tenantId tenant ID
+     * @param appPackageName application package name
+     * @param appPkgVersion application package version
+     * @param hostList list of host
+     * @param file CSAR package
+     * @return application package identifier on success, error code on failure
+     */
+    @ApiOperation(value = "Onboard application package", response = Map.class)
+    @PostMapping(path = "/tenants/{tenant_id}/packages/upload",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
+    public ResponseEntity<Map<String, String>> onBoardApplication(
+            @RequestHeader("access_token") String accessToken,
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @RequestParam("appPackageName") @Pattern(regexp = Constants.APP_NAME_REGEX) String appPackageName,
+            @RequestParam("appPackageVersion") @Length(max = Constants.MAX_COMMON_STRING_LENGTH) String appPkgVersion,
+            @RequestParam("hostList") @NotNull @Length(max = Constants.MAX_COMMON_STRING_LENGTH) String hostList,
+            @ApiParam(value = "app package") @RequestPart MultipartFile file) {
+
+        // TODO: to be implemented
+        Map<String, String> response = new HashMap<>();
+        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+    }
+
+    /**
+     * On-boards application package by downloading package from appstore.
      *
      * @param tenantId      tenant ID
      * @param appPackageDto application package

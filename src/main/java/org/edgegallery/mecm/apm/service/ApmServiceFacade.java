@@ -62,8 +62,7 @@ public class ApmServiceFacade {
     @Async
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto) {
         try {
-            dbService.createAppPackage(tenantId, appPackageDto);
-            dbService.createHost(tenantId, appPackageDto);
+            createAppPackageEntryInDb(tenantId, appPackageDto);
         } catch (ApmException e) {
             LOGGER.error(e.getMessage());
             return;
@@ -84,21 +83,7 @@ public class ApmServiceFacade {
             return;
         }
 
-        for (MecHostDto host : appPackageDto.getMecHostInfo()) {
-            String distributionStatus = "Distributed";
-            String error = "";
-            if (pushImage) {
-                try {
-                    String repo = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
-                    apmService.downloadAppImage(repo, imageInfoList);
-                }  catch (ApmException e) {
-                    distributionStatus = ERROR;
-                    error = e.getMessage();
-                    LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
-                }
-            }
-            dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus, error);
-        }
+        distributeApplication(tenantId, appPackageDto, accessToken, imageInfoList);
     }
 
     /**
@@ -157,5 +142,30 @@ public class ApmServiceFacade {
     public InputStream getAppPackageFile(String tenantId, String packageId) {
         AppPackage appPackage = dbService.getAppPackage(tenantId, packageId);
         return apmService.getAppPackageFile(appPackage.getLocalFilePath());
+    }
+
+    private void createAppPackageEntryInDb(String tenantId, AppPackageDto appPackageDto) throws ApmException {
+        dbService.createAppPackage(tenantId, appPackageDto);
+        dbService.createHost(tenantId, appPackageDto);
+    }
+
+    private void distributeApplication(String tenantId, AppPackageDto appPackageDto, String accessToken,
+                                       List<ImageInfo> imageInfoList) {
+        String packageId = appPackageDto.getAppPkgId();
+        for (MecHostDto host : appPackageDto.getMecHostInfo()) {
+            String distributionStatus = "Distributed";
+            String error = "";
+            if (pushImage) {
+                try {
+                    String repo = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
+                    apmService.downloadAppImage(repo, imageInfoList);
+                }  catch (ApmException e) {
+                    distributionStatus = ERROR;
+                    error = e.getMessage();
+                    LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
+                }
+            }
+            dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus, error);
+        }
     }
 }

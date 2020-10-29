@@ -87,6 +87,38 @@ public class ApmServiceFacade {
     }
 
     /**
+     * Updates Db and distributes docker application image to host.
+     *
+     * @param accessToken access token
+     * @param tenantId tenant ID
+     * @param appPackageDto appPackage details
+     * @param localFilePath local package path
+     */
+    @Async
+    public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto,
+                                   String localFilePath) {
+        try {
+            createAppPackageEntryInDb(tenantId, appPackageDto);
+        } catch (ApmException e) {
+            LOGGER.error(e.getMessage());
+            return;
+        }
+
+        String packageId = appPackageDto.getAppPkgId();
+        List<ImageInfo> imageInfoList;
+        try {
+            dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
+            imageInfoList = apmService.getAppImageInfo(localFilePath);
+        } catch (ApmException | IllegalArgumentException e) {
+            LOGGER.error(DISTRIBUTION_FAILED, e);
+            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
+            return;
+        }
+
+        distributeApplication(tenantId, appPackageDto, accessToken, imageInfoList);
+    }
+
+    /**
      * Returns app package info.
      *
      * @param tenantId tenant ID

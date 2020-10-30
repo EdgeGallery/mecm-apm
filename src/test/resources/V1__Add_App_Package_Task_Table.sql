@@ -4,7 +4,7 @@
         app_pkg_id  varchar(255) not null,
         app_pkg_name varchar(255) not null,
         app_pkg_version varchar(255) not null,
-        app_pkg_path varchar(255) not null,
+        app_pkg_path varchar(255),
         app_provider varchar(200),
         app_pkg_desc varchar(500),
         app_pkg_affinity varchar(200),

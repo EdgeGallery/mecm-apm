@@ -16,22 +16,27 @@
 
 package org.edgegallery.mecm.apm.utils;
 
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getHostList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import javax.validation.ConstraintViolationException;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
+import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.ResourceUtils;
 
 class ApmServiceHelperTest {
@@ -84,5 +89,44 @@ class ApmServiceHelperTest {
         File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913b.csar");
         String localFilePath = file.getPath();
         assertThrows(ApmException.class, () -> ApmServiceHelper.getMainServiceYaml(localFilePath));
+    }
+
+    @Test
+    public void testGetHostList() {
+        List<MecHostDto> mecHostList = getHostList("1.1.1.1");
+        assertEquals(1, mecHostList.size());
+
+        mecHostList = getHostList("     1.1.1.1");
+        assertEquals(1, mecHostList.size());
+
+        mecHostList = getHostList("1.1.1.1, 2.2.2.2");
+        assertEquals(2, mecHostList.size());
+
+        mecHostList = getHostList("1.1.1.1, 2.2.2.2          ");
+        assertEquals(2, mecHostList.size());
+
+        assertThrows(ConstraintViolationException.class, () -> getHostList("sdfsdfsd"));
+    }
+
+    @Test
+    public void testSaveMultiPartFile() throws IOException {
+        File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
+        FileInputStream fis = new FileInputStream(file.getPath());
+        MockMultipartFile multipartFile = new MockMultipartFile("22406fba-fd5d-4f55-b3fa-89a45fee913a.csar",
+                "app.csar", "", fis);
+        File dir = ResourceUtils.getFile("classpath:packages");
+        String path = ApmServiceHelper.saveMultipartFile(multipartFile, PACKAGE_ID, TENANT_ID, dir.getPath());
+        String expectedPath = new StringBuilder(dir.getPath()).append(File.separator).append(PACKAGE_ID)
+                .append(TENANT_ID).append(File.separator).append(PACKAGE_ID).append(".csar").toString();
+        assertEquals(expectedPath, path);
+        String dirPath = new StringBuilder(dir.getPath()).append(File.separator).append(PACKAGE_ID)
+                .append(TENANT_ID).toString();
+        Files.deleteIfExists(Paths.get(path));
+        Files.deleteIfExists(Paths.get(dirPath));
+    }
+
+    @Test
+    public void testGetAppId() {
+        assertNotNull(ApmServiceHelper.generateAppId());
     }
 }

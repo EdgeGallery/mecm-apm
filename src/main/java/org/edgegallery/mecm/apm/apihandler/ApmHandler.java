@@ -16,6 +16,9 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.generateAppId;
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getHostList;
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveMultipartFile;
 import static org.edgegallery.mecm.apm.utils.Constants.APP_PKG_ID_REGX;
 import static org.edgegallery.mecm.apm.utils.Constants.HOST_IP_REGX;
 import static org.edgegallery.mecm.apm.utils.Constants.TENENT_ID_REGEX;
@@ -27,7 +30,9 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -36,6 +41,7 @@ import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -67,6 +73,9 @@ public class ApmHandler {
     @Autowired
     private ApmServiceFacade service;
 
+    @Value("${apm.package-dir:/usr/app/packages}")
+    private String localDirPath;
+
     /**
      * On-boards application with package provided.
      *
@@ -92,8 +101,21 @@ public class ApmHandler {
             @RequestParam("hostList") @NotNull @Length(max = Constants.MAX_COMMON_STRING_LENGTH) String hostList,
             @ApiParam(value = "app package") @RequestPart MultipartFile file) {
 
-        // TODO: to be implemented
+        AppPackageDto dto = new AppPackageDto();
+        dto.setAppPkgName(appPackageName);
+        dto.setAppPkgVersion(appPkgVersion);
+        String appPkgId = generateAppId();
+        dto.setAppPkgId(appPkgId);
+        String appId = generateAppId();
+        dto.setAppId(appId);
+        dto.setMecHostInfo(getHostList(hostList));
+
+        String localFilePath = saveMultipartFile(file, appPkgId, tenantId, localDirPath);
+        service.onboardApplication(accessToken, tenantId, dto, localFilePath);
+
         Map<String, String> response = new HashMap<>();
+        response.put("appPackageId", appPkgId);
+        response.put("appId", appId);
         return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
 

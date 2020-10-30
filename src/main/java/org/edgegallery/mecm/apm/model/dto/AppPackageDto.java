@@ -59,24 +59,19 @@ public class AppPackageDto {
     @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
     private String appPkgVersion;
 
-    @NotEmpty(message = "appPkgPath must not be empty")
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appPkgPath must not exceed more than 1024 characters")
     @CustomConstraint(value = ConstraintType.URL, message = "invalid app package path")
     private String appPkgPath;
 
-    @NotEmpty(message = "appProvider must not be empty")
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appProvider must not exceed more than 1024 characters")
     private String appProvider;
 
-    @NotEmpty(message = "appPkgDesc must not be empty")
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appPkgDesc must not exceed more than 1024 characters")
     private String appPkgDesc;
 
-    @NotEmpty(message = "appPkgAffinity must not be empty")
     @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgAffinity must not exceed more than 255 characters")
     private String appPkgAffinity;
 
-    @NotEmpty(message = "appIconUrl must not be empty")
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appIconUrl must not exceed more than 1024 characters")
     @CustomConstraint(value = ConstraintType.URL, message = "invalid app icon path")
     private String appIconUrl;

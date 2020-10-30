@@ -26,22 +26,32 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Valid;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ImageInfo;
+import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 
 public final class ApmServiceHelper {
 
@@ -102,6 +112,31 @@ public final class ApmServiceHelper {
         } catch (IOException e) {
             LOGGER.error(Constants.FAILED_TO_CREATE_CSAR, packageId);
             throw new ApmException("failed to create csar file for package " + packageId);
+        }
+    }
+
+    /**
+     * Save app package file locally.
+     *
+     * @param multipartFile save app Package file
+     * @param packageId package ID
+     * @param tenantId tenant ID
+     * @param localDirBasePath base directory
+     * @return file saved path
+     */
+    public static String saveMultipartFile(MultipartFile multipartFile, String packageId, String tenantId,
+                                           String localDirBasePath) {
+        FileChecker.check(multipartFile);
+        String localDirPath = createDir(localDirBasePath + File.separator + packageId + tenantId);
+        String localFilePath = localDirPath + File.separator + packageId + ".csar";
+        File file = new File(localFilePath);
+        try {
+            multipartFile.transferTo(file);
+            LOGGER.info("app package saved locally ", packageId);
+            return file.getCanonicalPath();
+        } catch (IOException e) {
+            LOGGER.error(Constants.FAILED_TO_SAVE_CSAR, packageId);
+            throw new ApmException("failed to save csar package locally for package " + packageId);
         }
     }
 
@@ -197,5 +232,42 @@ public final class ApmServiceHelper {
         Pattern p = Pattern.compile(pattern);
         Matcher m = p.matcher(param);
         return m.matches();
+    }
+
+    /**
+     * Generates random app ID.
+     *
+     * @return random app ID
+     */
+    public static String generateAppId() {
+        String appPkgIdRandom = UUID.randomUUID().toString();
+        return appPkgIdRandom.replace("-", "");
+    }
+
+    /**
+     * Returns list of MecHostDto.
+     *
+     * @param hostList host list
+     * @return list of MecHostDto
+     */
+    public static List<MecHostDto> getHostList(String hostList) {
+        if (hostList == null) {
+            LOGGER.error("host list is empty");
+            throw new ApmException("host list is empty");
+        }
+        List<MecHostDto> mecHostDtos = new LinkedList<>();
+        List<String> newHostList = Arrays.asList(hostList.trim().split("\\s*,\\s*"));
+        for (String host : newHostList) {
+            MecHostDto dto = new MecHostDto();
+            dto.setHostIp(host);
+            ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+            Validator validator = factory.getValidator();
+            Set<ConstraintViolation<MecHostDto>> violations = validator.validate(dto);
+            if (!violations.isEmpty()) {
+                throw new ConstraintViolationException(violations);
+            }
+            mecHostDtos.add(dto);
+        }
+        return mecHostDtos;
     }
 }

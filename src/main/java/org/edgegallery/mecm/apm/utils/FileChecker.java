@@ -21,8 +21,14 @@ import java.io.File;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
+import org.edgegallery.mecm.apm.service.ApmService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 
 public final class FileChecker {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApmService.class);
 
     private static final String REG
             = "[^\\s\\\\/:*?\"<>|](\\x20|[^\\s\\\\/:*?\"<>|])*[^\\s\\\\/:*?\"<>|.]$";
@@ -52,6 +58,32 @@ public final class FileChecker {
         }
 
         if (file.length() > MAX_ZIP_FILE_SIZE) {
+            throw new IllegalArgumentException(fileName + " :fileSize is too big");
+        }
+    }
+
+    /**
+     * Checks file if is invalid.
+     *
+     * @param file object.
+     */
+    public static void check(MultipartFile file) {
+        String fileName = file.getOriginalFilename();
+        LOGGER.info(fileName + " :fileName");
+
+        // file name should not contains blank.
+        if (fileName != null && WHITE_SPACE_PATTERN.split(fileName).length > 1) {
+            LOGGER.error(fileName + " :fileName contain blank");
+            throw new IllegalArgumentException(fileName + " :fileName contain blank");
+        }
+
+        if (!isAllowedFileName(fileName)) {
+            LOGGER.error(fileName + " :fileName is Illegal");
+            throw new IllegalArgumentException(fileName + " :fileName is Illegal");
+        }
+
+        if (file.getSize() > MAX_ZIP_FILE_SIZE) {
+            LOGGER.error(fileName + " :fileSize is too big");
             throw new IllegalArgumentException(fileName + " :fileSize is too big");
         }
     }

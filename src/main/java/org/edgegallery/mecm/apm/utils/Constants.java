@@ -53,6 +53,7 @@ public final class Constants {
             + "db for package {}";
     public static final String FAILED_TO_READ_INPUTSTREAM = "failed to read input stream from app store for package {}";
     public static final String FAILED_TO_CREATE_CSAR = "failed to create csar file for package {}";
+    public static final String FAILED_TO_SAVE_CSAR = "failed to save csar file locally for package {}";
     public static final String FAILED_TO_UNZIP_CSAR = "failed to unzip the csar file";
     public static final String FAILED_TO_CONVERT_YAML_TO_JSON = "failed to convert main service yaml to json";
     public static final String SERVICE_YAML_NOT_FOUND = "main service yaml not found in CSAR";

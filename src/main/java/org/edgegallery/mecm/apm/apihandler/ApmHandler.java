@@ -133,6 +133,10 @@ public class ApmHandler {
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @Valid @ApiParam(value = "app package info") @RequestBody AppPackageDto appPackageDto) {
+        if (appPackageDto.getAppPkgPath() == null) {
+            throw new IllegalArgumentException("App Package Path is null");
+        }
+
         service.onboardApplication(accessToken, tenantId, appPackageDto);
 
         Map<String, String> response = new HashMap<>();

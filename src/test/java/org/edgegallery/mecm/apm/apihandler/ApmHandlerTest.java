@@ -128,7 +128,7 @@ public class ApmHandlerTest {
                 + "  \"appPkgAffinity\": \"GPU\",\n"
                 + "  \"appPkgDesc\": \"face recognition application\",\n"
                 + "  \"appPkgId\": \"f40358433cf8eb4719a62a49ed118c9b\",\n"
-                + "  \"appPkgName\": \"codelab-demo1\",\n"
+                + "  \"appPkgName\": \"正在参-加开源.中国举_办的\",\n"
                 + "  \"appPkgPath\": \"http://1.1.1.1:1234/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2"
                 + "/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download\",\n"
                 + "  \"appPkgVersion\": \"1.0\",\n"

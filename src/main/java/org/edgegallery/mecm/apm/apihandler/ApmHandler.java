@@ -245,4 +245,15 @@ public class ApmHandler {
         service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
         return new ResponseEntity<>("success", HttpStatus.OK);
     }
+
+    /**
+     * Queries liveness & readiness.
+     *
+     * @return status code 200 when ready
+     */
+    @ApiOperation(value = "Queries liveness and readiness", response = String.class)
+    @GetMapping(path = "/health", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> healthCheck() {
+        return new ResponseEntity<>("ok", HttpStatus.OK);
+    }
 }

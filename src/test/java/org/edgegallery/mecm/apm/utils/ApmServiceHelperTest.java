@@ -33,7 +33,6 @@ import java.util.List;
 import javax.validation.ConstraintViolationException;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
-import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -46,21 +45,20 @@ class ApmServiceHelperTest {
 
     @Test
     void testGetMainServiceYaml() throws IOException {
-        File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
+        File file = ResourceUtils.getFile("classpath:sampleapp.csar");
         String response = ApmServiceHelper.getMainServiceYaml(file.getPath());
         assertNotNull(response);
     }
 
     @Test
     void testGetImageInfo() throws FileNotFoundException {
-        File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
+        File file = ResourceUtils.getFile("classpath:sampleapp.csar");
         String response = ApmServiceHelper.getMainServiceYaml(file.getPath());
-        List<ImageInfo> imageInfoList = ApmServiceHelper.getImageInfo(response);
+        List<String> imageInfoList = ApmServiceHelper.getImageInfo(response);
         assertNotNull(imageInfoList);
-        assertEquals(3, imageInfoList.size());
-        ImageInfo imageInfo = imageInfoList.get(0);
-        assertEquals("template_app", imageInfo.getName());
-        assertEquals("v1.4", imageInfo.getVersion());
+        assertEquals(2, imageInfoList.size());
+        String imageInfo = imageInfoList.get(0);
+        assertEquals("swr.ap-southeast-1.myhuaweicloud.com/edgegallery/mep-agent:1.0", imageInfo);
     }
 
     @Test

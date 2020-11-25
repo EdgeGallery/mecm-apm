@@ -39,7 +39,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
-import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +122,7 @@ public class ApmService {
      * @param localFilePath csar file path
      * @return list of image info
      */
-    public List<ImageInfo> getAppImageInfo(String localFilePath) {
+    public List<String> getAppImageInfo(String localFilePath) {
         String yaml = getMainServiceYaml(localFilePath);
         return getImageInfo(yaml);
     }
@@ -223,8 +222,8 @@ public class ApmService {
      * @param repositoryInfo edge repository info
      * @param imageInfoList list of images
      */
-    public void downloadAppImage(String repositoryInfo, List<ImageInfo> imageInfoList) {
-        for (ImageInfo image : imageInfoList) {
+    public void downloadAppImage(String repositoryInfo, List<String> imageInfoList) {
+        for (String image : imageInfoList) {
             DockerClientConfig config = DefaultDockerClientConfig
                     .createDefaultConfigBuilder()
                     .withRegistryUsername(edgeRepoUsername)
@@ -234,8 +233,7 @@ public class ApmService {
             DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
 
             String imageName = new StringBuilder(repositoryInfo)
-                    .append("/").append(image.getName()).append(":")
-                    .append(image.getVersion()).toString();
+                    .append("/").append(image).toString();
             LOGGER.info("image name to download {} ", imageName);
 
             try {

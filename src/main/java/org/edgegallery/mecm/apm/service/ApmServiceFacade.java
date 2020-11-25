@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.util.List;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackage;
-import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
@@ -69,7 +68,7 @@ public class ApmServiceFacade {
         }
 
         String packageId = appPackageDto.getAppPkgId();
-        List<ImageInfo> imageInfoList;
+        List<String> imageInfoList;
         try {
             InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(), packageId,
                     accessToken);
@@ -105,7 +104,7 @@ public class ApmServiceFacade {
         }
 
         String packageId = appPackageDto.getAppPkgId();
-        List<ImageInfo> imageInfoList;
+        List<String> imageInfoList;
         try {
             dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
             imageInfoList = apmService.getAppImageInfo(localFilePath);
@@ -182,7 +181,7 @@ public class ApmServiceFacade {
     }
 
     private void distributeApplication(String tenantId, AppPackageDto appPackageDto, String accessToken,
-                                       List<ImageInfo> imageInfoList) {
+                                       List<String> imageInfoList) {
         String packageId = appPackageDto.getAppPkgId();
         for (MecHostDto host : appPackageDto.getMecHostInfo()) {
             String distributionStatus = "Distributed";

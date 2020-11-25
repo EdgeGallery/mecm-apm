@@ -47,7 +47,6 @@ import javax.validation.ValidatorFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
-import org.edgegallery.mecm.apm.model.ImageInfo;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,7 +153,7 @@ public final class ApmServiceHelper {
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
                 entriesCount++;
-                if (!entry.isDirectory() && entry.getName().contains("/Definitions/MainServiceTemplate.yaml")) {
+                if (!entry.isDirectory() && entry.getName().contains("APPD/Definition/MainServiceTemplate.yaml")) {
                     mainServiceYaml = entry;
                     break;
                 }
@@ -187,7 +186,7 @@ public final class ApmServiceHelper {
      * @param mainServiceYaml main service template file content
      * @return list of image details
      */
-    public static List<ImageInfo> getImageInfo(String mainServiceYaml) {
+    public static List<String> getImageInfo(String mainServiceYaml) {
         ObjectMapper om = new ObjectMapper(new YAMLFactory());
         ObjectMapper jsonWriter = new ObjectMapper();
         String response = null;
@@ -211,14 +210,13 @@ public final class ApmServiceHelper {
             }
         }
 
-        List<ImageInfo> imageInfoList = new LinkedList<>();
+        List<String> imageList = new LinkedList<>();
         for (JsonObject vdu : vdus) {
-            String imageName = vdu.get("properties").getAsJsonObject().get("image").getAsString();
-            String imageVersion = vdu.get("properties").getAsJsonObject().get("image_version").getAsString();
-            ImageInfo imageInfo = new ImageInfo(imageName, imageVersion);
-            imageInfoList.add(imageInfo);
+            JsonObject swImageData = vdu.get("properties").getAsJsonObject().get("sw_image_data").getAsJsonObject();
+            String imageName = swImageData.get("name").getAsString();
+            imageList.add(imageName);
         }
-        return imageInfoList;
+        return imageList;
     }
 
     /**

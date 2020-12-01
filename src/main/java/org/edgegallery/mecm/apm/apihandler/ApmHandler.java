@@ -154,7 +154,7 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieves application package information", response = AppPackageDto.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
     public ResponseEntity<AppPackageDto> getAppPackageInfo(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -194,7 +194,7 @@ public class ApmHandler {
     @ApiOperation(value = "Download application package CSAR", response = InputStreamResource.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/download",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
     public ResponseEntity<InputStreamResource> downloadAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -215,7 +215,7 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieves all application packages", response = List.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
     public ResponseEntity<List<AppPackageDto>> getAllAppPackageInfo(
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId) {

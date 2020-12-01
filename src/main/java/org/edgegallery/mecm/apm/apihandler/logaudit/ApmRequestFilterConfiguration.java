@@ -33,7 +33,7 @@ public class ApmRequestFilterConfiguration {
     public FilterRegistrationBean<OncePerRequestFilter> authFilterRegistrationBean() {
         FilterRegistrationBean<OncePerRequestFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new ApmTraceLogFilter());
-        registration.addUrlPatterns("/apm/v1/*");
+        registration.addUrlPatterns("/apm/v1/tenants/*");
         registration.setName("HttpTraceLogFilter");
         return registration;
     }

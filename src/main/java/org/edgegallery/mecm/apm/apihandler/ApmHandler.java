@@ -16,9 +16,6 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.generateAppId;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getHostList;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveMultipartFile;
 import static org.edgegallery.mecm.apm.utils.Constants.APP_PKG_ID_REGX;
 import static org.edgegallery.mecm.apm.utils.Constants.HOST_IP_REGX;
 import static org.edgegallery.mecm.apm.utils.Constants.TENENT_ID_REGEX;
@@ -36,6 +33,7 @@ import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
+import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,13 +100,13 @@ public class ApmHandler {
         AppPackageDto dto = new AppPackageDto();
         dto.setAppPkgName(appPackageName);
         dto.setAppPkgVersion(appPkgVersion);
-        String appPkgId = generateAppId();
+        String appPkgId = ApmServiceHelper.generateAppId();
         dto.setAppPkgId(appPkgId);
-        String appId = generateAppId();
+        String appId = ApmServiceHelper.generateAppId();
         dto.setAppId(appId);
-        dto.setMecHostInfo(getHostList(hostList));
+        dto.setMecHostInfo(ApmServiceHelper.getHostList(hostList));
 
-        String localFilePath = saveMultipartFile(file, appPkgId, tenantId, localDirPath);
+        String localFilePath = ApmServiceHelper.saveMultipartFile(file, appPkgId, tenantId, localDirPath);
         service.onboardApplication(accessToken, tenantId, dto, localFilePath);
 
         Map<String, String> response = new HashMap<>();

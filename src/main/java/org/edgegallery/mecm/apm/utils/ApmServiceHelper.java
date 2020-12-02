@@ -40,7 +40,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
-import javax.validation.Valid;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;

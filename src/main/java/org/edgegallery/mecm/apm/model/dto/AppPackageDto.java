@@ -50,13 +50,13 @@ public class AppPackageDto {
     private String appPkgId;
 
     @NotEmpty(message = "appPkgName must not be empty")
-    @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
+    @Size(max = MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
     @Pattern(regexp = Constants.APP_NAME_REGEX, message = "appPkgName is invalid. It must start with alpha numeric "
             + "characters and special characters allowed are hyphen and underscore.")
     private String appPkgName;
 
     @NotEmpty(message = "appPkgVersion must not be empty")
-    @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
+    @Size(max = MAX_COMMON_STRING_LENGTH, message = "appPkgName must not exceed more than 255 characters")
     private String appPkgVersion;
 
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appPkgPath must not exceed more than 1024 characters")
@@ -69,7 +69,7 @@ public class AppPackageDto {
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appPkgDesc must not exceed more than 1024 characters")
     private String appPkgDesc;
 
-    @Size(max = Constants.MAX_COMMON_STRING_LENGTH, message = "appPkgAffinity must not exceed more than 255 characters")
+    @Size(max = MAX_COMMON_STRING_LENGTH, message = "appPkgAffinity must not exceed more than 255 characters")
     private String appPkgAffinity;
 
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appIconUrl must not exceed more than 1024 characters")

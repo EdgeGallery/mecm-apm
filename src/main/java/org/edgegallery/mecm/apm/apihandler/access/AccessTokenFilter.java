@@ -78,7 +78,8 @@ public class AccessTokenFilter extends OncePerRequestFilter {
 
             String userIdFromRequest = getTenantId(request.getRequestURI());
             String userIdFromToken = additionalInfoMap.get("userId").toString();
-            if (!StringUtils.isEmpty(userIdFromRequest) && !userIdFromRequest.equals(userIdFromToken)) {
+            if (userIdFromRequest != null && !StringUtils.isEmpty(userIdFromRequest)
+                    && !userIdFromRequest.equals(userIdFromToken)) {
                 LOGGER.error("Illegal tenant ID");
                 response.sendError(HttpStatus.UNAUTHORIZED.value(), "Illegal tenant ID");
                 return;

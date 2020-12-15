@@ -17,6 +17,7 @@
 package org.edgegallery.mecm.apm.utils;
 
 import com.google.common.io.Files;
+import java.awt.Container;
 import java.io.File;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
@@ -50,15 +51,15 @@ public final class FileChecker {
 
         // file name should not contains blank.
         if (fileName != null && WHITE_SPACE_PATTERN.split(fileName).length > 1) {
-            throw new IllegalArgumentException(fileName + " :fileName contain blank");
+            throw new IllegalArgumentException(fileName + Constants.FILENAME_BLANK);
         }
 
         if (!isAllowedFileName(fileName)) {
-            throw new IllegalArgumentException(fileName + " :fileName is Illegal");
+            throw new IllegalArgumentException(fileName + Constants.FILENAME_ILLEGAL);
         }
 
         if (file.length() > MAX_ZIP_FILE_SIZE) {
-            throw new IllegalArgumentException(fileName + " :fileSize is too big");
+            throw new IllegalArgumentException(fileName + Constants.FILE_SIZE_TOO_BIG);
         }
     }
 
@@ -69,22 +70,22 @@ public final class FileChecker {
      */
     public static void check(MultipartFile file) {
         String fileName = file.getOriginalFilename();
-        LOGGER.info(fileName + " :fileName");
+        LOGGER.info(fileName + Constants.FILENAME);
 
         // file name should not contains blank.
         if (fileName != null && WHITE_SPACE_PATTERN.split(fileName).length > 1) {
-            LOGGER.error(fileName + " :fileName contain blank");
-            throw new IllegalArgumentException(fileName + " :fileName contain blank");
+            LOGGER.error(fileName + Constants.FILENAME_BLANK);
+            throw new IllegalArgumentException(fileName + Constants.FILENAME_BLANK);
         }
 
         if (!isAllowedFileName(fileName)) {
-            LOGGER.error(fileName + " :fileName is Illegal");
-            throw new IllegalArgumentException(fileName + " :fileName is Illegal");
+            LOGGER.error(fileName + Constants.FILENAME_ILLEGAL);
+            throw new IllegalArgumentException(fileName + Constants.FILENAME_ILLEGAL);
         }
 
         if (file.getSize() > MAX_ZIP_FILE_SIZE) {
-            LOGGER.error(fileName + " :fileSize is too big");
-            throw new IllegalArgumentException(fileName + " :fileSize is too big");
+            LOGGER.error(fileName + Constants.FILE_SIZE_TOO_BIG);
+            throw new IllegalArgumentException(fileName + Constants.FILE_SIZE_TOO_BIG);
         }
     }
 

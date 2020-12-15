@@ -60,10 +60,15 @@ public final class Constants {
     public static final String FAILED_TO_CREATE_DIR = "failed to create local directory";
     public static final String FAILED_TO_GET_FAIL_PATH = "failed to get local directory path";
     public static final String ERROR = "Error";
+    public static final String FILENAME_BLANK = " :fileName contain blank";
+    public static final String FILENAME_ILLEGAL = " :fileName is Illegal";
+    public static final String FILE_SIZE_TOO_BIG = " :fileSize is too big";
+    public static final String FILENAME = " :fileName";
 
     public static final int MAX_ENTRY_PER_TENANT_PER_MODEL = 50;
     public static final int MAX_TENANTS = 20;
     public static final String MAX_LIMIT_REACHED_ERROR = "Max record limit exceeded";
+
 
     private Constants() {
     }

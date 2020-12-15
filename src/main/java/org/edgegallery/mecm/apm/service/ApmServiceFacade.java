@@ -175,7 +175,7 @@ public class ApmServiceFacade {
         return apmService.getAppPackageFile(appPackage.getLocalFilePath());
     }
 
-    private void createAppPackageEntryInDb(String tenantId, AppPackageDto appPackageDto) throws ApmException {
+    private void createAppPackageEntryInDb(String tenantId, AppPackageDto appPackageDto) {
         dbService.createAppPackage(tenantId, appPackageDto);
         dbService.createHost(tenantId, appPackageDto);
     }

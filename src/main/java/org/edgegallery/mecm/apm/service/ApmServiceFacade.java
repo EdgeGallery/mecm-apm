@@ -75,7 +75,7 @@ public class ApmServiceFacade {
             String localFilePath = saveInputStreamToFile(stream, packageId, tenantId, localDirPath);
             dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
 
-            imageInfoList = apmService.getAppImageInfo(localFilePath);
+            imageInfoList = apmService.getAppImageInfo(localFilePath, packageId, tenantId);
         } catch (ApmException | IllegalArgumentException e) {
             LOGGER.error(DISTRIBUTION_FAILED, packageId);
             dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
@@ -107,7 +107,7 @@ public class ApmServiceFacade {
         List<String> imageInfoList;
         try {
             dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
-            imageInfoList = apmService.getAppImageInfo(localFilePath);
+            imageInfoList = apmService.getAppImageInfo(localFilePath, packageId, tenantId);
         } catch (ApmException | IllegalArgumentException e) {
             LOGGER.error(DISTRIBUTION_FAILED, e);
             dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());

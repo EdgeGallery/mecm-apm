@@ -16,6 +16,8 @@
 
 package org.edgegallery.mecm.apm.utils;
 
+import static org.edgegallery.mecm.apm.utils.FileChecker.sanitizeFileName;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -144,7 +146,7 @@ public final class ApmServiceHelper {
      * @param localFilePath CSAR file path
      * @return main service template content in string
      */
-    public static String getMainServiceYaml(String localFilePath) {
+    public static String getMainServiceYaml(String localFilePath, String intendedDir) {
         ZipEntry mainServiceYaml = null;
         try (ZipFile zipFile = new ZipFile(localFilePath)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
@@ -152,7 +154,9 @@ public final class ApmServiceHelper {
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
                 entriesCount++;
-                if (!entry.isDirectory() && entry.getName().contains("APPD/Definition/MainServiceTemplate.yaml")) {
+                // sanitize file path
+                String fileName = sanitizeFileName(entry.getName(), intendedDir);
+                if (!entry.isDirectory() && fileName.contains("APPD/Definition/MainServiceTemplate.yaml")) {
                     mainServiceYaml = entry;
                     break;
                 }

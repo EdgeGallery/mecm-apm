@@ -31,6 +31,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -76,6 +77,9 @@ public class ApmService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Value("${apm.package-dir:/usr/app/packages}")
+    private String localDirPath;
+
     /**
      * Downloads app package csar from app store and stores it locally.
      *
@@ -120,11 +124,24 @@ public class ApmService {
      * Returns list of image info.
      *
      * @param localFilePath csar file path
+     * @param packageId package Id
+     * @param tenantId tenant Id
      * @return list of image info
      */
-    public List<String> getAppImageInfo(String localFilePath) {
-        String yaml = getMainServiceYaml(localFilePath);
+    public List<String> getAppImageInfo(String localFilePath, String packageId, String tenantId) {
+        String yaml = getMainServiceYaml(localFilePath, getLocalIntendedDir(packageId, tenantId));
         return getImageInfo(yaml);
+    }
+
+    /**
+     * Returns local intended dir path.
+     *
+     * @param packageId package id
+     * @param tenantId tenantId
+     * @return returns local intended dir path
+     */
+    private String getLocalIntendedDir(String packageId, String tenantId) {
+        return localDirPath + File.separator + packageId + tenantId;
     }
 
     /**

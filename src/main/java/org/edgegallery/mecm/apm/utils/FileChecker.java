@@ -18,6 +18,7 @@ package org.edgegallery.mecm.apm.utils;
 
 import com.google.common.io.Files;
 import java.io.File;
+import java.io.IOException;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
@@ -99,5 +100,32 @@ public final class FileChecker {
         }
         fileName = Normalizer.normalize(fileName, Normalizer.Form.NFKC);
         return Pattern.compile(REG).matcher(fileName).matches();
+    }
+
+    static String sanitizeFileName(String entryName, String intendedDir) throws IOException {
+        File f = new File(intendedDir, entryName);
+        String canonicalPath = f.getCanonicalPath();
+        File intendDir = new File(intendedDir);
+        if (intendDir.isDirectory() && !intendDir.exists()) {
+            createFile(intendedDir);
+        }
+        String canonicalID = intendDir.getCanonicalPath();
+        if (canonicalPath.startsWith(canonicalID)) {
+            return canonicalPath;
+        } else {
+            throw new IllegalStateException("file is outside extraction target directory.");
+        }
+    }
+
+    static void createFile(String filePath) throws IOException {
+        File tempFile = new File(filePath);
+        boolean result = false;
+
+        if (!tempFile.getParentFile().exists() && !tempFile.isDirectory()) {
+            result = tempFile.getParentFile().mkdirs();
+        }
+        if (!tempFile.exists() && !tempFile.isDirectory() && !tempFile.createNewFile() && !result) {
+            throw new IllegalArgumentException("create temp file failed");
+        }
     }
 }

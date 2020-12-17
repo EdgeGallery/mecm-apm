@@ -46,14 +46,18 @@ class ApmServiceHelperTest {
     @Test
     void testGetMainServiceYaml() throws IOException {
         File file = ResourceUtils.getFile("classpath:sampleapp.csar");
-        String response = ApmServiceHelper.getMainServiceYaml(file.getPath());
+        File packagesDir = ResourceUtils.getFile("classpath:packages");
+        String indentedDir = packagesDir.getPath() + File.separator + PACKAGE_ID + TENANT_ID;
+        String response = ApmServiceHelper.getMainServiceYaml(file.getPath(), indentedDir);
         assertNotNull(response);
     }
 
     @Test
     void testGetImageInfo() throws FileNotFoundException {
         File file = ResourceUtils.getFile("classpath:sampleapp.csar");
-        String response = ApmServiceHelper.getMainServiceYaml(file.getPath());
+        File packagesDir = ResourceUtils.getFile("classpath:packages");
+        String indentedDir = packagesDir.getPath() + File.separator + PACKAGE_ID + TENANT_ID;
+        String response = ApmServiceHelper.getMainServiceYaml(file.getPath(), indentedDir);
         List<String> imageInfoList = ApmServiceHelper.getImageInfo(response);
         assertNotNull(imageInfoList);
         assertEquals(2, imageInfoList.size());
@@ -86,7 +90,9 @@ class ApmServiceHelperTest {
     void testGetMainServiceYamlInvalid() throws IOException {
         File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913b.csar");
         String localFilePath = file.getPath();
-        assertThrows(ApmException.class, () -> ApmServiceHelper.getMainServiceYaml(localFilePath));
+        File packagesDir = ResourceUtils.getFile("classpath:packages");
+        String indentedDir = packagesDir.getPath() + File.separator + PACKAGE_ID + TENANT_ID;
+        assertThrows(ApmException.class, () -> ApmServiceHelper.getMainServiceYaml(localFilePath, indentedDir));
     }
 
     @Test

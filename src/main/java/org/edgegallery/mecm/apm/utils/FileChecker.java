@@ -17,7 +17,6 @@
 package org.edgegallery.mecm.apm.utils;
 
 import com.google.common.io.Files;
-import java.awt.Container;
 import java.io.File;
 import java.text.Normalizer;
 import java.util.regex.Pattern;

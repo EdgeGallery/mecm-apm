@@ -159,6 +159,6 @@ public class ApmServiceTest {
     public void testGetAppImageInfo() throws FileNotFoundException {
         File file = ResourceUtils.getFile("classpath:sampleapp.csar");
         List<String> imageInfo = apmService.getAppImageInfo(file.getPath(), PACKAGE_ID, TENANT_ID);
-        System.out.println(imageInfo.size());
+        assertEquals(2, imageInfo.size());
     }
 }

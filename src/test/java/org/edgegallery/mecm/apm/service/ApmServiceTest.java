@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
@@ -152,5 +153,12 @@ public class ApmServiceTest {
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
         assertDoesNotThrow(() -> apmService.deleteAppPackageFile(response));
+    }
+
+    @Test
+    public void testGetAppImageInfo() throws FileNotFoundException {
+        File file = ResourceUtils.getFile("classpath:sampleapp.csar");
+        List<String> imageInfo = apmService.getAppImageInfo(file.getPath(), PACKAGE_ID, TENANT_ID);
+        System.out.println(imageInfo.size());
     }
 }

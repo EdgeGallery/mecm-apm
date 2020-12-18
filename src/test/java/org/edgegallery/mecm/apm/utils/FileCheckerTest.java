@@ -33,6 +33,12 @@ class FileCheckerTest {
     }
 
     @Test
+    void testCreateFile() throws FileNotFoundException {
+        File file = ResourceUtils.getFile("classpath:packages");
+        assertDoesNotThrow(() -> FileChecker.createFile(file.getPath()));
+    }
+
+    @Test
     void testWhiteSpaceInFileName()  {
         File file = new File("ab c.txt");
         assertThrows(IllegalArgumentException.class, () -> FileChecker.check(file));

@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -86,6 +87,20 @@ public class ApmExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgException(IllegalArgumentException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Returns error when Access is Denied.
+     *
+     * @param ex exception while processing request
+     * @return response entity with error code and message
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApmExceptionResponse> handleAccessDeniedException(AccessDeniedException ex) {
+        ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(),
+                "Forbidden", Collections.singletonList("User is not authorized to perform this operation"));
+        LOGGER.info("User is not authorized to perform this operation", response);
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
     /**

@@ -64,6 +64,7 @@ public final class Constants {
     public static final String FILENAME_ILLEGAL = " :fileName is Illegal";
     public static final String FILE_SIZE_TOO_BIG = " :fileSize is too big";
     public static final String FILENAME = " :fileName";
+    public static final String SUCCESS = "success";
 
     public static final int MAX_ENTRY_PER_TENANT_PER_MODEL = 50;
     public static final int MAX_TENANTS = 20;

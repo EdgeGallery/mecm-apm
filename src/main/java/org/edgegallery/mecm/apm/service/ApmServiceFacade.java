@@ -60,13 +60,6 @@ public class ApmServiceFacade {
      */
     @Async
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto) {
-        try {
-            createAppPackageEntryInDb(tenantId, appPackageDto);
-        } catch (ApmException e) {
-            LOGGER.error(e.getMessage());
-            return;
-        }
-
         String packageId = appPackageDto.getAppPkgId();
         List<String> imageInfoList;
         try {
@@ -86,7 +79,7 @@ public class ApmServiceFacade {
     }
 
     /**
-     * Updates Db and distributes docker application image to host.
+     * Distributes docker application image to host.
      *
      * @param accessToken access token
      * @param tenantId tenant ID
@@ -96,13 +89,6 @@ public class ApmServiceFacade {
     @Async
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto,
                                    String localFilePath) {
-        try {
-            createAppPackageEntryInDb(tenantId, appPackageDto);
-        } catch (ApmException e) {
-            LOGGER.error(e.getMessage());
-            return;
-        }
-
         String packageId = appPackageDto.getAppPkgId();
         List<String> imageInfoList;
         try {
@@ -175,7 +161,13 @@ public class ApmServiceFacade {
         return apmService.getAppPackageFile(appPackage.getLocalFilePath());
     }
 
-    private void createAppPackageEntryInDb(String tenantId, AppPackageDto appPackageDto) {
+    /**
+     * Create app package record in db.
+     *
+     * @param tenantId tenant ID
+     * @param appPackageDto app package dto
+     */
+    public void createAppPackageEntryInDb(String tenantId, AppPackageDto appPackageDto) {
         dbService.createAppPackage(tenantId, appPackageDto);
         dbService.createHost(tenantId, appPackageDto);
     }

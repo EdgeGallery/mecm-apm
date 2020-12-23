@@ -192,7 +192,7 @@ public final class ApmServiceHelper {
     public static List<String> getImageInfo(String mainServiceYaml) {
         ObjectMapper om = new ObjectMapper(new YAMLFactory());
         ObjectMapper jsonWriter = new ObjectMapper();
-        String response = null;
+        String response;
         try {
             response = jsonWriter.writeValueAsString(om.readValue(mainServiceYaml, Object.class));
         } catch (JsonProcessingException e) {

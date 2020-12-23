@@ -107,6 +107,7 @@ public class ApmHandler {
         dto.setMecHostInfo(ApmServiceHelper.getHostList(hostList));
 
         String localFilePath = ApmServiceHelper.saveMultipartFile(file, appPkgId, tenantId, localDirPath);
+        service.createAppPackageEntryInDb(tenantId, dto);
         service.onboardApplication(accessToken, tenantId, dto, localFilePath);
 
         Map<String, String> response = new HashMap<>();
@@ -135,6 +136,7 @@ public class ApmHandler {
             throw new IllegalArgumentException("App Package Path is null");
         }
 
+        service.createAppPackageEntryInDb(tenantId, appPackageDto);
         service.onboardApplication(accessToken, tenantId, appPackageDto);
 
         Map<String, String> response = new HashMap<>();
@@ -179,7 +181,7 @@ public class ApmHandler {
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
         service.deleteAppPackage(tenantId, appPackageId);
-        return new ResponseEntity<>("success", HttpStatus.OK);
+        return new ResponseEntity<>(Constants.SUCCESS, HttpStatus.OK);
     }
 
     /**
@@ -241,7 +243,7 @@ public class ApmHandler {
             @ApiParam(value = "host ip") @PathVariable("host_ip")
             @Size(max = Constants.MAX_COMMON_IP_LENGTH) @Pattern(regexp = HOST_IP_REGX) String hostIp) {
         service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
-        return new ResponseEntity<>("success", HttpStatus.OK);
+        return new ResponseEntity<>(Constants.SUCCESS, HttpStatus.OK);
     }
 
     /**

@@ -253,8 +253,9 @@ public class DbService {
      * @param hostIp host ip
      */
     public void deleteHostWithIp(String tenantId, String packageId, String hostIp) {
+        String id = packageId + tenantId;
         mecHostRepository.findAll().forEach((MecHost host) -> {
-            if (host.getPkgHostKey().equals(packageId + tenantId)
+            if (host.getPkgHostKey().equals(id)
                     && host.getHostIp().equals(hostIp)) {
                 mecHostRepository.delete(host);
                 LOGGER.info("host record for tenant {}, package {} and host ip {} deleted successfully",
@@ -274,9 +275,10 @@ public class DbService {
     public MecHost findHostWithIp(String tenantId, String packageId, String hostIp) {
         Iterable<MecHost> mecHostIterable = mecHostRepository.findAll();
         Iterator<MecHost> it = mecHostIterable.iterator();
+        String id = packageId + tenantId;
         while (it.hasNext()) {
             MecHost host = it.next();
-            if (host.getPkgHostKey().equals(packageId + tenantId)
+            if (host.getPkgHostKey().equals(id)
                     && host.getHostIp().equals(hostIp)) {
                 return host;
             }

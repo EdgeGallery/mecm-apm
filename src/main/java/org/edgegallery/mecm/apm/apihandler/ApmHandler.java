@@ -202,7 +202,7 @@ public class ApmHandler {
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
         InputStream resource = service.getAppPackageFile(tenantId, appPackageId);
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/octet-stream");
+        headers.add("Content-Type", MediaType.APPLICATION_OCTET_STREAM_VALUE);
         return new ResponseEntity<>(new InputStreamResource(resource), headers, HttpStatus.OK);
     }
 

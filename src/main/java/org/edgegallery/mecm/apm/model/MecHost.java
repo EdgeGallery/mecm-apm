@@ -33,7 +33,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "apppackagehost")
-public class MecHost {
+public final class MecHost {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

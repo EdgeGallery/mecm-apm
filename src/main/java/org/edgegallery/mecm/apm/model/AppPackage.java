@@ -34,7 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @AllArgsConstructor
 @Entity
 @Table(name = "apppackage")
-public class AppPackage {
+public final class AppPackage {
 
     @Id
     @Column(name = "id")

@@ -80,12 +80,12 @@ public class ApmServiceFacadeTest {
         assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
         assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
         File file = ResourceUtils.getFile("classpath:packages");
+        facade.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
         String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, TENANT_ID, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
-        dbService.updateLocalFilePathOfAppPackage(TENANT_ID, PACKAGE_ID, response);
         InputStream stream = facade.getAppPackageFile(TENANT_ID, PACKAGE_ID);
         assertNotNull(stream);
         assertDoesNotThrow(() -> facade.deleteAppPackage(TENANT_ID, PACKAGE_ID));

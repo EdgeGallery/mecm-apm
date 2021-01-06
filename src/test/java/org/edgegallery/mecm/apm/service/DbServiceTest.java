@@ -151,20 +151,6 @@ public class DbServiceTest {
     }
 
     @Test
-    public void testUpdateLocalFilePathOfAppPackage() {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.updateLocalFilePathOfAppPackage(TENANT_ID,
-                PACKAGE_ID, "/home/localfilepath"));
-        AppPackage response = dbService.getAppPackage(TENANT_ID, PACKAGE_ID);
-        assertNotNull(response);
-        assertEquals("/home/localfilepath", response.getLocalFilePath());
-
-        // cleanup
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
-        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
-    }
-
-    @Test
     public void testUpdateDistributionStatusOfAllHost() {
         assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
         assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
@@ -208,12 +194,6 @@ public class DbServiceTest {
         assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
         assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
         assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
-    }
-
-    @Test
-    public void testUpdateAppPackageRecordIfNotExist() {
-        assertThrows(ApmException.class, () -> dbService.updateLocalFilePathOfAppPackage(TENANT_ID,
-                PACKAGE_ID, "local file path"));
     }
 
     @Test

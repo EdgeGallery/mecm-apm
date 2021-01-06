@@ -49,8 +49,6 @@ public final class Constants {
     public static final String LOCAL_FILE_PATH_NULL = "local file path is null";
     public static final String DISTRIBUTION_FAILED = "failed to distribute the package {}";
     public static final String DISTRIBUTION_IN_HOST_FAILED = "failed to distribute the package {} in host {}";
-    public static final String ERROR_IN_UPDATING_LOCAL_FILE_PATH = "error occurred while updating local file path in "
-            + "db for package {}";
     public static final String FAILED_TO_READ_INPUTSTREAM = "failed to read input stream from app store for package {}";
     public static final String FAILED_TO_CREATE_CSAR = "failed to create csar file for package {}";
     public static final String FAILED_TO_SAVE_CSAR = "failed to save csar file locally for package {}";
@@ -59,6 +57,8 @@ public final class Constants {
     public static final String SERVICE_YAML_NOT_FOUND = "main service yaml not found in CSAR";
     public static final String FAILED_TO_CREATE_DIR = "failed to create local directory";
     public static final String FAILED_TO_GET_FAIL_PATH = "failed to get local directory path";
+    public static final String ELEMENT_NOT_FOUND = " not found in MainServiceTemplate.yaml";
+    public static final String ERROR_ELEMENT_NOT_FOUND = "{}" + ELEMENT_NOT_FOUND;
     public static final String ERROR = "Error";
     public static final String FILENAME_BLANK = " :fileName contain blank";
     public static final String FILENAME_ILLEGAL = " :fileName is Illegal";

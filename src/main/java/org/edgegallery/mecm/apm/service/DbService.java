@@ -16,7 +16,6 @@
 
 package org.edgegallery.mecm.apm.service;
 
-import static org.edgegallery.mecm.apm.utils.Constants.ERROR_IN_UPDATING_LOCAL_FILE_PATH;
 import static org.edgegallery.mecm.apm.utils.Constants.RECORD_NOT_FOUND;
 
 import java.util.Iterator;
@@ -139,7 +138,7 @@ public class DbService {
         List<MecHostDto> mecHostDtoList = new LinkedList<>();
         List<String> mecHost = new LinkedList<>();
         mecHostRepository.findAll().forEach((MecHost host) -> {
-            if (host.getPkgHostKey().equals(packageId + tenantId)) {
+            if (host.getPkgHostKey().equals(id)) {
                 mecHostDtoList.add(new MecHostDto(host.getHostIp(), host.getDistributionStatus(),
                         host.getError()));
                 mecHost.add(host.getHostIp());
@@ -236,8 +235,9 @@ public class DbService {
      * @param packageId package ID
      */
     public void deleteHost(String tenantId, String packageId) {
+        String id = packageId + tenantId;
         mecHostRepository.findAll().forEach((MecHost host) -> {
-            if (host.getPkgHostKey().equals(packageId + tenantId)) {
+            if (host.getPkgHostKey().equals(id)) {
                 mecHostRepository.delete(host);
                 LOGGER.info("host record for tenant {} and package {} deleted successfully",
                         tenantId, packageId);
@@ -253,8 +253,9 @@ public class DbService {
      * @param hostIp host ip
      */
     public void deleteHostWithIp(String tenantId, String packageId, String hostIp) {
+        String id = packageId + tenantId;
         mecHostRepository.findAll().forEach((MecHost host) -> {
-            if (host.getPkgHostKey().equals(packageId + tenantId)
+            if (host.getPkgHostKey().equals(id)
                     && host.getHostIp().equals(hostIp)) {
                 mecHostRepository.delete(host);
                 LOGGER.info("host record for tenant {}, package {} and host ip {} deleted successfully",
@@ -274,35 +275,15 @@ public class DbService {
     public MecHost findHostWithIp(String tenantId, String packageId, String hostIp) {
         Iterable<MecHost> mecHostIterable = mecHostRepository.findAll();
         Iterator<MecHost> it = mecHostIterable.iterator();
+        String id = packageId + tenantId;
         while (it.hasNext()) {
             MecHost host = it.next();
-            if (host.getPkgHostKey().equals(packageId + tenantId)
+            if (host.getPkgHostKey().equals(id)
                     && host.getHostIp().equals(hostIp)) {
                 return host;
             }
         }
         return null;
-    }
-
-    /**
-     * Updates local file path in app package.
-     *
-     * @param tenantId tenant ID
-     * @param packageId package ID
-     * @param localFilePath local file path
-     */
-    public void updateLocalFilePathOfAppPackage(String tenantId, String packageId,
-                                                String localFilePath) {
-        String id = packageId + tenantId;
-        Optional<AppPackage> info = appPackageRepository.findById(id);
-        if (!info.isPresent()) {
-            LOGGER.error(ERROR_IN_UPDATING_LOCAL_FILE_PATH, packageId);
-            throw new ApmException("error occurred while updating local file path in db for package " + packageId);
-        }
-        AppPackage appPackage = info.get();
-        appPackage.setLocalFilePath(localFilePath);
-        appPackageRepository.save(appPackage);
-        LOGGER.info("local file path updated for tenant {} and package {}", tenantId, packageId);
     }
 
     /**
@@ -315,8 +296,9 @@ public class DbService {
      */
     public void updateDistributionStatusOfAllHost(String tenantId, String packageId,
                                                 String status, String error) {
+        String id = packageId + tenantId;
         mecHostRepository.findAll().forEach((MecHost host) -> {
-            if (host.getPkgHostKey().equals(packageId + tenantId)) {
+            if (host.getPkgHostKey().equals(id)) {
                 host.setDistributionStatus(status);
                 host.setError(error);
                 mecHostRepository.save(host);
@@ -335,8 +317,9 @@ public class DbService {
      */
     public void updateDistributionStatusOfHost(String tenantId, String packageId,
                                                String hostIp, String status, String error) {
+        String id = packageId + tenantId;
         mecHostRepository.findAll().forEach((MecHost host) -> {
-            if (host.getPkgHostKey().equals(packageId + tenantId)
+            if (host.getPkgHostKey().equals(id)
                     && host.getHostIp().equals(hostIp)) {
                 host.setDistributionStatus(status);
                 host.setError(error);

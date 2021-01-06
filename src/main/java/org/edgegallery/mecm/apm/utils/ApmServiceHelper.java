@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.File;
@@ -84,6 +85,19 @@ public final class ApmServiceHelper {
             LOGGER.info(Constants.FAILED_TO_GET_FAIL_PATH);
             throw new ApmException(Constants.FAILED_TO_GET_FAIL_PATH);
         }
+    }
+
+    /**
+     * Returns local file path based on tenant Id and package Id.
+     *
+     * @param tenantId tenant ID
+     * @param packageId package ID
+     * @return local file path
+     */
+    public static String getLocalFilePath(String baseDirPath, String tenantId, String packageId) {
+        return new StringBuilder(baseDirPath).append(File.separator)
+                .append(packageId).append(tenantId).append(File.separator)
+                .append(packageId + ".csar").toString();
     }
 
     /**
@@ -201,8 +215,8 @@ public final class ApmServiceHelper {
         }
 
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
-        JsonObject topologyTemplate = jsonObject.get("topology_template").getAsJsonObject();
-        JsonObject nodeTemplates = topologyTemplate.get("node_templates").getAsJsonObject();
+        JsonObject topologyTemplate = getChildJsonObject(jsonObject, "topology_template");
+        JsonObject nodeTemplates = getChildJsonObject(topologyTemplate, "node_templates");
 
         Set<Entry<String, JsonElement>> entrySet = nodeTemplates.entrySet();
         List<JsonObject> vdus = new LinkedList<>();
@@ -215,11 +229,30 @@ public final class ApmServiceHelper {
 
         List<String> imageList = new LinkedList<>();
         for (JsonObject vdu : vdus) {
-            JsonObject swImageData = vdu.get("properties").getAsJsonObject().get("sw_image_data").getAsJsonObject();
-            String imageName = swImageData.get("name").getAsString();
+            JsonObject properties = getChildJsonObject(vdu, "properties");
+            JsonObject swImageData = getChildJsonObject(properties, "sw_image_data");
+            String imageName = getChildJsonObjectValue(swImageData, "name");
             imageList.add(imageName);
         }
         return imageList;
+    }
+
+    private static JsonObject getChildJsonObject(JsonObject parent, String key) {
+        JsonElement element = parent.get(key);
+        if (element == null || element instanceof JsonNull) {
+            LOGGER.error(Constants.ERROR_ELEMENT_NOT_FOUND, key);
+            throw new ApmException(key + Constants.ELEMENT_NOT_FOUND);
+        }
+        return element.getAsJsonObject();
+    }
+
+    private static String getChildJsonObjectValue(JsonObject parent, String key) {
+        JsonElement element = parent.get(key);
+        if (element == null || element instanceof JsonNull) {
+            LOGGER.error(Constants.ERROR_ELEMENT_NOT_FOUND, key);
+            throw new ApmException(key + Constants.ELEMENT_NOT_FOUND);
+        }
+        return element.getAsString();
     }
 
     /**

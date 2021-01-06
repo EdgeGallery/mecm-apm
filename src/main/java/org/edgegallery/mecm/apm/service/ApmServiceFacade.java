@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getLocalFilePath;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
@@ -23,8 +24,9 @@ import static org.edgegallery.mecm.apm.utils.Constants.ERROR;
 
 import java.io.InputStream;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.edgegallery.mecm.apm.exception.ApmException;
-import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
@@ -34,6 +36,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+@Getter
+@Setter
 @Service("ApmServiceFacade")
 public class ApmServiceFacade {
 
@@ -63,11 +67,9 @@ public class ApmServiceFacade {
         String packageId = appPackageDto.getAppPkgId();
         List<String> imageInfoList;
         try {
-            InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(), packageId,
-                    accessToken);
+            InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(),
+                    packageId, accessToken);
             String localFilePath = saveInputStreamToFile(stream, packageId, tenantId, localDirPath);
-            dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
-
             imageInfoList = apmService.getAppImageInfo(localFilePath, packageId, tenantId);
         } catch (ApmException | IllegalArgumentException e) {
             LOGGER.error(DISTRIBUTION_FAILED, packageId);
@@ -92,7 +94,6 @@ public class ApmServiceFacade {
         String packageId = appPackageDto.getAppPkgId();
         List<String> imageInfoList;
         try {
-            dbService.updateLocalFilePathOfAppPackage(tenantId, packageId, localFilePath);
             imageInfoList = apmService.getAppImageInfo(localFilePath, packageId, tenantId);
         } catch (ApmException | IllegalArgumentException e) {
             LOGGER.error(DISTRIBUTION_FAILED, e);
@@ -121,10 +122,9 @@ public class ApmServiceFacade {
      * @param appPackageId app package ID
      */
     public void deleteAppPackage(String tenantId, String appPackageId) {
-        AppPackage appPackage = dbService.getAppPackage(tenantId, appPackageId);
         dbService.deleteAppPackage(tenantId, appPackageId);
         dbService.deleteHost(tenantId, appPackageId);
-        apmService.deleteAppPackageFile(appPackage.getLocalFilePath());
+        apmService.deleteAppPackageFile(getLocalFilePath(localDirPath, tenantId, appPackageId));
     }
 
     /**
@@ -157,8 +157,7 @@ public class ApmServiceFacade {
      * @return app package csar file
      */
     public InputStream getAppPackageFile(String tenantId, String packageId) {
-        AppPackage appPackage = dbService.getAppPackage(tenantId, packageId);
-        return apmService.getAppPackageFile(appPackage.getLocalFilePath());
+        return apmService.getAppPackageFile(getLocalFilePath(localDirPath, tenantId, packageId));
     }
 
     /**

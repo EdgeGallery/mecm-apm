@@ -99,10 +99,10 @@ public class ApmService {
             LOGGER.error(Constants.FAILED_TO_CONNECT_APPSTORE);
             throw new ApmException(Constants.FAILED_TO_CONNECT_APPSTORE);
         } catch (HttpClientErrorException ex) {
-            LOGGER.error("client error while downloading app package", ex.getMessage());
+            LOGGER.error("client error while downloading app package {}", ex.getMessage());
             throw new ApmException(Constants.ERROR_IN_DOWNLOADING_CSAR);
         } catch (HttpServerErrorException ex) {
-            LOGGER.error("server error while downloading app package", ex.getMessage());
+            LOGGER.error("server error while downloading app package {}", ex.getMessage());
             throw new ApmException(Constants.ERROR_IN_DOWNLOADING_CSAR);
         }
 

@@ -108,13 +108,13 @@ public class ApmHandlerTest {
         dbService.createAppPackage(TENANT_ID, packageDto);
         dbService.createHost(TENANT_ID, packageDto);
         File file = ResourceUtils.getFile("classpath:packages");
+        apmServiceFacade.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
         String response = ApmServiceHelper.saveInputStreamToFile(inputStream,
                 packageDto.getAppPkgId(), TENANT_ID, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
-        dbService.updateLocalFilePathOfAppPackage(TENANT_ID, packageDto.getAppPkgId(), response);
         InputStream stream = apmServiceFacade.getAppPackageFile(TENANT_ID, packageDto.getAppPkgId());
         assertNotNull(stream);
     }

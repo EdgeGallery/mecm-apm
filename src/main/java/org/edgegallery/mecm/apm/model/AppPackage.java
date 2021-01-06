@@ -34,7 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @AllArgsConstructor
 @Entity
 @Table(name = "apppackage")
-public class AppPackage {
+public final class AppPackage {
 
     @Id
     @Column(name = "id")
@@ -77,7 +77,4 @@ public class AppPackage {
 
     @Column(name = "tenant_id")
     private String tenantId;
-
-    @Column(name = "local_file_path")
-    private String localFilePath;
 }

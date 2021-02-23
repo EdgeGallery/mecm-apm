@@ -38,7 +38,7 @@ server:
 spring:
   http:
     multipart:
-      max-file-size: 10MB
+
       max-request-size: 10MB
   datasource:
     url: jdbc:postgresql://${APM_DB_HOST:mecm-postgres}:${APM_DB_PORT:5432}/${APM_DB:apmdb}
@@ -60,8 +60,10 @@ apm:
   inventory-port: ${INVENTORY_PORT:8093}
   package-dir: /usr/app/packages
   push-image: ${PUSH_IMAGE:true}
-  edge-repo-password: ${EDGE_REPO_PASSWORD:}
-  edge-repo-username: ${EDGE_REPO_USERNAME:}
+  mecm-repo-password: ${MECM_REPO_PASSWORD:}
+  mecm-repo-username: ${MECM_REPO_USERNAME:}
+  mecm-repo-endpoint: ${MECM_REPO_ENDPOINT:}
+
 
 #### security config ####
 security:

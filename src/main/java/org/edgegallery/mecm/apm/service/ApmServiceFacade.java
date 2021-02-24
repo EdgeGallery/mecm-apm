@@ -160,9 +160,10 @@ public class ApmServiceFacade {
 
         if (dockerImgspath != null) {
             try {
+                FileUtils.forceDelete(new File(dockerImgspath + ".zip"));
                 FileUtils.forceDelete(new File(dockerImgspath));
             } catch (IOException ex) {
-                LOGGER.debug("failed to delete docker images {}", ex.getMessage());
+                LOGGER.debug("failed to delete docker images");
             }
         }
 

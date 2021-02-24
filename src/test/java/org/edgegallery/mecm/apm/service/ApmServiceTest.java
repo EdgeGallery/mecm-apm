@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -65,15 +65,17 @@ public class ApmServiceTest {
 
     private MockRestServiceServer mockServer;
 
+
     @Test
     public void downloadAppPackageTest() throws FileNotFoundException {
+
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+
         File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
         InputStream ins = new BufferedInputStream(new FileInputStream(file.getPath()));
         InputStreamResource inputStreamResource = new InputStreamResource(ins);
         String url = "http://1.1.1.1:8099/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2/packages"
                 + "/0fb274f2-213b-4a66-accc-ab218470caa3/action/download";
-
-        mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(inputStreamResource, MediaType.APPLICATION_OCTET_STREAM));
@@ -92,7 +94,7 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        String info = apmService.getRepoInfoOfHost("1.1.1.1",  TENANT_ID, "access token");
+        String info = apmService.getRepoInfoOfHost("1.1.1.1", TENANT_ID, "access token");
         assertEquals("2.2.2.2:1234", info);
         mockServer.verify();
     }
@@ -104,7 +106,7 @@ public class ApmServiceTest {
         mockServer.expect(requestTo(url)).andExpect(method(HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        assertThrows(ApmException.class , () -> apmService.getRepoInfoOfHost("1.1.1.1",
+        assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
                 TENANT_ID, "access token"));
         mockServer.verify();
     }
@@ -118,7 +120,7 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        assertThrows(ApmException.class , () -> apmService.getRepoInfoOfHost("1.1.1.1",
+        assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
                 TENANT_ID, "access token"));
         mockServer.verify();
     }
@@ -133,7 +135,7 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        assertThrows(ApmException.class , () -> apmService.getRepoInfoOfHost("1.1.1.1",
+        assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
                 TENANT_ID, "access token"));
         mockServer.verify();
     }

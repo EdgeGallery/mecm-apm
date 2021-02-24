@@ -22,6 +22,7 @@ public final class Constants {
             + "{3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$";
     public static final String APPD_ID_REGEX = "[0-9a-f]{32}";
     public static final String APP_PKG_ID_REGX = APPD_ID_REGEX;
+    public static final String APPD_ID_PKG_ID_REGEX = "[0-9a-f]{64}";
     public static final String TENENT_ID_REGEX = "[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}";
     public static final String APP_NAME_REGEX = "^[\\d\\p{L}]*$|^[\\d\\p{L}][\\d\\p{L}_\\-\\.]*[\\d\\p{L}]$";
     public static final String RECORD_NOT_FOUND = "record not found";
@@ -38,6 +39,9 @@ public final class Constants {
     public static final String ERROR_IN_DOWNLOADING_CSAR = "error while downloading csar package";
     public static final String FAILED_TO_CONNECT_INVENTORY = "failed to connect to inventory";
     public static final String ERROR_FROM_INVENTORY = "error while fetching host {} record from inventory ";
+    public static final String ERROR_FROM_APPSTORE = "error while fetching apps {} record from appstore ";
+    public static final String FAILED_TO_GET_PKG_INFO = "failed to get package information, error code {}";
+    public static final String SYNC_APP_FAILED = "failed to synchronize the package {}";
     public static final String CSAR_NOT_EXIST = "csar package file does not exists";
     public static final String CSAR_DOWNLOAD_FAILED = "failed to download app package for package {}";
     public static final String GET_INPUTSTREAM_FAILED = "failed to get input stream from app store response for "
@@ -55,6 +59,7 @@ public final class Constants {
     public static final String FAILED_TO_UNZIP_CSAR = "failed to unzip the csar file";
     public static final String FAILED_TO_CONVERT_YAML_TO_JSON = "failed to convert main service yaml to json";
     public static final String SERVICE_YAML_NOT_FOUND = "main service yaml not found in CSAR";
+    public static final String SW_IMAGE_DESCR_NOT_FOUND = "software image descr json not found in CSAR";
     public static final String FAILED_TO_CREATE_DIR = "failed to create local directory";
     public static final String FAILED_TO_GET_FAIL_PATH = "failed to get local directory path";
     public static final String ELEMENT_NOT_FOUND = " not found in MainServiceTemplate.yaml";
@@ -69,6 +74,7 @@ public final class Constants {
     public static final int MAX_ENTRY_PER_TENANT_PER_MODEL = 50;
     public static final int MAX_TENANTS = 20;
     public static final String MAX_LIMIT_REACHED_ERROR = "Max record limit exceeded";
+    public static final int MAX_APPS_PER_APPSTORE = 400;
 
 
     private Constants() {

@@ -16,15 +16,14 @@
 
 package org.edgegallery.mecm.apm.service;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.LinkedList;
 import java.util.List;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
-import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
@@ -47,6 +46,8 @@ public class DbServiceTest {
     private static final String TIME = "Thu Nov 21 16:02:24 CST 2019";
 
     private AppPackageDto packageDto = new AppPackageDto();
+    @Autowired
+    private DbService dbService;
 
     @Before
     public void setUp() {
@@ -69,9 +70,6 @@ public class DbServiceTest {
         hostDtos.add(hostDto2);
         packageDto.setMecHostInfo(hostDtos);
     }
-
-    @Autowired
-    private DbService dbService;
 
     @Test
     public void testCreateAppPackage() {
@@ -109,7 +107,7 @@ public class DbServiceTest {
         assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
         assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
         assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackageWithHost("18db0283-3c67-4042-a708"
-                        + "-a8e4a10c6b32",PACKAGE_ID));
+                + "-a8e4a10c6b32", PACKAGE_ID));
     }
 
     @Test
@@ -147,7 +145,7 @@ public class DbServiceTest {
         assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
         assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
         assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackageWithHost("18db0283-3c67-4042-a708"
-                + "-a8e4a10c6b32",PACKAGE_ID));
+                + "-a8e4a10c6b32", PACKAGE_ID));
     }
 
     @Test
@@ -204,7 +202,7 @@ public class DbServiceTest {
         // clean up
         assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
         assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage("18db0283-3c67-4042-a708"
-                + "-a8e4a10c6b32",PACKAGE_ID));
+                + "-a8e4a10c6b32", PACKAGE_ID));
     }
 
     @Test

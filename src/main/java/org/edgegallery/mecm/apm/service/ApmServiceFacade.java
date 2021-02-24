@@ -22,13 +22,26 @@ import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.ERROR;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.io.FileUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.AppPackageInfo;
+import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
+import org.edgegallery.mecm.apm.model.AppRepo;
+import org.edgegallery.mecm.apm.model.AppStore;
+import org.edgegallery.mecm.apm.model.PkgSyncInfo;
+import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,62 +65,130 @@ public class ApmServiceFacade {
     @Value("${apm.package-dir:/usr/app/packages}")
     private String localDirPath;
 
-    @Value("${apm.push-image}")
-    private boolean pushImage;
-
     /**
      * Updates Db and distributes docker application image to host.
      *
-     * @param accessToken access token
-     * @param tenantId tenant ID
+     * @param accessToken   access token
+     * @param tenantId      tenant ID
      * @param appPackageDto appPackage details
+     * @param syncAppPkg    app package sync info
      */
     @Async
-    public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto) {
+    public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto,
+                                   PkgSyncInfo syncAppPkg) {
         String packageId = appPackageDto.getAppPkgId();
-        List<String> imageInfoList;
+        List<SwImageDescr> imageInfoList = null;
+        boolean isPkgInSync = false;
+        boolean isPkgExist = false;
         try {
-            InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(),
-                    packageId, accessToken);
-            String localFilePath = saveInputStreamToFile(stream, packageId, tenantId, localDirPath);
-            imageInfoList = apmService.getAppImageInfo(localFilePath, packageId, tenantId);
-        } catch (ApmException | IllegalArgumentException e) {
-            LOGGER.error(DISTRIBUTION_FAILED, packageId);
-            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
-            return;
+            AppPackageInfo appPkinfoDb = dbService.getAppPackageSyncInfo(packageId);
+            if ("SYNC".equals(appPkinfoDb.getSyncStatus())) {
+                isPkgInSync = true;
+            }
+        } catch (IllegalArgumentException ex) {
+            LOGGER.info("application package not synchronized...");
         }
 
-        distributeApplication(tenantId, appPackageDto, accessToken, imageInfoList);
+        File packageFile = new File(localDirPath + File.separator + packageId);
+        if (packageFile.exists()) {
+            isPkgExist = true;
+        }
+
+        if (!isPkgInSync || !isPkgExist) {
+            try {
+                InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(),
+                        packageId, accessToken);
+                String localFilePath = saveInputStreamToFile(stream, packageId, null, localDirPath);
+                imageInfoList = apmService.getAppImageInfo(localFilePath, packageId);
+
+                apmService.updateAppPackageWithRepoInfo(packageId, true);
+            } catch (ApmException | IllegalArgumentException e) {
+                LOGGER.error(DISTRIBUTION_FAILED, packageId);
+                dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
+                return;
+            }
+        }
+
+        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, false);
+
+        if (!isPkgExist) {
+            apmService.compressAppPackage(packageId);
+        }
+
+        if (!isPkgInSync) {
+            addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
+        }
     }
 
     /**
      * Distributes docker application image to host.
      *
-     * @param accessToken access token
-     * @param tenantId tenant ID
+     * @param accessToken   access token
+     * @param tenantId      tenant ID
      * @param appPackageDto appPackage details
      * @param localFilePath local package path
      */
     @Async
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto,
-                                   String localFilePath) {
+                                   String localFilePath, PkgSyncInfo syncAppPkg) {
         String packageId = appPackageDto.getAppPkgId();
-        List<String> imageInfoList;
+        List<SwImageDescr> imageInfoList;
+        String dockerImgspath = null;
+        boolean isDockerImgTarPresent = false;
+
         try {
-            imageInfoList = apmService.getAppImageInfo(localFilePath, packageId, tenantId);
-        } catch (ApmException | IllegalArgumentException e) {
-            LOGGER.error(DISTRIBUTION_FAILED, e);
-            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
+            imageInfoList = apmService.getAppImageInfo(localFilePath, packageId);
+            for (SwImageDescr imageDescr : imageInfoList) {
+                if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains("tar.gz")
+                        || imageDescr.getSwImage().contains(".tgz")) {
+                    isDockerImgTarPresent = true;
+                }
+            }
+
+            if (isDockerImgTarPresent) {
+                dockerImgspath = apmService.unzipDockerImages(appPackageDto.getAppPkgId());
+                apmService.loadDockerImages(packageId, imageInfoList);
+                apmService.updateAppPackageWithRepoInfo(packageId, false);
+            } else {
+                apmService.updateAppPackageWithRepoInfo(packageId, true);
+            }
+        } catch (ApmException | IllegalArgumentException ex) {
+            LOGGER.error(DISTRIBUTION_FAILED, ex.getMessage());
+            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, ex.getMessage());
             return;
         }
 
-        distributeApplication(tenantId, appPackageDto, accessToken, imageInfoList);
+        if (dockerImgspath != null) {
+            try {
+                FileUtils.forceDelete(new File(dockerImgspath));
+            } catch (IOException ex) {
+                LOGGER.debug("failed to delete docker images {}", ex.getMessage());
+            }
+        }
+
+        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, isDockerImgTarPresent);
+        apmService.compressAppPackage(packageId);
+
+        addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
+    }
+
+    private void addAppSyncInfoDb(AppPackageDto appPackageDto, PkgSyncInfo syncInfo, String operationalInfo) {
+        AppPackageInfo pkgInfo = new AppPackageInfo();
+        pkgInfo.setAppPkgInfoId(appPackageDto.getAppPkgId());
+        pkgInfo.setAppId(appPackageDto.getAppId());
+        pkgInfo.setPackageId(syncInfo.getPackageId());
+        pkgInfo.setName(appPackageDto.getAppPkgName());
+        pkgInfo.setSyncStatus("SYNC");
+        pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
+        pkgInfo.setOperationalInfo(operationalInfo);
+
+        dbService.addAppPackageInfoDB(pkgInfo);
     }
 
     /**
      * Returns app package info.
      *
-     * @param tenantId tenant ID
+     * @param tenantId     tenant ID
      * @param appPackageId app package ID
      * @return app package info
      */
@@ -118,13 +199,14 @@ public class ApmServiceFacade {
     /**
      * Deletes app package.
      *
-     * @param tenantId tenant ID
+     * @param tenantId     tenant ID
      * @param appPackageId app package ID
      */
     public void deleteAppPackage(String tenantId, String appPackageId) {
         dbService.deleteAppPackage(tenantId, appPackageId);
         dbService.deleteHost(tenantId, appPackageId);
         apmService.deleteAppPackageFile(getLocalFilePath(localDirPath, tenantId, appPackageId));
+        dbService.deleteAppPackageSyncInfoDb(appPackageId);
     }
 
     /**
@@ -140,9 +222,9 @@ public class ApmServiceFacade {
     /**
      * Deletes app package in host.
      *
-     * @param tenantId tenant ID
+     * @param tenantId     tenant ID
      * @param appPackageId app package ID
-     * @param hostIp host Ip
+     * @param hostIp       host Ip
      */
     public void deleteAppPackageInHost(String tenantId, String appPackageId,
                                        String hostIp) {
@@ -152,7 +234,7 @@ public class ApmServiceFacade {
     /**
      * Returns app package csar file.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
      * @return app package csar file
      */
@@ -163,7 +245,7 @@ public class ApmServiceFacade {
     /**
      * Create app package record in db.
      *
-     * @param tenantId tenant ID
+     * @param tenantId      tenant ID
      * @param appPackageDto app package dto
      */
     public void createAppPackageEntryInDb(String tenantId, AppPackageDto appPackageDto) {
@@ -171,23 +253,168 @@ public class ApmServiceFacade {
         dbService.createHost(tenantId, appPackageDto);
     }
 
-    private void distributeApplication(String tenantId, AppPackageDto appPackageDto, String accessToken,
-                                       List<String> imageInfoList) {
+    private void distributeApplication(String tenantId, AppPackageDto appPackageDto,
+                                       List<SwImageDescr> imageInfoList, PkgSyncInfo syncAppPkg,
+                                       boolean skipDownload) {
         String packageId = appPackageDto.getAppPkgId();
+        Set<String> downloadedImgs = null;
+        Set<String> uploadedImgs = null;
+
         for (MecHostDto host : appPackageDto.getMecHostInfo()) {
             String distributionStatus = "Distributed";
             String error = "";
-            if (pushImage) {
-                try {
-                    String repo = apmService.getRepoInfoOfHost(host.getHostIp(), tenantId, accessToken);
-                    apmService.downloadAppImage(repo, imageInfoList);
-                }  catch (ApmException e) {
-                    distributionStatus = ERROR;
-                    error = e.getMessage();
-                    LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
+            try {
+                if (imageInfoList != null) {
+                    if (!skipDownload) {
+                        downloadedImgs = new HashSet<>();
+                        apmService.downloadAppImage(syncAppPkg, imageInfoList, downloadedImgs);
+                    }
+
+                    uploadedImgs = new HashSet<>();
+                    apmService.uploadAppImage(syncAppPkg, imageInfoList, uploadedImgs);
                 }
+            } catch (ApmException e) {
+                distributionStatus = ERROR;
+                error = e.getMessage();
+                LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
+            } finally {
+                apmService.deleteAppPkgDockerImages(downloadedImgs);
+                apmService.deleteAppPkgDockerImages(uploadedImgs);
             }
+
             dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus, error);
+        }
+    }
+
+    /**
+     * Returns application store configuration.
+     *
+     * @param tenantId   tenant ID
+     * @param appstoreIp appstore IP
+     * @return app store configuration
+     */
+    public AppStore getAppstoreConfig(String tenantId, String appstoreIp, String accessToken) {
+
+        return apmService.getAppStoreCfgFromInventory(appstoreIp, tenantId, accessToken);
+    }
+
+    /**
+     * Returns application store configuration.
+     *
+     * @param tenantId tenant ID
+     * @return app store configuration
+     */
+    public List<AppStore> getAllAppstoreConfig(String tenantId, String accessToken) {
+
+        return apmService.getAppStoreCfgFromInventory(tenantId, accessToken);
+    }
+
+    /**
+     * Returns application repo configuration.
+     *
+     * @param tenantId tenant ID
+     * @return app store configuration
+     */
+    public List<AppRepo> getAllAppRepoConfig(String tenantId, String accessToken) {
+
+        return apmService.getAllAppRepoCfgFromInventory(tenantId, accessToken);
+    }
+
+    /**
+     * Returns application repo configuration.
+     *
+     * @param tenantId tenant ID
+     * @param host     repo host
+     * @return app store configuration
+     */
+    public AppRepo getAppRepoConfig(String tenantId, String host, String accessToken) {
+
+        return apmService.getAppRepoCfgFromInventory(tenantId, host, accessToken);
+    }
+
+    /**
+     * Returns application package info.
+     *
+     * @param tenantId         tenant ID
+     * @param appstoreEndPoint appstore end point
+     * @return app store configuration
+     */
+    public List<AppPackageInfoDto> getAppPackagesInfo(String tenantId, String appstoreEndPoint, String accessToken) {
+
+        return apmService.getAppPackagesInfoFromAppStore(appstoreEndPoint, tenantId, accessToken);
+    }
+
+    /**
+     * Adds application package info.
+     *
+     * @param appstoreIp appstore end point
+     * @param apps       application package infos
+     */
+    public void updateAppPackageInfoDB(String appstoreIp, List<AppPackageInfoDto> apps) {
+        dbService.updateAppPackageInfoDB(appstoreIp, apps);
+    }
+
+    /**
+     * Retrieves al application package info.
+     */
+    public List<AppPackageInfo> getAppPackageInfoDB() {
+        return dbService.getAppPackageSyncInfo();
+    }
+
+    /**
+     * Retrieve application package info.
+     *
+     * @return application package info
+     */
+    public AppPackageInfo getAppPackageInfoDB(String id) {
+        return dbService.getAppPackageSyncInfo(id);
+    }
+
+    /**
+     * Updates Db and distributes docker application image to host.
+     *
+     * @param accessToken access token
+     * @param syncInfos   sync appPackage details
+     */
+    @Async
+    public void syncApplicationPackages(String accessToken, AppPackageSyncInfo syncInfos) {
+        List<PkgSyncInfo> pkgInfos = syncInfos.getSyncInfo();
+        for (PkgSyncInfo syncInfo : pkgInfos) {
+            syncInfo.setRepoInfo(syncInfos.getRepoInfo());
+            syncAppPkgFromAppstoreToMecmRepo(accessToken, syncInfo);
+        }
+    }
+
+    private void syncAppPkgFromAppstoreToMecmRepo(String accessToken, PkgSyncInfo syncInfo) {
+        List<SwImageDescr> imageInfoList;
+        InputStream stream;
+        String host = syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort();
+        String appPackageId = syncInfo.getAppId() + syncInfo.getPackageId();
+
+        String appPkgPath = "https://" + host + "/mec/appstore/v1/apps/" + syncInfo.getAppId()
+                + "/packages/" + syncInfo.getPackageId() + "/action/download";
+
+        Set<String> uploadedImgs = new HashSet();
+        Set<String> downloadedImgs = new HashSet();
+        try {
+            stream = apmService.downloadAppPackage(appPkgPath, syncInfo.getPackageId(), accessToken);
+            String localFilePath = saveInputStreamToFile(stream, appPackageId, null, localDirPath);
+
+            imageInfoList = apmService.getAppImageInfo(localFilePath, appPackageId);
+
+            apmService.downloadAppImage(syncInfo, imageInfoList, downloadedImgs);
+            apmService.uploadAppImage(syncInfo, imageInfoList, uploadedImgs);
+
+            dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
+                    "SYNC", Constants.SUCCESS);
+            apmService.updateAppPackageWithRepoInfo(appPackageId, true);
+        } catch (ApmException | IllegalArgumentException e) {
+            LOGGER.error(Constants.SYNC_APP_FAILED, appPackageId);
+            dbService.updateAppPackageSyncStatus(syncInfo.getAppId(),
+                    syncInfo.getPackageId(), "SYNC_FAILED", e.getMessage());
+        } finally {
+            apmService.deleteAppPkgDockerImages(downloadedImgs);
+            apmService.deleteAppPkgDockerImages(uploadedImgs);
         }
     }
 }

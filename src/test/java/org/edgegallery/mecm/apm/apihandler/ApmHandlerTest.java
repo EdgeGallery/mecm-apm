@@ -19,8 +19,13 @@ package org.edgegallery.mecm.apm.apihandler;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
@@ -39,36 +44,40 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.util.ResourceUtils;
+import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ApmApplicationTest.class)
 @AutoConfigureMockMvc
 public class ApmHandlerTest {
 
-    @Autowired
-    MockMvc mvc;
-
-    @Autowired
-    private DbService dbService;
-
-    @Autowired
-    private ApmServiceFacade apmServiceFacade;
-
     private static final String TENANT_ID = "19db0283-3c67-4042-a708-a8e4a10c6b32";
     private static final String PACKAGE_ID1 = "f50358433cf8eb4719a62a49ed118c9b";
+    private static final String APP_ID1 = "f50358433cf8eb4719a62a49ed118c9c";
     private static final String PACKAGE_ID2 = "f60358433cf8eb4719a62a49ed118c9b";
     private static final String TIME = "Thu Nov 21 16:02:24 CST 2019";
-
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    private DbService dbService;
+    @Autowired
+    private ApmServiceFacade apmServiceFacade;
+    @Autowired
+    private RestTemplate restTemplate;
+    private MockRestServiceServer mockServer;
     private AppPackageDto packageDto1 = new AppPackageDto();
     private AppPackageDto packageDto2 = new AppPackageDto();
 
@@ -84,7 +93,7 @@ public class ApmHandlerTest {
     }
 
     public void mockAppPackageDto(String packageId, AppPackageDto packageDto) {
-        packageDto.setAppPkgId(packageId);
+        packageDto.setAppPkgId("f50358433cf8eb4719a62a49ed118c9c" + packageId);
         packageDto.setAppId("f50358433cf8eb4719a62a49ed118c9c");
         packageDto.setAppIconUrl("http://1.1.1.1:1234/mec");
         packageDto.setAppPkgAffinity("GPU");
@@ -120,7 +129,6 @@ public class ApmHandlerTest {
     }
 
     @Test
-    @WithMockUser(roles = "MECM_TENANT")
     public void onBoardAppPackage() throws Exception {
         String request = "{\n"
                 + "  \"appIconUrl\": \"http://1.1.1.1:1234/mec\",\n"
@@ -129,7 +137,7 @@ public class ApmHandlerTest {
                 + "  \"appPkgDesc\": \"face recognition application\",\n"
                 + "  \"appPkgId\": \"f40358433cf8eb4719a62a49ed118c9b\",\n"
                 + "  \"appPkgName\": \"正在参-加开源.中国举_办的\",\n"
-                + "  \"appPkgPath\": \"http://1.1.1.1:1234/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2"
+                + "  \"appPkgPath\": \"http://1.1.1.1:4443/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2"
                 + "/packages/0fb274f2-213b-4a66-accc-ab218470caa3/action/download\",\n"
                 + "  \"appPkgVersion\": \"1.0\",\n"
                 + "  \"appProvider\": \"huawei\",\n"
@@ -140,6 +148,33 @@ public class ApmHandlerTest {
                 + "  \"modifiedTime\": \"Thu Nov 21 16:02:24 CST 2019\"\n"
                 + "}";
 
+        String serviceResponseBody;
+
+        String url3 = "https://1.1.1.1:8080/inventory/v1/tenants/19db0283-3c67-4042-a708-a8e4a10c6b32/appstores/1.1.1.1";
+        serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
+                + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url3))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        String url1 = "https://1.1.1.1:8080/inventory/v1/apprepos";
+        serviceResponseBody = "[{'repoEndPoint': '1.1.1.1:4443', 'repoName': 'AppRepo1', 'repoUserName': "
+                + "'admin', 'repoPassword': 'admin@12345' }]";
+        mockServer.expect(requestTo(url1))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913c.csar");
+        InputStream ins = new BufferedInputStream(new FileInputStream(file.getPath()));
+        InputStreamResource inputStreamResource = new InputStreamResource(ins);
+        String url = "http://1.1.1.1:4443/mec/appstore/v1/apps/8ec923a8-9e30-4c94-a7ac-c92279488db2/packages"
+                + "/0fb274f2-213b-4a66-accc-ab218470caa3/action/download";
+
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(inputStreamResource, MediaType.APPLICATION_OCTET_STREAM));
+
         ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.post("/apm/v1/tenants/" + TENANT_ID
                         + "/packages")
@@ -147,10 +182,93 @@ public class ApmHandlerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .header("access_token", "aasdjk")
                         .content(request))
-                        .andExpect(MockMvcResultMatchers.status().isAccepted());
+                        .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
+
         MvcResult result = resultActions.andReturn();
         MockHttpServletResponse obj = result.getResponse();
-        assertEquals("{\"packageId\":\"f40358433cf8eb4719a62a49ed118c9b\"}", obj.getContentAsString());
+        assertEquals("{\"packageId\":\"f40358433cf8eb4719a62a49ed118c9cf40358433cf8eb4719a62a49ed118c9b\"}",
+                obj.getContentAsString());
+        mockServer.verify();
+    }
+
+    @Test
+    public void queryAppPackageInfoTest() throws Exception {
+
+        String url1 = "https://1.1.1.1:8080/inventory/v1/tenants/19db0283-3c67-4042-a708-a8e4a10c6b32/appstores/1.1.1"
+                + ".1";
+        String serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
+                + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url1))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        String url2 = "https://1.1.1.1:1234/mec/appstore/v1/apps";
+        String serviceResponseBody1 = "[\n"
+                + "    {\n"
+                + "        \"appId\": \"5e489a241af84e35b02079ace6954fc7\",\n"
+                + "        \"iconUrl\": null,\n"
+                + "        \"name\": \"zoneminder\",\n"
+                + "        \"provider\": \"Huawei\",\n"
+                + "        \"type\": \"Video Application\",\n"
+                + "        \"shortDesc\": \"ZoneMinder is an integrated set of applications which provide a complete surveillance solution attached to a Linux based machine.\",\n"
+                + "        \"createTime\": \"2021-02-10 15:56:35.157777\",\n"
+                + "        \"details\": \"ZoneMinder\\n\",\n"
+                + "        \"downloadCount\": 2,\n"
+                + "        \"affinity\": \"x86\",\n"
+                + "        \"industry\": \"Smart Park\",\n"
+                + "        \"contact\": null,\n"
+                + "        \"score\": 5.0,\n"
+                + "        \"userId\": \"50ba5ba7-5165-4754-9192-9c739039109d\",\n"
+                + "        \"userName\": \"wenson\",\n"
+                + "        \"status\": \"Published\"\n"
+                + "    }    \n"
+                + "]";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody1, MediaType.APPLICATION_JSON));
+
+        String url3 = "https://1.1.1.1:1234/mec/appstore/v1/apps/5e489a241af84e35b02079ace6954fc7/packages";
+        String serviceResponseBody3 = "[\n"
+                + "    {\n"
+                + "        \"packageId\": \"7530d819ca12460a9cdf31c790417752\",\n"
+                + "        \"size\": \"0\",\n"
+                + "        \"format\": \"{\\\"name\\\":\\\"76026777dd5e47d8ad869585cf6e0652\\\"}\",\n"
+                + "        \"createTime\": \"2021-02-10T07:56:35.157+0000\",\n"
+                + "        \"name\": \"zoneminder\",\n"
+                + "        \"version\": \"1.0\",\n"
+                + "        \"type\": \"Video Application\",\n"
+                + "        \"details\": \"ZoneMinder\\n\",\n"
+                + "        \"affinity\": \"x86\",\n"
+                + "        \"industry\": \"Smart Park\",\n"
+                + "        \"contact\": null,\n"
+                + "        \"appId\": \"5e489a241af84e35b02079ace6954fc7\",\n"
+                + "        \"userId\": \"50ba5ba7-5165-4754-9192-9c739039109d\",\n"
+                + "        \"userName\": \"wenson\",\n"
+                + "        \"status\": \"Published\",\n"
+                + "        \"shortDesc\": \"ZoneMinder is an integrated set of applications which provide a \",\n"
+                + "        \"testTaskId\": null,\n"
+                + "        \"provider\": \"Huawei\"\n"
+                + "    }\n"
+                + "]";
+        mockServer.expect(requestTo(url3))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody3, MediaType.APPLICATION_JSON));
+
+        ResultActions resultActions =
+                mvc.perform(MockMvcRequestBuilders.get("/apm/v1/tenants/" + TENANT_ID
+                        + "/apps/info/appstores/1.1.1.1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("access_token", "aasdjk")
+                        .content(""))
+                        .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
+        MvcResult result = resultActions.andReturn();
+        MockHttpServletResponse obj = result.getResponse();
+        assertEquals(
+                "[{\"packageId\":\"7530d819ca12460a9cdf31c790417752\",\"size\":\"0\",\"format\":\"{\\\"name\\\":\\\"76026777dd5e47d8ad869585cf6e0652\\\"}\",\"createTime\":\"2021-02-10T07:56:35.157+0000\",\"name\":\"zoneminder\",\"version\":\"1.0\",\"type\":\"Video Application\",\"details\":\"ZoneMinder\\n\",\"affinity\":\"x86\",\"industry\":\"Smart Park\",\"contact\":null,\"appId\":\"5e489a241af84e35b02079ace6954fc7\",\"userId\":\"50ba5ba7-5165-4754-9192-9c739039109d\",\"userName\":\"wenson\",\"status\":\"Published\",\"shortDesc\":\"ZoneMinder is an integrated set of applications which provide a \",\"testTaskId\":null,\"provider\":\"Huawei\"}]",
+                obj.getContentAsString());
+        mockServer.verify();
     }
 
     @Test
@@ -191,7 +309,7 @@ public class ApmHandlerTest {
     public void getAppPackageInfo() throws Exception {
         ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.get("/apm/v1/tenants/" + TENANT_ID
-                        + "/packages/" + PACKAGE_ID1)
+                        + "/packages/" + APP_ID1 + PACKAGE_ID1)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                         .andExpect(MockMvcResultMatchers.status().isOk());
         MvcResult result = resultActions.andReturn();
@@ -204,7 +322,7 @@ public class ApmHandlerTest {
     public void deleteAppPackage() throws Exception {
         ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.delete("/apm/v1/tenants/" + TENANT_ID
-                        + "/packages/" + PACKAGE_ID1)
+                        + "/packages/" + APP_ID1 + PACKAGE_ID1)
                         .accept(MediaType.TEXT_PLAIN_VALUE))
                         .andExpect(MockMvcResultMatchers.status().isOk());
         MvcResult result = resultActions.andReturn();
@@ -220,7 +338,7 @@ public class ApmHandlerTest {
     public void downloadAppPackage() throws Exception {
         ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.get("/apm/v1/tenants/" + TENANT_ID
-                        + "/packages/" + PACKAGE_ID1 + "/download")
+                        + "/packages/" + APP_ID1 + PACKAGE_ID1 + "/download")
                         .accept(MediaType.APPLICATION_OCTET_STREAM_VALUE))
                         .andExpect(MockMvcResultMatchers.status().isOk());
         MvcResult result = resultActions.andReturn();
@@ -249,7 +367,7 @@ public class ApmHandlerTest {
     public void deleteAppPackageInHost() throws Exception {
         ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.delete("/apm/v1/tenants/" + TENANT_ID
-                        + "/packages/" + PACKAGE_ID1 + "/hosts/1.1.1.1")
+                        + "/packages/" + APP_ID1 + PACKAGE_ID1 + "/hosts/1.1.1.1")
                         .accept(MediaType.TEXT_PLAIN_VALUE))
                         .andExpect(MockMvcResultMatchers.status().isOk());
         MvcResult result = resultActions.andReturn();
@@ -258,7 +376,7 @@ public class ApmHandlerTest {
 
         resultActions =
                 mvc.perform(MockMvcRequestBuilders.get("/apm/v1/tenants/" + TENANT_ID
-                        + "/packages/" + PACKAGE_ID1)
+                        + "/packages/" + APP_ID1 + PACKAGE_ID1)
                         .accept(MediaType.APPLICATION_JSON_VALUE))
                         .andExpect(MockMvcResultMatchers.status().isOk());
         result = resultActions.andReturn();

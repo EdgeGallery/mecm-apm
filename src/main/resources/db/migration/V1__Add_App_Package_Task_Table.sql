@@ -31,3 +31,15 @@
         tenant  varchar(255) not null,
         primary key (tenant)
     );
+
+    create table apppackageinfo (
+        id varchar(255) not null,
+        app_id  varchar(255) not null,
+        appstore_ip  varchar(255) not null,
+        package_id  varchar(255) not null,
+        name varchar(255) not null,
+        sync_status varchar(255),
+        created_time varchar(255),
+        operational_info varchar(255),
+        primary key (id)
+    );

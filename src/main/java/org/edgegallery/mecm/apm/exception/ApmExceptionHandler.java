@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import javax.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,5 +116,19 @@ public class ApmExceptionHandler {
                 "Error while processing request", Collections.singletonList("Error while process request"));
         LOGGER.info("Internal server error: {}", response.toString());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Returns error code and message when record not found.
+     *
+     * @param ex exception while processing request
+     * @return response entity with error code and message
+     */
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApmExceptionResponse> handleNoSuchElementException(NoSuchElementException ex) {
+        ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(),
+                "No such element", Collections.singletonList(ex.getMessage()));
+        LOGGER.info("No such element error: {}", response);
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 }

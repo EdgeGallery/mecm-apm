@@ -92,13 +92,12 @@ public final class ApmServiceHelper {
     /**
      * Returns local file path based on tenant Id and package Id.
      *
-     * @param tenantId  tenant ID
      * @param packageId package ID
      * @return local file path
      */
-    public static String getLocalFilePath(String baseDirPath, String tenantId, String packageId) {
+    public static String getLocalFilePath(String baseDirPath, String packageId) {
         return new StringBuilder(baseDirPath).append(File.separator)
-                .append(packageId).append(tenantId).append(File.separator)
+                .append(packageId).append(File.separator)
                 .append(packageId + ".csar").toString();
     }
 

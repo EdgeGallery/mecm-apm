@@ -119,7 +119,7 @@ public class SyncAppPackageTest {
         apmServiceFacade.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
         String response = ApmServiceHelper.saveInputStreamToFile(inputStream,
-                packageDto.getAppPkgId(), TENANT_ID, file.getPath());
+                packageDto.getAppPkgId(), null, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
@@ -130,8 +130,7 @@ public class SyncAppPackageTest {
     @Test
     public void syncAppPackageTest() throws Exception {
 
-        String url1 = "https://1.1.1.1:8080/inventory/v1/tenants/19db0283-3c67-4042-a708-a8e4a10c6b32/appstores/1.1.1"
-                + ".1";
+        String url1 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";
         String serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
                 + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -156,8 +155,7 @@ public class SyncAppPackageTest {
                 .andRespond(withSuccess(inputStreamResource, MediaType.APPLICATION_OCTET_STREAM));
 
         ResultActions resultActions =
-                mvc.perform(MockMvcRequestBuilders.post("/apm/v1/tenants/" + TENANT_ID
-                        + "/apps/sync")
+                mvc.perform(MockMvcRequestBuilders.post("/apm/v1/apps/sync")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .header("access_token", "aasdjk")

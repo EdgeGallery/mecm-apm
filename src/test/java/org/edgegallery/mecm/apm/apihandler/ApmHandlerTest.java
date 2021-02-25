@@ -120,7 +120,7 @@ public class ApmHandlerTest {
         apmServiceFacade.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
         String response = ApmServiceHelper.saveInputStreamToFile(inputStream,
-                packageDto.getAppPkgId(), TENANT_ID, file.getPath());
+                packageDto.getAppPkgId(), null, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
@@ -150,7 +150,7 @@ public class ApmHandlerTest {
 
         String serviceResponseBody;
 
-        String url3 = "https://1.1.1.1:8080/inventory/v1/tenants/19db0283-3c67-4042-a708-a8e4a10c6b32/appstores/1.1.1.1";
+        String url3 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";
         serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
                 + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -194,8 +194,7 @@ public class ApmHandlerTest {
     @Test
     public void queryAppPackageInfoTest() throws Exception {
 
-        String url1 = "https://1.1.1.1:8080/inventory/v1/tenants/19db0283-3c67-4042-a708-a8e4a10c6b32/appstores/1.1.1"
-                + ".1";
+        String url1 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";
         String serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
                 + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -256,8 +255,7 @@ public class ApmHandlerTest {
                 .andRespond(withSuccess(serviceResponseBody3, MediaType.APPLICATION_JSON));
 
         ResultActions resultActions =
-                mvc.perform(MockMvcRequestBuilders.get("/apm/v1/tenants/" + TENANT_ID
-                        + "/apps/info/appstores/1.1.1.1")
+                mvc.perform(MockMvcRequestBuilders.get("/apm/v1/apps/info/appstores/1.1.1.1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .header("access_token", "aasdjk")

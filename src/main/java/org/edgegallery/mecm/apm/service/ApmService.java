@@ -57,6 +57,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -584,15 +585,13 @@ public class ApmService {
      * Returns edge repository address.
      *
      * @param hostIp      host ip
-     * @param tenantId    tenant ID
      * @param accessToken access token
      * @return returns edge repository info
      * @throws ApmException exception if failed to get edge repository details
      */
-    public String getRepoInfoOfHost(String hostIp, String tenantId, String accessToken) {
+    public String getRepoInfoOfHost(String hostIp, String accessToken) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
-                .append("/mechosts/").append(hostIp).toString();
+                .append(inventoryPort).append("/inventory/v1").append("/mechosts/").append(hostIp).toString();
 
         String response = sendGetRequest(url, accessToken);
 
@@ -657,14 +656,13 @@ public class ApmService {
      * Returns edge repository address.
      *
      * @param appstoreIp  appstore ip
-     * @param tenantId    tenant ID
      * @param accessToken access token
      * @return returns appstore configuration info
      * @throws ApmException exception if failed to get appstore configuration details
      */
-    public AppStore getAppStoreCfgFromInventory(String appstoreIp, String tenantId, String accessToken) {
+    public AppStore getAppStoreCfgFromInventory(String appstoreIp, String accessToken) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
+                .append(inventoryPort).append("/inventory/v1")
                 .append("/appstores/").append(appstoreIp).toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -675,15 +673,13 @@ public class ApmService {
     /**
      * Returns edge repository address.
      *
-     * @param tenantId    tenant ID
      * @param accessToken access token
      * @return returns all appstore configurations
      * @throws ApmException exception if failed to get appstore configuration details
      */
-    public List<AppStore> getAppStoreCfgFromInventory(String tenantId, String accessToken) {
+    public List<AppStore> getAppStoreCfgFromInventory(String accessToken) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1/tenants/").append(tenantId)
-                .append("/appstores").toString();
+                .append(inventoryPort).append("/inventory/v1").append("/appstores").toString();
 
         String response = sendGetRequest(url, accessToken);
 
@@ -699,12 +695,11 @@ public class ApmService {
     /**
      * Returns edge repository address.
      *
-     * @param tenantId    tenant ID
      * @param accessToken access token
      * @return returns all appstore configurations
      * @throws ApmException exception if failed to get appstore configuration details
      */
-    public List<AppRepo> getAllAppRepoCfgFromInventory(String tenantId, String accessToken) {
+    public List<AppRepo> getAllAppRepoCfgFromInventory(String accessToken) {
         String url = new StringBuilder("https://").append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1").append("/apprepos").toString();
 
@@ -747,7 +742,7 @@ public class ApmService {
 
         if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
             LOGGER.error("data not found, status {}", response.getStatusCode());
-            throw new IllegalArgumentException("not found status " + response.getStatusCode());
+            throw new NoSuchElementException("not found status " + response.getStatusCode());
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
@@ -778,13 +773,11 @@ public class ApmService {
      * Returns application package info.
      *
      * @param appstoreEndpoint appstore endpoint
-     * @param tenantId         tenant ID
      * @param accessToken      access token
      * @return returns appstore configuration info
      * @throws ApmException exception if failed to get appstore configuration details
      */
-    public List<AppPackageInfoDto> getAppPackagesInfoFromAppStore(String appstoreEndpoint, String tenantId,
-                                                                  String accessToken) {
+    public List<AppPackageInfoDto> getAppPackagesInfoFromAppStore(String appstoreEndpoint, String accessToken) {
         String appsUrl = new StringBuilder("https://").append(appstoreEndpoint)
                 .append("/mec/appstore/v1/apps").toString();
 
@@ -802,13 +795,13 @@ public class ApmService {
             try {
                 List<AppPackageInfoDto> pkgInfos = getAppPackagesInfoBasedOnAppId(appstoreEndpoint, appId, accessToken);
                 appPkgInfos.addAll(pkgInfos);
-            } catch (IllegalArgumentException ex) {
+            } catch (NoSuchElementException ex) {
                 LOGGER.error("failed to get app package info {}", ex.getMessage());
             }
         }
 
         if (appPkgInfos.isEmpty()) {
-            throw new NotFoundException("App Record does not exist");
+            throw new NoSuchElementException("app package record does not exist");
         }
         return appPkgInfos;
     }

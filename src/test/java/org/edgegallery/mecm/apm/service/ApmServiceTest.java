@@ -87,33 +87,33 @@ public class ApmServiceTest {
 
     @Test
     public void getRepoInfoOfHostTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/tenants/18db0283-3c67-4042-a708-a8e4a10c6b32/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
         String serviceResponseBody = "{'edgerepoIp': '2.2.2.2', 'edgerepoPort': 1234, 'edgerepoUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        String info = apmService.getRepoInfoOfHost("1.1.1.1", TENANT_ID, "access token");
+        String info = apmService.getRepoInfoOfHost("1.1.1.1", "access token");
         assertEquals("2.2.2.2:1234", info);
         mockServer.verify();
     }
 
     @Test
     public void getRepoInfoOfHostInvalidTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/tenants/18db0283-3c67-4042-a708-a8e4a10c6b32/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url)).andExpect(method(HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
         assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
-                TENANT_ID, "access token"));
+                 "access token"));
         mockServer.verify();
     }
 
     @Test
     public void getRepoInfoOfHostInvalidEdgeRepoIpTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/tenants/18db0283-3c67-4042-a708-a8e4a10c6b32/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
         String serviceResponseBody = "{'edgerepoIp': 'edgerepoIp', 'edgerepoPort': 1234, 'edgerepoUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url))
@@ -121,13 +121,13 @@ public class ApmServiceTest {
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
         assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
-                TENANT_ID, "access token"));
+                 "access token"));
         mockServer.verify();
     }
 
     @Test
     public void getRepoInfoOfHostInvalidEdgeRepoPortTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/tenants/18db0283-3c67-4042-a708-a8e4a10c6b32/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
         String serviceResponseBody = "{'edgerepoIp': '1.1.1.1', 'edgerepoPort': 'edgerepoPort',"
                 + " 'edgerepoUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -136,7 +136,7 @@ public class ApmServiceTest {
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
         assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
-                TENANT_ID, "access token"));
+                 "access token"));
         mockServer.verify();
     }
 

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -101,7 +102,7 @@ public class ApmHandler {
     @PostMapping(path = "/tenants/{tenant_id}/packages/upload",
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<Map<String, String>> onBoardApplication(
             @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
@@ -128,7 +129,7 @@ public class ApmHandler {
 
         service.createAppPackageEntryInDb(tenantId, dto);
 
-        List<AppRepo> appRepos = service.getAllAppRepoConfig(tenantId, accessToken);
+        List<AppRepo> appRepos = service.getAllAppRepoConfig(accessToken);
         Map<String, AppRepo> repoInfo = new HashMap<>();
         for (AppRepo appRepo : appRepos) {
             repoInfo.put(appRepo.getRepoEndPoint(), appRepo);
@@ -154,7 +155,7 @@ public class ApmHandler {
     @ApiOperation(value = "Onboard application package", response = Map.class)
     @PostMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<Map<String, String>> onBoardAppPackage(
             @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
@@ -166,7 +167,7 @@ public class ApmHandler {
         AppStore appStore;
         try {
             URL appRepoUrl = new URL(appPackageDto.getAppPkgPath());
-            appStore = service.getAppstoreConfig(tenantId, appRepoUrl.getHost(), accessToken);
+            appStore = service.getAppstoreConfig(appRepoUrl.getHost(), accessToken);
         } catch (MalformedURLException ex) {
             throw new IllegalArgumentException(ex.getMessage());
         }
@@ -177,7 +178,7 @@ public class ApmHandler {
         syncAppPkg.setAppId(appPackageDto.getAppId());
         syncAppPkg.setPackageId(appPackageDto.getAppPkgId());
 
-        List<AppRepo> appRepos = service.getAllAppRepoConfig(tenantId, accessToken);
+        List<AppRepo> appRepos = service.getAllAppRepoConfig(accessToken);
         Map<String, AppRepo> repoInfo = new HashMap<>();
         for (AppRepo appRepo : appRepos) {
             repoInfo.put(appRepo.getRepoEndPoint(), appRepo);
@@ -209,7 +210,7 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieves application package information", response = AppPackageDto.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
     public ResponseEntity<AppPackageDto> getAppPackageInfo(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -229,7 +230,7 @@ public class ApmHandler {
     @ApiOperation(value = "Deletes application package", response = String.class)
     @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}",
             produces = MediaType.TEXT_PLAIN_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<String> deleteAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -249,7 +250,7 @@ public class ApmHandler {
     @ApiOperation(value = "Download application package CSAR", response = InputStreamResource.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/download",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<InputStreamResource> downloadAppPackage(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -270,7 +271,7 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieves all application packages", response = List.class)
     @GetMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
     public ResponseEntity<List<AppPackageDto>> getAllAppPackageInfo(
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Pattern(regexp = TENENT_ID_REGEX) String tenantId) {
@@ -289,7 +290,7 @@ public class ApmHandler {
     @ApiOperation(value = "Deletes an application packages", response = String.class)
     @DeleteMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/hosts/{host_ip}",
             produces = MediaType.TEXT_PLAIN_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<String> deleteAppPackageInHost(
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
@@ -319,28 +320,24 @@ public class ApmHandler {
      * @return application packages
      */
     @ApiOperation(value = "Retrieves all application packages info from app store", response = List.class)
-    @GetMapping(path = "/tenants/{tenant_id}/apps/info/appstores/{appstore_ip}",
+    @GetMapping(path = "/apps/info/appstores/{appstore_ip}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
     public ResponseEntity<List<AppPackageInfoDto>> getAllAppPackageInfoFromAppStore(
             @RequestHeader("access_token") String accessToken,
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "appstore ip") @PathVariable("appstore_ip")
             @Size(max = Constants.MAX_COMMON_IP_LENGTH) @Pattern(regexp = HOST_IP_REGX) String appstoreIp) {
 
-        AppStore appstore = service.getAppstoreConfig(tenantId, appstoreIp, accessToken);
+        AppStore appstore = service.getAppstoreConfig(appstoreIp, accessToken);
         String appstoreEndPoint = appstore.getAppstoreIp() + ":" + appstore.getAppstorePort();
         List<AppPackageInfoDto> apps = null;
         try {
-            apps = service.getAppPackagesInfo(tenantId, appstoreEndPoint, accessToken);
-        } catch (IllegalArgumentException ex) {
+            apps = service.getAppPackagesInfo(appstoreEndPoint, accessToken);
+        } catch (NoSuchElementException ex) {
             service.updateAppPackageInfoDB(appstoreIp, apps);
             return new ResponseEntity<>(apps, HttpStatus.NOT_FOUND);
         }
-        if (apps == null || apps.isEmpty()) {
-            return new ResponseEntity<>(apps, HttpStatus.NOT_FOUND);
-        }
+
         service.updateAppPackageInfoDB(appstoreIp, apps);
 
         return new ResponseEntity<>(apps, HttpStatus.OK);
@@ -349,18 +346,15 @@ public class ApmHandler {
     /**
      * Sync application package by downloading package from appstore.
      *
-     * @param tenantId           tenant ID
      * @param syncAppPackageDtos sync application packages
      * @return http status code
      */
     @ApiOperation(value = "Sync application packages", response = List.class)
-    @PostMapping(path = "/tenants/{tenant_id}/apps/sync",
+    @PostMapping(path = "/apps/sync",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<List<Map<String, String>>> syncApplicationPackages(
             @RequestHeader("access_token") String accessToken,
-            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @Valid @ApiParam(value = "sync app package info") @Size(min = 1)
             @RequestBody List<SyncAppPackageDto> syncAppPackageDtos) {
 
@@ -379,7 +373,7 @@ public class ApmHandler {
             PkgSyncInfo pkgSyncInfo = mapper.map(syncApp, PkgSyncInfo.class);
             if (!appstoreCfgs.containsKey(syncApp.getAppstoreIp())) {
                 try {
-                    appstore = service.getAppstoreConfig(tenantId, syncApp.getAppstoreIp(), accessToken);
+                    appstore = service.getAppstoreConfig(syncApp.getAppstoreIp(), accessToken);
                     appstoreCfgs.put(syncApp.getAppstoreIp(), appstore);
 
                     response.put("status", "accepted");
@@ -404,7 +398,7 @@ public class ApmHandler {
         }
         AppPackageSyncInfo appPkgSyncInfo = new AppPackageSyncInfo();
         appPkgSyncInfo.setSyncInfo(syncAppPkgs);
-        List<AppRepo> appRepos = service.getAllAppRepoConfig(tenantId, accessToken);
+        List<AppRepo> appRepos = service.getAllAppRepoConfig(accessToken);
         for (AppRepo appRepo : appRepos) {
             repoInfo.put(appRepo.getRepoEndPoint(), appRepo);
         }
@@ -421,7 +415,7 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieves all application packages sync status", response = List.class)
     @GetMapping(path = "/apps/syncstatus",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
     public ResponseEntity<List<AppPackageSyncStatusDto>> getAllAppPackageSyncStatus(
             @RequestHeader("access_token") String accessToken) {
 
@@ -432,9 +426,7 @@ public class ApmHandler {
             AppPackageSyncStatusDto statusInfoDto = mapper.map(appPkgInfo, AppPackageSyncStatusDto.class);
             response.add(statusInfoDto);
         }
-        if (response.isEmpty()) {
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
+
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -446,21 +438,17 @@ public class ApmHandler {
     @ApiOperation(value = "Retrieve  application packages sync status", response = AppPackageSyncStatusDto.class)
     @GetMapping(path = "/apps/{app_id}/packages/{package_id}/syncstatus",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
     public ResponseEntity<AppPackageSyncStatusDto> getAllAppPackageSyncStatus(
             @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "app id") @PathVariable("app_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appId,
             @ApiParam(value = "app package id") @PathVariable("package_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String packageId) {
-        AppPackageSyncStatusDto statusInfoDto = null;
-        try {
-            AppPackageInfo statusInfo = service.getAppPackageInfoDB(appId + packageId);
-            ModelMapper mapper = new ModelMapper();
-            statusInfoDto = mapper.map(statusInfo, AppPackageSyncStatusDto.class);
-        } catch (IllegalArgumentException ex) {
-            return new ResponseEntity<>(statusInfoDto, HttpStatus.NOT_FOUND);
-        }
+
+        AppPackageInfo statusInfo = service.getAppPackageInfoDB(appId + packageId);
+        ModelMapper mapper = new ModelMapper();
+        AppPackageSyncStatusDto statusInfoDto = mapper.map(statusInfo, AppPackageSyncStatusDto.class);
 
         return new ResponseEntity<>(statusInfoDto, HttpStatus.OK);
     }

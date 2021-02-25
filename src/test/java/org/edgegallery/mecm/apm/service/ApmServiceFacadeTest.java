@@ -82,7 +82,7 @@ public class ApmServiceFacadeTest {
         File file = ResourceUtils.getFile("classpath:packages");
         facade.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
-        String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, TENANT_ID, file.getPath());
+        String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, null, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());

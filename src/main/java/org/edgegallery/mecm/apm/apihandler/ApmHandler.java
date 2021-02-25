@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
+import static org.edgegallery.mecm.apm.utils.Constants.APPD_ID_PKG_ID_REGEX;
 import static org.edgegallery.mecm.apm.utils.Constants.APP_PKG_ID_REGX;
 import static org.edgegallery.mecm.apm.utils.Constants.HOST_IP_REGX;
 import static org.edgegallery.mecm.apm.utils.Constants.TENENT_ID_REGEX;
@@ -24,18 +25,31 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.AppPackageInfo;
+import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
+import org.edgegallery.mecm.apm.model.AppRepo;
+import org.edgegallery.mecm.apm.model.AppStore;
+import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageSyncStatusDto;
+import org.edgegallery.mecm.apm.model.dto.SyncAppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.hibernate.validator.constraints.Length;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -75,12 +89,12 @@ public class ApmHandler {
     /**
      * On-boards application with package provided.
      *
-     * @param accessToken access token
-     * @param tenantId tenant ID
+     * @param accessToken    access token
+     * @param tenantId       tenant ID
      * @param appPackageName application package name
-     * @param appPkgVersion application package version
-     * @param hostList list of host
-     * @param file CSAR package
+     * @param appPkgVersion  application package version
+     * @param hostList       list of host
+     * @param file           CSAR package
      * @return application package identifier on success, error code on failure
      */
     @ApiOperation(value = "Onboard application package", response = Map.class)
@@ -105,13 +119,27 @@ public class ApmHandler {
         String appId = ApmServiceHelper.generateAppId();
         dto.setAppId(appId);
         dto.setMecHostInfo(ApmServiceHelper.getHostList(hostList));
+        dto.setAppPkgId(appId + appPkgId);
 
-        String localFilePath = ApmServiceHelper.saveMultipartFile(file, appPkgId, tenantId, localDirPath);
+        PkgSyncInfo syncAppPkg = new PkgSyncInfo();
+        syncAppPkg.setAppstoreIp("-");
+        syncAppPkg.setAppId(appId);
+        syncAppPkg.setPackageId(appPkgId);
+
         service.createAppPackageEntryInDb(tenantId, dto);
-        service.onboardApplication(accessToken, tenantId, dto, localFilePath);
+
+        List<AppRepo> appRepos = service.getAllAppRepoConfig(tenantId, accessToken);
+        Map<String, AppRepo> repoInfo = new HashMap<>();
+        for (AppRepo appRepo : appRepos) {
+            repoInfo.put(appRepo.getRepoEndPoint(), appRepo);
+        }
+        syncAppPkg.setRepoInfo(repoInfo);
+
+        String localFilePath = ApmServiceHelper.saveMultipartFile(file, dto.getAppPkgId(), null, localDirPath);
+        service.onboardApplication(accessToken, tenantId, dto, localFilePath, syncAppPkg);
 
         Map<String, String> response = new HashMap<>();
-        response.put("appPackageId", appPkgId);
+        response.put("appPackageId", appId + appPkgId);
         response.put("appId", appId);
         return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
@@ -135,9 +163,36 @@ public class ApmHandler {
         if (appPackageDto.getAppPkgPath() == null) {
             throw new IllegalArgumentException("App Package Path is null");
         }
+        AppStore appStore;
+        try {
+            URL appRepoUrl = new URL(appPackageDto.getAppPkgPath());
+            appStore = service.getAppstoreConfig(tenantId, appRepoUrl.getHost(), accessToken);
+        } catch (MalformedURLException ex) {
+            throw new IllegalArgumentException(ex.getMessage());
+        }
 
+        PkgSyncInfo syncAppPkg = new PkgSyncInfo();
+        syncAppPkg.setAppstoreIp(appStore.getAppstoreIp());
+        syncAppPkg.setAppstorePort(appStore.getAppstorePort());
+        syncAppPkg.setAppId(appPackageDto.getAppId());
+        syncAppPkg.setPackageId(appPackageDto.getAppPkgId());
+
+        List<AppRepo> appRepos = service.getAllAppRepoConfig(tenantId, accessToken);
+        Map<String, AppRepo> repoInfo = new HashMap<>();
+        for (AppRepo appRepo : appRepos) {
+            repoInfo.put(appRepo.getRepoEndPoint(), appRepo);
+        }
+        AppRepo appRepo = new AppRepo();
+        appRepo.setRepoEndPoint(appStore.getAppstoreRepo());
+        appRepo.setRepoUserName(appStore.getAppstoreRepoUserName());
+        appRepo.setRepoPassword(appStore.getAppstoreRepoPassword());
+        repoInfo.put(appStore.getAppstoreRepo(), appRepo);
+
+        syncAppPkg.setRepoInfo(repoInfo);
+
+        appPackageDto.setAppPkgId(appPackageDto.getAppId() + appPackageDto.getAppPkgId());
         service.createAppPackageEntryInDb(tenantId, appPackageDto);
-        service.onboardApplication(accessToken, tenantId, appPackageDto);
+        service.onboardApplication(accessToken, tenantId, appPackageDto, syncAppPkg);
 
         Map<String, String> response = new HashMap<>();
         response.put("packageId", appPackageDto.getAppPkgId());
@@ -159,7 +214,7 @@ public class ApmHandler {
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId) {
         AppPackageDto response = service.getAppPackageInfo(tenantId, appPackageId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -179,7 +234,7 @@ public class ApmHandler {
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId) {
         service.deleteAppPackage(tenantId, appPackageId);
         return new ResponseEntity<>(Constants.SUCCESS, HttpStatus.OK);
     }
@@ -199,7 +254,7 @@ public class ApmHandler {
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId) {
         InputStream resource = service.getAppPackageFile(tenantId, appPackageId);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", MediaType.APPLICATION_OCTET_STREAM_VALUE);
@@ -239,7 +294,7 @@ public class ApmHandler {
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
-            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId,
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId,
             @ApiParam(value = "host ip") @PathVariable("host_ip")
             @Size(max = Constants.MAX_COMMON_IP_LENGTH) @Pattern(regexp = HOST_IP_REGX) String hostIp) {
         service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
@@ -255,5 +310,158 @@ public class ApmHandler {
     @GetMapping(path = "/health", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> healthCheck() {
         return new ResponseEntity<>("ok", HttpStatus.OK);
+    }
+
+    /**
+     * Retrieves all application packages info from app store.
+     *
+     * @param appstoreIp application store IP
+     * @return application packages
+     */
+    @ApiOperation(value = "Retrieves all application packages info from app store", response = List.class)
+    @GetMapping(path = "/tenants/{tenant_id}/apps/info/appstores/{appstore_ip}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    public ResponseEntity<List<AppPackageInfoDto>> getAllAppPackageInfoFromAppStore(
+            @RequestHeader("access_token") String accessToken,
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @ApiParam(value = "appstore ip") @PathVariable("appstore_ip")
+            @Size(max = Constants.MAX_COMMON_IP_LENGTH) @Pattern(regexp = HOST_IP_REGX) String appstoreIp) {
+
+        AppStore appstore = service.getAppstoreConfig(tenantId, appstoreIp, accessToken);
+        String appstoreEndPoint = appstore.getAppstoreIp() + ":" + appstore.getAppstorePort();
+        List<AppPackageInfoDto> apps = null;
+        try {
+            apps = service.getAppPackagesInfo(tenantId, appstoreEndPoint, accessToken);
+        } catch (IllegalArgumentException ex) {
+            service.updateAppPackageInfoDB(appstoreIp, apps);
+            return new ResponseEntity<>(apps, HttpStatus.NOT_FOUND);
+        }
+        if (apps == null || apps.isEmpty()) {
+            return new ResponseEntity<>(apps, HttpStatus.NOT_FOUND);
+        }
+        service.updateAppPackageInfoDB(appstoreIp, apps);
+
+        return new ResponseEntity<>(apps, HttpStatus.OK);
+    }
+
+    /**
+     * Sync application package by downloading package from appstore.
+     *
+     * @param tenantId           tenant ID
+     * @param syncAppPackageDtos sync application packages
+     * @return http status code
+     */
+    @ApiOperation(value = "Sync application packages", response = List.class)
+    @PostMapping(path = "/tenants/{tenant_id}/apps/sync",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT')")
+    public ResponseEntity<List<Map<String, String>>> syncApplicationPackages(
+            @RequestHeader("access_token") String accessToken,
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @Valid @ApiParam(value = "sync app package info") @Size(min = 1)
+            @RequestBody List<SyncAppPackageDto> syncAppPackageDtos) {
+
+        AppStore appstore = null;
+        Map<String, AppStore> appstoreCfgs = new HashMap<>();
+
+        List<Map<String, String>> responseList = new LinkedList<>();
+        List<PkgSyncInfo> syncAppPkgs = new LinkedList<>();
+        ModelMapper mapper = new ModelMapper();
+        Map<String, AppRepo> repoInfo = new HashMap<>();
+        for (SyncAppPackageDto syncApp : syncAppPackageDtos) {
+            Map<String, String> response = new HashMap<>();
+            response.put("appId", syncApp.getAppId());
+            response.put("packageId", syncApp.getPackageId());
+
+            PkgSyncInfo pkgSyncInfo = mapper.map(syncApp, PkgSyncInfo.class);
+            if (!appstoreCfgs.containsKey(syncApp.getAppstoreIp())) {
+                try {
+                    appstore = service.getAppstoreConfig(tenantId, syncApp.getAppstoreIp(), accessToken);
+                    appstoreCfgs.put(syncApp.getAppstoreIp(), appstore);
+
+                    response.put("status", "accepted");
+                    AppRepo appRepo = new AppRepo();
+                    appRepo.setRepoEndPoint(appstore.getAppstoreRepo());
+                    appRepo.setRepoUserName(appstore.getAppstoreRepoUserName());
+                    appRepo.setRepoPassword(appstore.getAppstoreRepoPassword());
+                    repoInfo.put(appstore.getAppstoreRepo(), appRepo);
+                } catch (ApmException ex) {
+                    response.put("status", "failed");
+                    response.put("reason", ex.getMessage());
+                    continue;
+                }
+            } else {
+                appstore = appstoreCfgs.get(syncApp.getAppstoreIp());
+                response.put("status", "accepted");
+            }
+            responseList.add(response);
+            pkgSyncInfo.setAppstoreIp(syncApp.getAppstoreIp());
+            pkgSyncInfo.setAppstorePort(appstore.getAppstorePort());
+            syncAppPkgs.add(pkgSyncInfo);
+        }
+        AppPackageSyncInfo appPkgSyncInfo = new AppPackageSyncInfo();
+        appPkgSyncInfo.setSyncInfo(syncAppPkgs);
+        List<AppRepo> appRepos = service.getAllAppRepoConfig(tenantId, accessToken);
+        for (AppRepo appRepo : appRepos) {
+            repoInfo.put(appRepo.getRepoEndPoint(), appRepo);
+        }
+        appPkgSyncInfo.setRepoInfo(repoInfo);
+        service.syncApplicationPackages(accessToken, appPkgSyncInfo);
+        return new ResponseEntity<>(responseList, HttpStatus.ACCEPTED);
+    }
+
+    /**
+     * Retrieves all application packages sync status.
+     *
+     * @return application packages info
+     */
+    @ApiOperation(value = "Retrieves all application packages sync status", response = List.class)
+    @GetMapping(path = "/apps/syncstatus",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    public ResponseEntity<List<AppPackageSyncStatusDto>> getAllAppPackageSyncStatus(
+            @RequestHeader("access_token") String accessToken) {
+
+        List<AppPackageSyncStatusDto> response = new LinkedList<>();
+        List<AppPackageInfo> appPkgInfos = service.getAppPackageInfoDB();
+        for (AppPackageInfo appPkgInfo : appPkgInfos) {
+            ModelMapper mapper = new ModelMapper();
+            AppPackageSyncStatusDto statusInfoDto = mapper.map(appPkgInfo, AppPackageSyncStatusDto.class);
+            response.add(statusInfoDto);
+        }
+        if (response.isEmpty()) {
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve application packages sync status.
+     *
+     * @return application packages info
+     */
+    @ApiOperation(value = "Retrieve  application packages sync status", response = AppPackageSyncStatusDto.class)
+    @GetMapping(path = "/apps/{app_id}/packages/{package_id}/syncstatus",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_GUEST')")
+    public ResponseEntity<AppPackageSyncStatusDto> getAllAppPackageSyncStatus(
+            @RequestHeader("access_token") String accessToken,
+            @ApiParam(value = "app id") @PathVariable("app_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appId,
+            @ApiParam(value = "app package id") @PathVariable("package_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String packageId) {
+        AppPackageSyncStatusDto statusInfoDto = null;
+        try {
+            AppPackageInfo statusInfo = service.getAppPackageInfoDB(appId + packageId);
+            ModelMapper mapper = new ModelMapper();
+            statusInfoDto = mapper.map(statusInfo, AppPackageSyncStatusDto.class);
+        } catch (IllegalArgumentException ex) {
+            return new ResponseEntity<>(statusInfoDto, HttpStatus.NOT_FOUND);
+        }
+
+        return new ResponseEntity<>(statusInfoDto, HttpStatus.OK);
     }
 }

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ApmTenant;
@@ -452,7 +453,7 @@ public class DbService {
         String pkgId = appId + packageId;
         Optional<AppPackageInfo> appPkgInfo = appPkgInfoRepository.findById(pkgId);
         if (!appPkgInfo.isPresent()) {
-            throw new IllegalArgumentException("package not found");
+            throw new NoSuchElementException("package not found");
         }
         AppPackageInfo pkgInfo = appPkgInfo.get();
         pkgInfo.setSyncStatus(syncStatus);
@@ -478,7 +479,7 @@ public class DbService {
 
         if (pkgInfos.isEmpty()) {
             LOGGER.error(RECORD_NOT_FOUND);
-            throw new IllegalArgumentException(RECORD_NOT_FOUND);
+            throw new NoSuchElementException(RECORD_NOT_FOUND);
         }
         return pkgInfos;
     }
@@ -492,7 +493,7 @@ public class DbService {
         Optional<AppPackageInfo> appPkgInfo = appPkgInfoRepository.findById(id);
         if (!appPkgInfo.isPresent()) {
             LOGGER.error(RECORD_NOT_FOUND);
-            throw new IllegalArgumentException(RECORD_NOT_FOUND);
+            throw new NoSuchElementException(RECORD_NOT_FOUND);
         }
 
         return appPkgInfo.get();

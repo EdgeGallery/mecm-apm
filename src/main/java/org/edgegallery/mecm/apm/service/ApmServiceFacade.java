@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
@@ -85,7 +86,7 @@ public class ApmServiceFacade {
             if ("SYNC".equals(appPkinfoDb.getSyncStatus())) {
                 isPkgInSync = true;
             }
-        } catch (IllegalArgumentException ex) {
+        } catch (NoSuchElementException ex) {
             LOGGER.info("application package not synchronized...");
         }
 
@@ -206,7 +207,7 @@ public class ApmServiceFacade {
     public void deleteAppPackage(String tenantId, String appPackageId) {
         dbService.deleteAppPackage(tenantId, appPackageId);
         dbService.deleteHost(tenantId, appPackageId);
-        apmService.deleteAppPackageFile(getLocalFilePath(localDirPath, tenantId, appPackageId));
+        apmService.deleteAppPackageFile(getLocalFilePath(localDirPath, appPackageId));
         dbService.deleteAppPackageSyncInfoDb(appPackageId);
     }
 
@@ -240,7 +241,7 @@ public class ApmServiceFacade {
      * @return app package csar file
      */
     public InputStream getAppPackageFile(String tenantId, String packageId) {
-        return apmService.getAppPackageFile(getLocalFilePath(localDirPath, tenantId, packageId));
+        return apmService.getAppPackageFile(getLocalFilePath(localDirPath, packageId));
     }
 
     /**
@@ -290,35 +291,32 @@ public class ApmServiceFacade {
     /**
      * Returns application store configuration.
      *
-     * @param tenantId   tenant ID
      * @param appstoreIp appstore IP
      * @return app store configuration
      */
-    public AppStore getAppstoreConfig(String tenantId, String appstoreIp, String accessToken) {
+    public AppStore getAppstoreConfig(String appstoreIp, String accessToken) {
 
-        return apmService.getAppStoreCfgFromInventory(appstoreIp, tenantId, accessToken);
+        return apmService.getAppStoreCfgFromInventory(appstoreIp, accessToken);
     }
 
     /**
      * Returns application store configuration.
      *
-     * @param tenantId tenant ID
      * @return app store configuration
      */
-    public List<AppStore> getAllAppstoreConfig(String tenantId, String accessToken) {
+    public List<AppStore> getAllAppstoreConfig(String accessToken) {
 
-        return apmService.getAppStoreCfgFromInventory(tenantId, accessToken);
+        return apmService.getAppStoreCfgFromInventory(accessToken);
     }
 
     /**
      * Returns application repo configuration.
      *
-     * @param tenantId tenant ID
      * @return app store configuration
      */
-    public List<AppRepo> getAllAppRepoConfig(String tenantId, String accessToken) {
+    public List<AppRepo> getAllAppRepoConfig(String accessToken) {
 
-        return apmService.getAllAppRepoCfgFromInventory(tenantId, accessToken);
+        return apmService.getAllAppRepoCfgFromInventory(accessToken);
     }
 
     /**
@@ -336,13 +334,12 @@ public class ApmServiceFacade {
     /**
      * Returns application package info.
      *
-     * @param tenantId         tenant ID
      * @param appstoreEndPoint appstore end point
      * @return app store configuration
      */
-    public List<AppPackageInfoDto> getAppPackagesInfo(String tenantId, String appstoreEndPoint, String accessToken) {
+    public List<AppPackageInfoDto> getAppPackagesInfo(String appstoreEndPoint, String accessToken) {
 
-        return apmService.getAppPackagesInfoFromAppStore(appstoreEndPoint, tenantId, accessToken);
+        return apmService.getAppPackagesInfoFromAppStore(appstoreEndPoint, accessToken);
     }
 
     /**

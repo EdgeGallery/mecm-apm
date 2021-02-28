@@ -17,7 +17,6 @@
 package org.edgegallery.mecm.apm;
 
 import java.io.IOException;
-import java.util.Arrays;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -28,10 +27,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @SpringBootApplication(scanBasePackages = "org.edgegallery.mecm.apm", exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
@@ -49,10 +44,6 @@ class ApmApplicationTest {
             @Override
             protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                             FilterChain filterChain) throws ServletException, IOException {
-                SecurityContext ctx = SecurityContextHolder.createEmptyContext();
-                SecurityContextHolder.setContext(ctx);
-                ctx.setAuthentication(new UsernamePasswordAuthenticationToken("anonymous", "",
-                        Arrays.asList(new SimpleGrantedAuthority("ROLE_MECM_TENANT"))));
 
                 filterChain.doFilter(request, response);
             }

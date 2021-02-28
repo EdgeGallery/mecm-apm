@@ -70,12 +70,20 @@ public final class Constants {
     public static final String FILE_SIZE_TOO_BIG = " :fileSize is too big";
     public static final String FILENAME = " :fileName";
     public static final String SUCCESS = "success";
+    public static final String STATUS = "status";
+    public static final String IMAGE_LOCATION = "imagelocation";
+    public static final String IMAGE_INPATH = "/Image";
+    public static final String HTTPS_PROTO = "https://";
 
     public static final int MAX_ENTRY_PER_TENANT_PER_MODEL = 50;
     public static final int MAX_TENANTS = 20;
     public static final String MAX_LIMIT_REACHED_ERROR = "Max record limit exceeded";
     public static final int MAX_APPS_PER_APPSTORE = 400;
 
+    public static final String APP_SYNC_INPROGRESS = "SYNC_INPROGRESS";
+    public static final String APP_SYNC_FAILED = "SYNC_FAILED";
+    public static final String APP_SYNC = "SYNC";
+    public static final String APP_NOT_IN_SYNC = "NOT_IN_SYNC";
 
     private Constants() {
     }

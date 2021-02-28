@@ -67,6 +67,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppRepo;
@@ -113,9 +114,6 @@ public class ApmService {
 
     @Value("${apm.mecm-repo-endpoint:}")
     private String mecmRepoEndpoint;
-
-    @Value("${apm.push-image}")
-    private boolean pushImage;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -170,7 +168,7 @@ public class ApmService {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerTlsVerify(true)
                 .withDockerCertPath("/usr/app/ssl")
-                .withRegistryUrl("https://" + repo)
+                .withRegistryUrl(Constants.HTTPS_PROTO + repo)
                 .withRegistryUsername(userName)
                 .withRegistryPassword(password)
                 .build();
@@ -186,11 +184,6 @@ public class ApmService {
      */
     public void downloadAppImage(PkgSyncInfo syncInfo, List<SwImageDescr> imageInfoList,
                                  Set<String> downloadedImgs) {
-
-        if (!pushImage) {
-            LOGGER.info("image push feature disabled");
-            return;
-        }
 
         String[] sourceRepoHost;
         Map<String, AppRepo> repoInfo = syncInfo.getRepoInfo();
@@ -221,7 +214,7 @@ public class ApmService {
             } catch (InternalServerErrorException e) {
                 LOGGER.error("internal server error while downloading image {},{}", imageInfo.getSwImage(),
                         e.getMessage());
-                throw new ApmException("failed to push image to edge repo");
+                throw new ApmException("failed to download docker image from source repo");
             }
         }
 
@@ -274,9 +267,6 @@ public class ApmService {
      */
     public void updateAppPackageWithRepoInfo(String packageId, boolean swImgDescrUpdate) {
 
-        if (!pushImage) {
-            LOGGER.info("image push feature disabled");
-        }
         if (swImgDescrUpdate) {
             File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
             updateRepoInfoInSwImageDescr(swImageDesc, mecmRepoEndpoint);
@@ -294,16 +284,16 @@ public class ApmService {
             Map<String, Object> values = loadvaluesYaml(valuesYaml);
             ImageLocation imageLocn = null;
             for (String key : values.keySet()) {
-                if (key.equals("imagelocation")) {
+                if (key.equals(Constants.IMAGE_LOCATION)) {
                     ModelMapper mapper = new ModelMapper();
-                    imageLocn = mapper.map(values.get("imagelocation"), ImageLocation.class);
+                    imageLocn = mapper.map(values.get(Constants.IMAGE_LOCATION), ImageLocation.class);
                     imageLocn.setDomainame(mecmRepoEndpoint);
-                    imageLocn.setProject("mecm");
+                    imageLocn.setProject("chartrepo/mecm");
                     break;
                 }
             }
             if (imageLocn != null) {
-                values.put("imagelocation", imageLocn);
+                values.put(Constants.IMAGE_LOCATION, imageLocn);
             } else {
                 LOGGER.error("missing image location parameters ");
                 throw new ApmException("failed to update values yaml, missing image location parameters");
@@ -327,7 +317,7 @@ public class ApmService {
         try (InputStream inputStream = new FileInputStream(valuesYaml)) {
             valuesYamlMap = yaml.load(inputStream);
         } catch (FileNotFoundException e) {
-            throw new ApmException("failed to load value yaml form charts");
+            throw new ApmException("failed to find values yaml in app package");
         } catch (IOException e) {
             throw new ApmException("failed to load value yaml form charts");
         }
@@ -361,13 +351,13 @@ public class ApmService {
                 }
             });
         } catch (IOException e) {
-            throw new ApmException("failed to zip application package");
+            throw new ApmException("failed to zip application package IO exception");
         }
         try {
             FileUtils.deleteDirectory(new File(intendedDir));
             FileUtils.moveFileToDirectory(new File(zipFileName), new File(intendedDir), true);
         } catch (IOException e) {
-            throw new ApmException("failed to zip application package");
+            throw new ApmException("failed to delete redundant files from app package");
         }
     }
 
@@ -379,22 +369,15 @@ public class ApmService {
      */
     public String unzipDockerImages(String packageId) {
         String intendedDir = getLocalIntendedDir(packageId, null);
-        File dockerZip = getFileFromPackage(packageId + "/Image", "/Image", "zip");
+        File dockerZip = getFileFromPackage(packageId + Constants.IMAGE_INPATH, Constants.IMAGE_INPATH, "zip");
 
         try {
-            unzipApplicationPacakge(dockerZip.getCanonicalPath(), intendedDir + "/Image");
+            unzipApplicationPacakge(dockerZip.getCanonicalPath(), intendedDir + Constants.IMAGE_INPATH);
+            return FilenameUtils.removeExtension(dockerZip.getCanonicalPath());
         } catch (IOException e) {
             LOGGER.error("failed to get sw image descriptor file {}", e.getMessage());
             throw new ApmException("failed to get sw image descriptor file");
         }
-
-        String[] dockerImgspath;
-        try {
-            dockerImgspath = dockerZip.getCanonicalPath().split(".zip");
-        } catch (IOException e) {
-            throw new ApmException("failed to get docker images ");
-        }
-        return dockerImgspath[0];
     }
 
     /**
@@ -402,8 +385,9 @@ public class ApmService {
      *
      * @param packageId        package Id
      * @param loadDockerImages image descriptors
+     * @param downloadedImgs   docker images loaded
      */
-    public void loadDockerImages(String packageId, List<SwImageDescr> loadDockerImages) {
+    public void loadDockerImages(String packageId, List<SwImageDescr> loadDockerImages, Set<String> downloadedImgs) {
         String intendedDir = getLocalIntendedDir(packageId, null);
 
         for (SwImageDescr imgDescr : loadDockerImages) {
@@ -420,13 +404,13 @@ public class ApmService {
             try {
                 dockerClient.loadImageCmd(new FileInputStream(intendedDir + "/" + imgDescr.getSwImage())).exec();
                 imgDescr.setSwImage(imgDescr.getName());
+                downloadedImgs.add(imgDescr.getName());
             } catch (NotFoundException e) {
-                LOGGER.error("failed to download imag, image not found in repository, {}",
-                        e.getMessage());
-                throw new ApmException("failed to push image to edge repo");
+                LOGGER.error("failed to load docker image tar, image not found {}", e.getMessage());
+                throw new ApmException("failed to docker image, not found");
             } catch (InternalServerErrorException | FileNotFoundException e) {
                 LOGGER.error("internal server error while downloading image,{}", e.getMessage());
-                throw new ApmException("failed to push image to edge repo");
+                throw new ApmException("failed to load docker image from tar");
             }
         }
         LOGGER.info("image load complete successfully");
@@ -541,17 +525,16 @@ public class ApmService {
             for (File f : files) {
                 if (f.getCanonicalPath().contains(file)) {
                     ext = getFileExtension(f.getCanonicalPath());
-                    if ((ext != null) && ext.equals(extension)) {
+                    if (ext.equals(extension)) {
                         return f;
                     }
-                    if ((ext != null) && extension.equals("tar")) {
-                        if (ext.equals("tgz") || ext.equals("tar.gz") || ext.equals("tar")) {
-                            return f;
-                        }
+                    if (extension.equals("tar")
+                            && (ext.equals("tgz") || ext.equals("tar.gz") || ext.equals("tar"))) {
+                        return f;
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | ApmException e) {
             throw new ApmException(file + e.getMessage());
         }
         throw new ApmException(file + " file not found");
@@ -564,7 +547,7 @@ public class ApmService {
                 return ext;
             }
         }
-        return null;
+        throw new ApmException(file + " file not found");
     }
 
     /**
@@ -590,7 +573,7 @@ public class ApmService {
      * @throws ApmException exception if failed to get edge repository details
      */
     public String getRepoInfoOfHost(String hostIp, String accessToken) {
-        String url = new StringBuilder("https://").append(inventoryIp).append(":")
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1").append("/mechosts/").append(hostIp).toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -646,7 +629,7 @@ public class ApmService {
             throw new ApmException(Constants.LOCAL_FILE_PATH_NULL);
         }
         try {
-            Files.deleteIfExists(Paths.get(localFilePath));
+            FileUtils.forceDelete(new File(localFilePath));
         } catch (IOException e) {
             LOGGER.error("failed to delete csar file");
         }
@@ -661,7 +644,7 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public AppStore getAppStoreCfgFromInventory(String appstoreIp, String accessToken) {
-        String url = new StringBuilder("https://").append(inventoryIp).append(":")
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1")
                 .append("/appstores/").append(appstoreIp).toString();
 
@@ -678,7 +661,7 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public List<AppStore> getAppStoreCfgFromInventory(String accessToken) {
-        String url = new StringBuilder("https://").append(inventoryIp).append(":")
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1").append("/appstores").toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -700,7 +683,7 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public List<AppRepo> getAllAppRepoCfgFromInventory(String accessToken) {
-        String url = new StringBuilder("https://").append(inventoryIp).append(":")
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1").append("/apprepos").toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -763,7 +746,7 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public AppRepo getAppRepoCfgFromInventory(String tenantId, String host, String accessToken) {
-        String url = new StringBuilder("https://").append(inventoryIp).append(":")
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1").append("/apprepos/").append(host).toString();
 
         return new Gson().fromJson(sendGetRequest(url, accessToken), AppRepo.class);
@@ -840,11 +823,6 @@ public class ApmService {
     public void uploadAppImage(PkgSyncInfo syncInfo, List<SwImageDescr> imageInfoList,
                                Set<String> uploadedImgs) {
 
-        if (!pushImage) {
-            LOGGER.info("image push feature disabled");
-            return;
-        }
-
         for (SwImageDescr imageInfo : imageInfoList) {
             LOGGER.info("Docker image to  upload: {}", imageInfo.getSwImage());
 
@@ -854,10 +832,10 @@ public class ApmService {
             String uploadImgName;
             if (dockerImageNames.length > 1) {
                 uploadImgName = new StringBuilder(mecmRepoEndpoint)
-                        .append("/mecm/").append(dockerImageNames[dockerImageNames.length - 1]).toString();
+                        .append("/chartrepo/mecm/").append(dockerImageNames[dockerImageNames.length - 1]).toString();
             } else {
                 uploadImgName = new StringBuilder(mecmRepoEndpoint)
-                        .append("/mecm/").append(dockerImageNames[0]).toString();
+                        .append("/chartrepo/mecm/").append(dockerImageNames[0]).toString();
             }
 
             LOGGER.info("tag image to upload: {}", uploadImgName);
@@ -894,8 +872,6 @@ public class ApmService {
         }
         DockerClientConfig config = DefaultDockerClientConfig
                 .createDefaultConfigBuilder()
-                .withRegistryUsername(mecmRepoUsername)
-                .withRegistryPassword(mecmRepoPassword)
                 .build();
 
         DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
@@ -936,7 +912,6 @@ public class ApmService {
             try {
                 id = dockerClient.inspectImageCmd(image).exec().getId();
                 if (id != null) {
-                    //dockerClient.removeImageCmd(id).withForce(true).exec();
                     LOGGER.debug("delete docker image from repo {}", image);
                 }
             } catch (NotFoundException | ConflictException ex) {

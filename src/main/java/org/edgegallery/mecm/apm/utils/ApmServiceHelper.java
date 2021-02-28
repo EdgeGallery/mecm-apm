@@ -219,6 +219,7 @@ public final class ApmServiceHelper {
      */
     public static void unzipApplicationPacakge(String localFilePath, String intendedDir) {
 
+        LOGGER.debug("unzip package....");
         try (ZipFile zipFile = new ZipFile(localFilePath)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             int entriesCount = 0;

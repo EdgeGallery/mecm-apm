@@ -129,6 +129,7 @@ public class ApmHandlerTest {
     }
 
     @Test
+    @WithMockUser(roles = "MECM_ADMIN")
     public void onBoardAppPackage() throws Exception {
         String request = "{\n"
                 + "  \"appIconUrl\": \"http://1.1.1.1:1234/mec\",\n"
@@ -192,6 +193,7 @@ public class ApmHandlerTest {
     }
 
     @Test
+    @WithMockUser(roles = "MECM_ADMIN")
     public void queryAppPackageInfoTest() throws Exception {
 
         String url1 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";

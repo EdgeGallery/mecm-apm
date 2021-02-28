@@ -32,11 +32,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
-import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
 import org.edgegallery.mecm.apm.model.AppRepo;
@@ -355,56 +355,86 @@ public class ApmHandler {
     @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<List<Map<String, String>>> syncApplicationPackages(
             @RequestHeader("access_token") String accessToken,
-            @Valid @ApiParam(value = "sync app package info") @Size(min = 1)
-            @RequestBody List<SyncAppPackageDto> syncAppPackageDtos) {
-
-        AppStore appstore = null;
-        Map<String, AppStore> appstoreCfgs = new HashMap<>();
+            @Valid @ApiParam(value = "sync app package info") @Size(min = 1, max = 400)
+            @RequestBody Set<SyncAppPackageDto> syncAppPackageDtos) {
 
         List<Map<String, String>> responseList = new LinkedList<>();
-        List<PkgSyncInfo> syncAppPkgs = new LinkedList<>();
-        ModelMapper mapper = new ModelMapper();
+        List<PkgSyncInfo> syncAppPkgs;
         Map<String, AppRepo> repoInfo = new HashMap<>();
-        for (SyncAppPackageDto syncApp : syncAppPackageDtos) {
-            Map<String, String> response = new HashMap<>();
-            response.put("appId", syncApp.getAppId());
-            response.put("packageId", syncApp.getPackageId());
 
-            PkgSyncInfo pkgSyncInfo = mapper.map(syncApp, PkgSyncInfo.class);
-            if (!appstoreCfgs.containsKey(syncApp.getAppstoreIp())) {
-                try {
-                    appstore = service.getAppstoreConfig(syncApp.getAppstoreIp(), accessToken);
-                    appstoreCfgs.put(syncApp.getAppstoreIp(), appstore);
-
-                    response.put("status", "accepted");
-                    AppRepo appRepo = new AppRepo();
-                    appRepo.setRepoEndPoint(appstore.getAppstoreRepo());
-                    appRepo.setRepoUserName(appstore.getAppstoreRepoUserName());
-                    appRepo.setRepoPassword(appstore.getAppstoreRepoPassword());
-                    repoInfo.put(appstore.getAppstoreRepo(), appRepo);
-                } catch (ApmException ex) {
-                    response.put("status", "failed");
-                    response.put("reason", ex.getMessage());
-                    continue;
-                }
-            } else {
-                appstore = appstoreCfgs.get(syncApp.getAppstoreIp());
-                response.put("status", "accepted");
-            }
-            responseList.add(response);
-            pkgSyncInfo.setAppstoreIp(syncApp.getAppstoreIp());
-            pkgSyncInfo.setAppstorePort(appstore.getAppstorePort());
-            syncAppPkgs.add(pkgSyncInfo);
+        syncAppPkgs = syncAppPackageProcessInput(syncAppPackageDtos, repoInfo, responseList, accessToken);
+        if (syncAppPkgs.isEmpty()) {
+            return new ResponseEntity<>(responseList, HttpStatus.BAD_REQUEST);
         }
+
         AppPackageSyncInfo appPkgSyncInfo = new AppPackageSyncInfo();
         appPkgSyncInfo.setSyncInfo(syncAppPkgs);
         List<AppRepo> appRepos = service.getAllAppRepoConfig(accessToken);
+
         for (AppRepo appRepo : appRepos) {
             repoInfo.put(appRepo.getRepoEndPoint(), appRepo);
         }
         appPkgSyncInfo.setRepoInfo(repoInfo);
         service.syncApplicationPackages(accessToken, appPkgSyncInfo);
+
         return new ResponseEntity<>(responseList, HttpStatus.ACCEPTED);
+    }
+
+    private List<PkgSyncInfo> syncAppPackageProcessInput(Set<SyncAppPackageDto> syncAppPackageDtos,
+                                                         Map<String, AppRepo> repoInfo,
+                                                         List<Map<String, String>> responseList,
+                                                         String accessToken) {
+        List<PkgSyncInfo> syncAppPkgs = new LinkedList<>();
+        Map<String, AppStore> appstoreCfgs = new HashMap<>();
+        ModelMapper mapper = new ModelMapper();
+        AppStore appstore;
+        boolean isValidInput;
+
+        for (SyncAppPackageDto syncApp : syncAppPackageDtos) {
+            isValidInput = true;
+            Map<String, String> response = new HashMap<>();
+            response.put("appId", syncApp.getAppId());
+            response.put("packageId", syncApp.getPackageId());
+
+            if (!appstoreCfgs.containsKey(syncApp.getAppstoreIp())) {
+                appstore = service.getAppstoreConfig(syncApp.getAppstoreIp(), accessToken);
+                appstoreCfgs.put(syncApp.getAppstoreIp(), appstore);
+
+                AppRepo appRepo = new AppRepo();
+                appRepo.setRepoEndPoint(appstore.getAppstoreRepo());
+                appRepo.setRepoUserName(appstore.getAppstoreRepoUserName());
+                appRepo.setRepoPassword(appstore.getAppstoreRepoPassword());
+                repoInfo.put(appstore.getAppstoreRepo(), appRepo);
+            } else {
+                appstore = appstoreCfgs.get(syncApp.getAppstoreIp());
+            }
+
+            try {
+                AppPackageInfo appPkgInfo = service.getAppPackageInfoDB(syncApp.getAppId() + syncApp.getPackageId());
+                if (Constants.APP_SYNC_INPROGRESS.equals(appPkgInfo.getSyncStatus())) {
+                    response.put(Constants.STATUS, "failed");
+                    response.put("reason", Constants.APP_SYNC_INPROGRESS);
+                    responseList.add(response);
+                    isValidInput = false;
+                }
+            } catch (NoSuchElementException ex) {
+                response.put(Constants.STATUS, "failed");
+                response.put("reason", ex.getMessage());
+                responseList.add(response);
+                isValidInput = false;
+            }
+            if (!isValidInput) {
+                continue;
+            }
+            response.put(Constants.STATUS, "accepted");
+            responseList.add(response);
+            
+            PkgSyncInfo pkgSyncInfo = mapper.map(syncApp, PkgSyncInfo.class);
+            pkgSyncInfo.setAppstoreIp(syncApp.getAppstoreIp());
+            pkgSyncInfo.setAppstorePort(appstore.getAppstorePort());
+            syncAppPkgs.add(pkgSyncInfo);
+        }
+        return syncAppPkgs;
     }
 
     /**

@@ -19,6 +19,7 @@ package org.edgegallery.mecm.apm.service;
 import static org.edgegallery.mecm.apm.utils.Constants.RECORD_NOT_FOUND;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -43,6 +44,7 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 
@@ -62,6 +64,9 @@ public class DbService {
 
     @Autowired
     private AppPackageInfoRepository appPkgInfoRepository;
+
+    @Value("${apm.package-dir:/usr/app/packages}")
+    private String localDirPath;
 
     /**
      * Create app package record.
@@ -342,41 +347,15 @@ public class DbService {
     private void deleteAppPackageSyncInfo(String appstoreIp) {
         List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
         for (AppPackageInfo info : appPkgInfosDb) {
+            String appPackage = info.getAppId() + info.getPackageId();
 
-            boolean result = FileSystemUtils.deleteRecursively(new File(info.getAppId() + info.getPackageId()));
-            LOGGER.debug("failed delete package appId {}, package ID {}, result {}", info.getAppId(),
-                    info.getPackageId(), result);
+            File pkgFile = new File(localDirPath + File.separator + appPackage);
+            boolean result = FileSystemUtils.deleteRecursively(pkgFile);
+            LOGGER.debug("application package {} delete result {}", appPackage, result);
 
-            appPkgInfoRepository.delete(info);
-            LOGGER.info("Deleted app package sync info DB {}", info);
+            appPkgInfoRepository.deleteById(appPackage);
+            LOGGER.info("Deleted app package sync info from DB {}", appPackage);
         }
-    }
-
-    private Map<String, AppPackageInfo> updateAppPackageSyncInfo(String appstoreIp,
-                                                                 List<AppPackageInfoDto> inAppPkgInfos) {
-        List<String> inPkgIds = new LinkedList<>();
-
-        for (AppPackageInfoDto inAppPkgInfo : inAppPkgInfos) {
-            inPkgIds.add(inAppPkgInfo.getAppId() + inAppPkgInfo.getPackageId());
-        }
-
-        List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
-        Map<String, AppPackageInfo> existingPkgCreateTime = new HashMap<>();
-        for (AppPackageInfo info : appPkgInfosDb) {
-            String appPackageId = info.getAppId() + info.getPackageId();
-            if (!inPkgIds.contains(appPackageId)) {
-
-                boolean result = FileSystemUtils.deleteRecursively(new File(appPackageId));
-                LOGGER.debug("failed delete package appId {}, package ID {}, result {}", info.getAppId(),
-                        info.getPackageId(), result);
-
-                appPkgInfoRepository.delete(info);
-                LOGGER.info("Deleted app package sync info DB {}", info);
-            } else {
-                existingPkgCreateTime.put(appPackageId, info);
-            }
-        }
-        return existingPkgCreateTime;
     }
 
     /**
@@ -397,34 +376,37 @@ public class DbService {
                     + Constants.MAX_APPS_PER_APPSTORE);
         }
 
-        Map<String, AppPackageInfo> existingPkgCreateTime = updateAppPackageSyncInfo(appstoreIp, inAppPkgInfos);
-
         ModelMapper mapper = new ModelMapper();
-        String createTime;
+        Map<String, AppPackageInfo> inAppPkgInfosMap = new HashMap<>();
         for (AppPackageInfoDto inAppPkgInfo : inAppPkgInfos) {
-
+            String key = inAppPkgInfo.getAppId() + inAppPkgInfo.getPackageId();
             AppPackageInfo pkgInfo = mapper.map(inAppPkgInfo, AppPackageInfo.class);
-            pkgInfo.setAppPkgInfoId(pkgInfo.getAppId() + pkgInfo.getPackageId());
+            pkgInfo.setAppPkgInfoId(key);
+            pkgInfo.setAppstoreIp(appstoreIp);
+            pkgInfo.setSyncStatus(Constants.APP_NOT_IN_SYNC);
+            inAppPkgInfosMap.put(key, pkgInfo);
+        }
 
-            if (existingPkgCreateTime.isEmpty()) {
-                pkgInfo.setSyncStatus("NOT_IN_SYNC");
+        List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
+
+        for (AppPackageInfo dbAppPackageInfo : appPkgInfosDb) {
+            AppPackageInfo inAppPackageInfo = inAppPkgInfosMap.get(dbAppPackageInfo.getAppPkgInfoId());
+            if (inAppPackageInfo == null) {
+                appPkgInfoRepository.deleteById(dbAppPackageInfo.getAppPkgInfoId());
+                File appPackage = new File(localDirPath + File.separator + dbAppPackageInfo.getAppPkgInfoId());
+                boolean result = FileSystemUtils.deleteRecursively(appPackage);
+                LOGGER.debug("package delete result {}", result);
             } else {
-                createTime = null;
-                AppPackageInfo existingPkg = existingPkgCreateTime.get(pkgInfo.getAppPkgInfoId());
-                if (existingPkg != null) {
-                    createTime = existingPkg.getCreateTime();
-                }
-
-                if (createTime == null || !createTime.equals(inAppPkgInfo.getCreateTime())) {
-                    pkgInfo.setSyncStatus("NOT_IN_SYNC");
-                } else {
-                    pkgInfo.setSyncStatus(existingPkg.getSyncStatus());
+                inAppPackageInfo.setOperationalInfo(dbAppPackageInfo.getOperationalInfo());
+                inAppPackageInfo.setSyncStatus(dbAppPackageInfo.getSyncStatus());
+                if (!inAppPackageInfo.getCreateTime().equals(dbAppPackageInfo.getCreateTime())) {
+                    inAppPackageInfo.setSyncStatus(Constants.APP_NOT_IN_SYNC);
                 }
             }
-            pkgInfo.setAppstoreIp(appstoreIp);
-            appPkgInfoRepository.save(pkgInfo);
-            LOGGER.info("Updated app package sync info DB {}", pkgInfo.toString());
         }
+        List<AppPackageInfo> appPkgInfos = new ArrayList<>(inAppPkgInfosMap.values());
+        appPkgInfoRepository.saveAll(appPkgInfos);
+        LOGGER.info("application package info DB updated successfully");
     }
 
     /**

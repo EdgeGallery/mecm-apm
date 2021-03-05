@@ -48,6 +48,42 @@ public final class AppPackageInfo {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "pkg_size")
+    private String size;
+
+    @Column(name = "version")
+    private String version;
+
+    @Column(name = "type")
+    private String type;
+
+    @Column(name = "affinity")
+    private String affinity;
+
+    @Column(name = "industry")
+    private String industry;
+
+    @Column(name = "contact")
+    private String contact;
+
+    @Column(name = "user_id")
+    private String userId;
+
+    @Column(name = "user_name")
+    private String userName;
+
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "short_desc")
+    private String shortDesc;
+
+    @Column(name = "test_task_id")
+    private String testTaskId;
+
+    @Column(name = "provider")
+    private String provider;
+
     @Column(name = "sync_status")
     private String syncStatus;
 

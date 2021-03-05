@@ -16,7 +16,6 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -140,35 +139,10 @@ public class SyncAppPackageTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        String url2 = "https://1.1.1.1:1234/mec/appstore/v1/apps";
-        String serviceResponseBody1 = "[\n"
-                + "    {\n"
-                + "        \"appId\": \"5e489a241af84e35b02079ace6954fc7\",\n"
-                + "        \"iconUrl\": null,\n"
-                + "        \"name\": \"zoneminder\",\n"
-                + "        \"provider\": \"Huawei\",\n"
-                + "        \"type\": \"Video Application\",\n"
-                + "        \"shortDesc\": \"ZoneMinder is an integrated set of applications which provide a complete surveillance solution attached to a Linux based machine.\",\n"
-                + "        \"createTime\": \"2021-02-10 15:56:35.157777\",\n"
-                + "        \"details\": \"ZoneMinder\\n\",\n"
-                + "        \"downloadCount\": 2,\n"
-                + "        \"affinity\": \"x86\",\n"
-                + "        \"industry\": \"Smart Park\",\n"
-                + "        \"contact\": null,\n"
-                + "        \"score\": 5.0,\n"
-                + "        \"userId\": \"50ba5ba7-5165-4754-9192-9c739039109d\",\n"
-                + "        \"userName\": \"wenson\",\n"
-                + "        \"status\": \"Published\"\n"
-                + "    }    \n"
-                + "]";
-        mockServer.expect(requestTo(url2))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(serviceResponseBody1, MediaType.APPLICATION_JSON));
-
-        String url3 = "https://1.1.1.1:1234/mec/appstore/v1/apps/5e489a241af84e35b02079ace6954fc7/packages";
-        String serviceResponseBody3 = "[\n"
-                + "    {\n"
-                + "        \"packageId\": \"7530d819ca12460a9cdf31c790417752\",\n"
+        url1 = "https://1.1.1.1:1234/mec/appstore/v1/apps/e261211d80d04cb6aed00e5cd1f2cd11/packages/"
+                + "b5a6ca9b8f85477bba2cd66fd79d5f98";
+        serviceResponseBody = "{\n"
+                + "        \"packageId\": \"b5a6ca9b8f85477bba2cd66fd79d5f98\",\n"
                 + "        \"size\": \"0\",\n"
                 + "        \"format\": \"{\\\"name\\\":\\\"76026777dd5e47d8ad869585cf6e0652\\\"}\",\n"
                 + "        \"createTime\": \"2021-02-10T07:56:35.157+0000\",\n"
@@ -179,42 +153,14 @@ public class SyncAppPackageTest {
                 + "        \"affinity\": \"x86\",\n"
                 + "        \"industry\": \"Smart Park\",\n"
                 + "        \"contact\": null,\n"
-                + "        \"appId\": \"5e489a241af84e35b02079ace6954fc7\",\n"
+                + "        \"appId\": \"e261211d80d04cb6aed00e5cd1f2cd11\",\n"
                 + "        \"userId\": \"50ba5ba7-5165-4754-9192-9c739039109d\",\n"
                 + "        \"userName\": \"wenson\",\n"
                 + "        \"status\": \"Published\",\n"
                 + "        \"shortDesc\": \"ZoneMinder is an integrated set of applications which provide a \",\n"
                 + "        \"testTaskId\": null,\n"
                 + "        \"provider\": \"Huawei\"\n"
-                + "    }\n"
-                + "]";
-        mockServer.expect(requestTo(url3))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(serviceResponseBody3, MediaType.APPLICATION_JSON));
-
-        ResultActions resultActions =
-                mvc.perform(MockMvcRequestBuilders.get("/apm/v1/apps/info/appstores/1.1.1.1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .header("access_token", "aasdjk")
-                        .content(""))
-                        .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
-        MvcResult result = resultActions.andReturn();
-        MockHttpServletResponse obj = result.getResponse();
-        assertEquals(
-                "[{\"packageId\":\"7530d819ca12460a9cdf31c790417752\",\"size\":\"0\",\"format\":\"{\\\"name\\\":\\\"76026777dd5e47d8ad869585cf6e0652\\\"}\",\"createTime\":\"2021-02-10T07:56:35.157+0000\",\"name\":\"zoneminder\",\"version\":\"1.0\",\"type\":\"Video Application\",\"details\":\"ZoneMinder\\n\",\"affinity\":\"x86\",\"industry\":\"Smart Park\",\"contact\":null,\"appId\":\"5e489a241af84e35b02079ace6954fc7\",\"userId\":\"50ba5ba7-5165-4754-9192-9c739039109d\",\"userName\":\"wenson\",\"status\":\"Published\",\"shortDesc\":\"ZoneMinder is an integrated set of applications which provide a \",\"testTaskId\":null,\"provider\":\"Huawei\"}]",
-                obj.getContentAsString());
-        /*********************************************************************/
-
-        Thread.sleep(5000);
-
-        mockServer.reset();
-        mockServer = MockRestServiceServer.createServer(restTemplate);
-
-        url1 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";
-        serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
-                + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
-
+                + "    }";
         mockServer.expect(requestTo(url1))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
@@ -235,7 +181,7 @@ public class SyncAppPackageTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(inputStreamResource, MediaType.APPLICATION_OCTET_STREAM));
 
-        resultActions =
+        ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.post("/apm/v1/apps/sync")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -246,9 +192,18 @@ public class SyncAppPackageTest {
                                 + "  \"packageId\": \"b5a6ca9b8f85477bba2cd66fd79d5f98\",\n"
                                 + "  \"appId\": \"e261211d80d04cb6aed00e5cd1f2cd11\"\n"
                                 + "}]"))
-                        .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                        .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
+        MvcResult result = resultActions.andReturn();
+
+        resultActions =
+                mvc.perform(MockMvcRequestBuilders.get("/apm/v1/apps/syncstatus")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("access_token", "aasdjk")
+                        .content(""))
+                        .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
         result = resultActions.andReturn();
-        obj = result.getResponse();
-        
+        MockHttpServletResponse obj = result.getResponse();
+        mockServer.verify();
     }
 }

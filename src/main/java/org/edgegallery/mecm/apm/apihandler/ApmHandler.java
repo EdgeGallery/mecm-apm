@@ -37,6 +37,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
 import org.edgegallery.mecm.apm.model.AppRepo;
@@ -334,11 +335,10 @@ public class ApmHandler {
         try {
             apps = service.getAppPackagesInfo(appstoreEndPoint, accessToken);
         } catch (NoSuchElementException ex) {
-            service.updateAppPackageInfoDB(appstoreIp, apps);
             return new ResponseEntity<>(apps, HttpStatus.NOT_FOUND);
         }
 
-        service.updateAppPackageInfoDB(appstoreIp, apps);
+        service.deleteNonExistingPackages(appstoreIp, apps);
 
         return new ResponseEntity<>(apps, HttpStatus.OK);
     }
@@ -410,25 +410,36 @@ public class ApmHandler {
             }
 
             try {
-                AppPackageInfo appPkgInfo = service.getAppPackageInfoDB(syncApp.getAppId() + syncApp.getPackageId());
-                if (Constants.APP_SYNC_INPROGRESS.equals(appPkgInfo.getSyncStatus())) {
-                    response.put(Constants.STATUS, "failed");
-                    response.put("reason", Constants.APP_SYNC_INPROGRESS);
-                    responseList.add(response);
-                    isValidInput = false;
+                String key = syncApp.getAppId() + syncApp.getPackageId();
+                AppPackageInfoDto appPkgInfoDto =
+                        service.getAppPackageInfoFromAppStore(
+                                appstore.getAppstoreIp() + ":" + appstore.getAppstorePort(),
+                                syncApp.getAppId(), syncApp.getPackageId(), accessToken);
+
+                if (service.isAppPackageInfoExistInDB(key)) {
+                    AppPackageInfo appPkgInfo = service.getAppPackageInfoDB(key);
+                    if (Constants.APP_SYNC_INPROGRESS.equals(appPkgInfo.getSyncStatus())) {
+                        response.put(Constants.STATUS, "failed");
+                        response.put("reason", Constants.APP_SYNC_INPROGRESS);
+                        responseList.add(response);
+                        isValidInput = false;
+                    }
+                } else {
+                    service.addAppPackageInfoDB(appstore.getAppstoreIp(), appPkgInfoDto);
                 }
-            } catch (NoSuchElementException ex) {
+            } catch (NoSuchElementException | ApmException ex) {
                 response.put(Constants.STATUS, "failed");
                 response.put("reason", ex.getMessage());
                 responseList.add(response);
                 isValidInput = false;
             }
+
             if (!isValidInput) {
                 continue;
             }
             response.put(Constants.STATUS, "accepted");
             responseList.add(response);
-            
+
             PkgSyncInfo pkgSyncInfo = mapper.map(syncApp, PkgSyncInfo.class);
             pkgSyncInfo.setAppstoreIp(syncApp.getAppstoreIp());
             pkgSyncInfo.setAppstorePort(appstore.getAppstorePort());

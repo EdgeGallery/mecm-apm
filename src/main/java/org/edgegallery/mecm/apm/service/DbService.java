@@ -19,12 +19,9 @@ package org.edgegallery.mecm.apm.service;
 import static org.edgegallery.mecm.apm.utils.Constants.RECORD_NOT_FOUND;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.edgegallery.mecm.apm.exception.ApmException;
@@ -359,12 +356,12 @@ public class DbService {
     }
 
     /**
-     * Updates app package info records.
+     * Deleted non existing app packages.
      *
      * @param appstoreIp    app store IP
      * @param inAppPkgInfos app package infos
      */
-    public void updateAppPackageInfoDB(String appstoreIp, List<AppPackageInfoDto> inAppPkgInfos) {
+    public void deleteNonExistingPackages(String appstoreIp, List<AppPackageInfoDto> inAppPkgInfos) {
 
         if (inAppPkgInfos == null || inAppPkgInfos.isEmpty()) {
             deleteAppPackageSyncInfo(appstoreIp);
@@ -376,36 +373,48 @@ public class DbService {
                     + Constants.MAX_APPS_PER_APPSTORE);
         }
 
-        ModelMapper mapper = new ModelMapper();
-        Map<String, AppPackageInfo> inAppPkgInfosMap = new HashMap<>();
+        List<String> inAppPkgInfosList = new LinkedList<>();
         for (AppPackageInfoDto inAppPkgInfo : inAppPkgInfos) {
-            String key = inAppPkgInfo.getAppId() + inAppPkgInfo.getPackageId();
-            AppPackageInfo pkgInfo = mapper.map(inAppPkgInfo, AppPackageInfo.class);
-            pkgInfo.setAppPkgInfoId(key);
-            pkgInfo.setAppstoreIp(appstoreIp);
-            pkgInfo.setSyncStatus(Constants.APP_NOT_IN_SYNC);
-            inAppPkgInfosMap.put(key, pkgInfo);
+            inAppPkgInfosList.add(inAppPkgInfo.getAppId() + inAppPkgInfo.getPackageId());
         }
 
         List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
 
         for (AppPackageInfo dbAppPackageInfo : appPkgInfosDb) {
-            AppPackageInfo inAppPackageInfo = inAppPkgInfosMap.get(dbAppPackageInfo.getAppPkgInfoId());
-            if (inAppPackageInfo == null) {
+            if (!inAppPkgInfosList.contains(dbAppPackageInfo.getAppPkgInfoId())) {
                 appPkgInfoRepository.deleteById(dbAppPackageInfo.getAppPkgInfoId());
+                LOGGER.info("deleting package, info not available in appstore {}", dbAppPackageInfo.getPackageId());
                 File appPackage = new File(localDirPath + File.separator + dbAppPackageInfo.getAppPkgInfoId());
                 boolean result = FileSystemUtils.deleteRecursively(appPackage);
                 LOGGER.debug("package delete result {}", result);
-            } else {
-                inAppPackageInfo.setOperationalInfo(dbAppPackageInfo.getOperationalInfo());
-                inAppPackageInfo.setSyncStatus(dbAppPackageInfo.getSyncStatus());
-                if (!inAppPackageInfo.getCreateTime().equals(dbAppPackageInfo.getCreateTime())) {
-                    inAppPackageInfo.setSyncStatus(Constants.APP_NOT_IN_SYNC);
-                }
             }
         }
-        List<AppPackageInfo> appPkgInfos = new ArrayList<>(inAppPkgInfosMap.values());
-        appPkgInfoRepository.saveAll(appPkgInfos);
+        LOGGER.info("application package info DB updated successfully");
+    }
+
+    /**
+     * Updates app package info records.
+     *
+     * @param appstoreIp   app store IP
+     * @param inAppPkgInfo app package infos
+     */
+    public void addAppPackageInfoDB(String appstoreIp, AppPackageInfoDto inAppPkgInfo) {
+
+        ModelMapper mapper = new ModelMapper();
+        AppPackageInfo pkgInfo = mapper.map(inAppPkgInfo, AppPackageInfo.class);
+        String key = pkgInfo.getAppId() + pkgInfo.getPackageId();
+        if (!appPkgInfoRepository.existsById(key)) {
+            List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
+            if (appPkgInfosDb.size() >= Constants.MAX_APPS_PER_APPSTORE) {
+                throw new ApmException("failed to update sync info DB, max limit is "
+                        + Constants.MAX_APPS_PER_APPSTORE);
+            }
+        }
+        pkgInfo.setAppPkgInfoId(key);
+        pkgInfo.setAppstoreIp(appstoreIp);
+        pkgInfo.setSyncStatus(Constants.APP_NOT_IN_SYNC);
+
+        appPkgInfoRepository.save(pkgInfo);
         LOGGER.info("application package info DB updated successfully");
     }
 
@@ -479,6 +488,15 @@ public class DbService {
         }
 
         return appPkgInfo.get();
+    }
+
+    /**
+     * Retrieves app package info records.
+     *
+     * @return application package sync info
+     */
+    public boolean isAppPackageSyncInfoExistInDb(String id) {
+        return appPkgInfoRepository.existsById(id);
     }
 
     /**

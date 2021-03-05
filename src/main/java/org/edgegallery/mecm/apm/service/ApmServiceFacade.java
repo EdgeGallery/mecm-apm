@@ -188,6 +188,10 @@ public class ApmServiceFacade {
         pkgInfo.setSyncStatus("SYNC");
         pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
         pkgInfo.setOperationalInfo(operationalInfo);
+        pkgInfo.setShortDesc(appPackageDto.getAppPkgDesc());
+        pkgInfo.setProvider(appPackageDto.getAppProvider());
+        pkgInfo.setAffinity(appPackageDto.getAppPkgAffinity());
+        pkgInfo.setVersion(appPackageDto.getAppPkgVersion());
 
         dbService.addAppPackageInfoDB(pkgInfo);
     }
@@ -349,13 +353,37 @@ public class ApmServiceFacade {
     }
 
     /**
+     * Retrieve app package info.
+     *
+     * @param appstoreEndPoint app store end point
+     * @param appId            app ID
+     * @param packageId        app package ID
+     * @param accessToken      access token
+     * @return app package info
+     */
+    public AppPackageInfoDto getAppPackageInfoFromAppStore(String appstoreEndPoint, String appId,
+                                                           String packageId, String accessToken) {
+        return apmService.getAppPkgInfoFromAppStore(appstoreEndPoint, appId, packageId, accessToken);
+    }
+
+    /**
      * Adds application package info.
      *
      * @param appstoreIp appstore end point
      * @param apps       application package infos
      */
-    public void updateAppPackageInfoDB(String appstoreIp, List<AppPackageInfoDto> apps) {
-        dbService.updateAppPackageInfoDB(appstoreIp, apps);
+    public void deleteNonExistingPackages(String appstoreIp, List<AppPackageInfoDto> apps) {
+        dbService.deleteNonExistingPackages(appstoreIp, apps);
+    }
+
+    /**
+     * Adds application package info.
+     *
+     * @param appstoreIp appstore end point
+     * @param appPkgInfo application package info
+     */
+    public void addAppPackageInfoDB(String appstoreIp, AppPackageInfoDto appPkgInfo) {
+        dbService.addAppPackageInfoDB(appstoreIp, appPkgInfo);
     }
 
     /**
@@ -372,6 +400,15 @@ public class ApmServiceFacade {
      */
     public AppPackageInfo getAppPackageInfoDB(String id) {
         return dbService.getAppPackageSyncInfo(id);
+    }
+
+    /**
+     * Returns true if package info exist in DB.
+     *
+     * @return true if available, otherwise false
+     */
+    public boolean isAppPackageInfoExistInDB(String id) {
+        return dbService.isAppPackageSyncInfoExistInDb(id);
     }
 
     /**

@@ -102,6 +102,17 @@ public final class ApmServiceHelper {
     }
 
     /**
+     * Returns local package directory path based on package Id.
+     *
+     * @param packageId package ID
+     * @return local package directory path
+     */
+    public static String getPackageDirPath(String baseDirPath, String packageId) {
+        return new StringBuilder(baseDirPath).append(File.separator)
+                .append(packageId).toString();
+    }
+
+    /**
      * Saves input stream to file.
      *
      * @param resourceStream   input resource stream

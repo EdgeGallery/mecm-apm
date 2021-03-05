@@ -17,6 +17,7 @@
 package org.edgegallery.mecm.apm.service;
 
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getLocalFilePath;
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getPackageDirPath;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
@@ -216,7 +217,7 @@ public class ApmServiceFacade {
     public void deleteAppPackage(String tenantId, String appPackageId) {
         dbService.deleteAppPackage(tenantId, appPackageId);
         dbService.deleteHost(tenantId, appPackageId);
-        apmService.deleteAppPackageFile(getLocalFilePath(localDirPath, appPackageId));
+        apmService.deleteAppPackageFile(getPackageDirPath(localDirPath, appPackageId));
         dbService.deleteAppPackageSyncInfoDb(appPackageId);
     }
 

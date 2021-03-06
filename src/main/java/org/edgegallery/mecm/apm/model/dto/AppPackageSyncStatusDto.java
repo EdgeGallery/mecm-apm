@@ -30,6 +30,19 @@ public final class AppPackageSyncStatusDto {
     private String appId;
     private String packageId;
     private String name;
+    private String size;
+    private String version;
+    private String type;
+    private String affinity;
+    private String industry;
+    private String contact;
+    private String userId;
+    private String userName;
+    private String status;
+    private String shortDesc;
+    private String testTaskId;
+    private String provider;
     private String syncStatus;
+    private String createTime;
     private String operationalInfo;
 }

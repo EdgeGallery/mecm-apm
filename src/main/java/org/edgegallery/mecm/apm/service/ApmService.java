@@ -790,6 +790,27 @@ public class ApmService {
     }
 
     /**
+     * Returns application package info from app store.
+     *
+     * @param appstoreEndpoint appstore endpoint
+     * @param appId            app ID
+     * @param packageId        package ID
+     * @param accessToken      access token
+     * @return returns appstore configuration info
+     * @throws ApmException exception if failed to get appstore configuration details
+     */
+    public AppPackageInfoDto getAppPkgInfoFromAppStore(String appstoreEndpoint, String appId,
+                                                       String packageId, String accessToken) {
+        String appsUrl = new StringBuilder("https://").append(appstoreEndpoint)
+                .append("/mec/appstore/v1/apps/").append(appId).append("/packages/").append(packageId).toString();
+
+        String response = sendGetRequest(appsUrl, accessToken);
+        LOGGER.info("applications package info response: {}", response);
+
+        return new Gson().fromJson(response, AppPackageInfoDto.class);
+    }
+
+    /**
      * Returns application package info.
      *
      * @param appstoreEndpoint appstore endpoint

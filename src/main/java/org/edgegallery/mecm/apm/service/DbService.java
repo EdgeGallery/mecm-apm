@@ -19,9 +19,11 @@ package org.edgegallery.mecm.apm.service;
 import static org.edgegallery.mecm.apm.utils.Constants.RECORD_NOT_FOUND;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.edgegallery.mecm.apm.exception.ApmException;
@@ -373,20 +375,23 @@ public class DbService {
                     + Constants.MAX_APPS_PER_APPSTORE);
         }
 
-        List<String> inAppPkgInfosList = new LinkedList<>();
+        Map<String, AppPackageInfoDto> inAppPkgInfosMap = new HashMap<>();
         for (AppPackageInfoDto inAppPkgInfo : inAppPkgInfos) {
-            inAppPkgInfosList.add(inAppPkgInfo.getAppId() + inAppPkgInfo.getPackageId());
+            inAppPkgInfosMap.put(inAppPkgInfo.getAppId() + inAppPkgInfo.getPackageId(), inAppPkgInfo);
         }
 
         List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
 
         for (AppPackageInfo dbAppPackageInfo : appPkgInfosDb) {
-            if (!inAppPkgInfosList.contains(dbAppPackageInfo.getAppPkgInfoId())) {
+            if (!inAppPkgInfosMap.containsKey(dbAppPackageInfo.getAppPkgInfoId())) {
                 appPkgInfoRepository.deleteById(dbAppPackageInfo.getAppPkgInfoId());
                 LOGGER.info("deleting package, info not available in appstore {}", dbAppPackageInfo.getPackageId());
                 File appPackage = new File(localDirPath + File.separator + dbAppPackageInfo.getAppPkgInfoId());
                 boolean result = FileSystemUtils.deleteRecursively(appPackage);
                 LOGGER.debug("package delete result {}", result);
+            } else {
+                AppPackageInfoDto dto = inAppPkgInfosMap.get(dbAppPackageInfo.getAppPkgInfoId());
+                dto.setSyncStatus(dbAppPackageInfo.getSyncStatus());
             }
         }
         LOGGER.info("application package info DB updated successfully");

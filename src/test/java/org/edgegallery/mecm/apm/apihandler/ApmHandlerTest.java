@@ -266,7 +266,7 @@ public class ApmHandlerTest {
         MvcResult result = resultActions.andReturn();
         MockHttpServletResponse obj = result.getResponse();
         assertEquals(
-                "[{\"packageId\":\"7530d819ca12460a9cdf31c790417752\",\"size\":\"0\",\"format\":\"{\\\"name\\\":\\\"76026777dd5e47d8ad869585cf6e0652\\\"}\",\"createTime\":\"2021-02-10T07:56:35.157+0000\",\"name\":\"zoneminder\",\"version\":\"1.0\",\"type\":\"Video Application\",\"details\":\"ZoneMinder\\n\",\"affinity\":\"x86\",\"industry\":\"Smart Park\",\"contact\":null,\"appId\":\"5e489a241af84e35b02079ace6954fc7\",\"userId\":\"50ba5ba7-5165-4754-9192-9c739039109d\",\"userName\":\"wenson\",\"status\":\"Published\",\"shortDesc\":\"ZoneMinder is an integrated set of applications which provide a \",\"testTaskId\":null,\"provider\":\"Huawei\"}]",
+                "[{\"packageId\":\"7530d819ca12460a9cdf31c790417752\",\"size\":\"0\",\"format\":\"{\\\"name\\\":\\\"76026777dd5e47d8ad869585cf6e0652\\\"}\",\"createTime\":\"2021-02-10T07:56:35.157+0000\",\"name\":\"zoneminder\",\"version\":\"1.0\",\"type\":\"Video Application\",\"details\":\"ZoneMinder\\n\",\"affinity\":\"x86\",\"industry\":\"Smart Park\",\"contact\":null,\"appId\":\"5e489a241af84e35b02079ace6954fc7\",\"userId\":\"50ba5ba7-5165-4754-9192-9c739039109d\",\"userName\":\"wenson\",\"status\":\"Published\",\"shortDesc\":\"ZoneMinder is an integrated set of applications which provide a \",\"testTaskId\":null,\"provider\":\"Huawei\",\"syncStatus\":\"NOT_IN_SYNC\"}]",
                 obj.getContentAsString());
         mockServer.verify();
     }

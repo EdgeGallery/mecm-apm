@@ -84,7 +84,7 @@ public class ApmServiceFacade {
         boolean isPkgExist = false;
         try {
             AppPackageInfo appPkinfoDb = dbService.getAppPackageSyncInfo(packageId);
-            if ("SYNC".equals(appPkinfoDb.getSyncStatus())) {
+            if (Constants.APP_SYNC.equals(appPkinfoDb.getSyncStatus())) {
                 isPkgInSync = true;
             }
         } catch (NoSuchElementException ex) {
@@ -186,7 +186,7 @@ public class ApmServiceFacade {
         pkgInfo.setAppId(appPackageDto.getAppId());
         pkgInfo.setPackageId(syncInfo.getPackageId());
         pkgInfo.setName(appPackageDto.getAppPkgName());
-        pkgInfo.setSyncStatus("SYNC");
+        pkgInfo.setSyncStatus(Constants.APP_SYNC);
         pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
         pkgInfo.setOperationalInfo(operationalInfo);
         pkgInfo.setShortDesc(appPackageDto.getAppPkgDesc());

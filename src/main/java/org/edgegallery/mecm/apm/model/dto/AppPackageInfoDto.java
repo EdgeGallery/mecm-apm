@@ -45,4 +45,5 @@ public final class AppPackageInfoDto {
     private String shortDesc;
     private String testTaskId;
     private String provider;
+    private String syncStatus;
 }

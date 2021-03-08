@@ -828,7 +828,9 @@ public class ApmService {
         List<AppPackageInfoDto> appPackageInfos = new LinkedList<>();
         JsonArray appsArray = new JsonParser().parse(response).getAsJsonArray();
         for (JsonElement app : appsArray) {
-            appPackageInfos.add(new Gson().fromJson(app.getAsJsonObject().toString(), AppPackageInfoDto.class));
+            AppPackageInfoDto dto = new Gson().fromJson(app.getAsJsonObject().toString(), AppPackageInfoDto.class);
+            dto.setSyncStatus(Constants.APP_NOT_IN_SYNC);
+            appPackageInfos.add(dto);
         }
         LOGGER.info("applications packages: {}", response);
         return appPackageInfos;

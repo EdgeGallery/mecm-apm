@@ -288,7 +288,7 @@ public class ApmService {
                     ModelMapper mapper = new ModelMapper();
                     imageLocn = mapper.map(values.get(Constants.IMAGE_LOCATION), ImageLocation.class);
                     imageLocn.setDomainame(mecmRepoEndpoint);
-                    imageLocn.setProject("chartrepo/mecm");
+                    imageLocn.setProject("mecm");
                     break;
                 }
             }
@@ -336,6 +336,16 @@ public class ApmService {
         String zipFileName = intendedDir.concat(".csar");
         try (ZipOutputStream os = new ZipOutputStream(new FileOutputStream(zipFileName))) {
             Files.walkFileTree(srcDir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs)
+                        throws IOException {
+                    if (!srcDir.equals(dir)) {
+                        os.putNextEntry(new ZipEntry(srcDir.relativize(dir).toString() + "/"));
+                        os.closeEntry();
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
                     try {
@@ -855,10 +865,10 @@ public class ApmService {
             String uploadImgName;
             if (dockerImageNames.length > 1) {
                 uploadImgName = new StringBuilder(mecmRepoEndpoint)
-                        .append("/chartrepo/mecm/").append(dockerImageNames[dockerImageNames.length - 1]).toString();
+                        .append("/mecm/").append(dockerImageNames[dockerImageNames.length - 1]).toString();
             } else {
                 uploadImgName = new StringBuilder(mecmRepoEndpoint)
-                        .append("/chartrepo/mecm/").append(dockerImageNames[0]).toString();
+                        .append("/mecm/").append(dockerImageNames[0]).toString();
             }
 
             LOGGER.info("tag image to upload: {}", uploadImgName);

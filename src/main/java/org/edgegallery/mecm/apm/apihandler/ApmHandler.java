@@ -233,11 +233,16 @@ public class ApmHandler {
             produces = MediaType.TEXT_PLAIN_VALUE)
     @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<String> deleteAppPackage(
+            @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId) {
-        service.deleteAppPackage(tenantId, appPackageId);
+
+        List<String> hosts = service.deleteAppPackage(tenantId, appPackageId);
+        for (String host : hosts) {
+            service.deleteAppPackageOnHost(tenantId, host, appPackageId, accessToken);
+        }
         return new ResponseEntity<>(Constants.SUCCESS, HttpStatus.OK);
     }
 
@@ -293,12 +298,16 @@ public class ApmHandler {
             produces = MediaType.TEXT_PLAIN_VALUE)
     @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<String> deleteAppPackageInHost(
+            @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
             @ApiParam(value = "app package id") @PathVariable("app_package_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId,
             @ApiParam(value = "host ip") @PathVariable("host_ip")
             @Size(max = Constants.MAX_COMMON_IP_LENGTH) @Pattern(regexp = HOST_IP_REGX) String hostIp) {
+
+        service.deleteAppPackageOnHost(tenantId, hostIp, appPackageId, accessToken);
+
         service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
         return new ResponseEntity<>(Constants.SUCCESS, HttpStatus.OK);
     }

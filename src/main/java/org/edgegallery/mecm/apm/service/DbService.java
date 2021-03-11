@@ -248,9 +248,12 @@ public class DbService {
      *
      * @param tenantId tenant ID
      * @param packageId package ID
+     * @return hostIp's of the deleted package
      */
-    public void deleteHost(String tenantId, String packageId) {
+    public List<String> deleteHost(String tenantId, String packageId) {
         String id = packageId + tenantId;
+
+        List<String> hosts = new LinkedList<>();
         mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(id)) {
                 mecHostRepository.delete(host);
@@ -258,6 +261,7 @@ public class DbService {
                         tenantId, packageId);
             }
         });
+        return hosts;
     }
 
     /**

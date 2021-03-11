@@ -362,9 +362,9 @@ public class ApmServiceFacade {
         try {
             String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
 
-            uploadApplicationPackage(restTemplate, applcmEndPoint, tenantId, appId, packageId, hostIp, accessToken);
+            uploadApplicationPackage(applcmEndPoint, tenantId, appId, packageId, hostIp, accessToken);
 
-            distributeApplicationPackage(restTemplate, applcmEndPoint, tenantId, packageId, hostIp, accessToken);
+            distributeApplicationPackage(applcmEndPoint, tenantId, packageId, hostIp, accessToken);
         } catch (ApmException | NoSuchElementException ex) {
             dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, "Error", "error");
             return;
@@ -372,11 +372,10 @@ public class ApmServiceFacade {
         dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, "distributed", "success");
     }
 
-    private void distributeApplicationPackage(RestTemplate restTemplate, String applcmEndPoint, String tenantId,
+    private void distributeApplicationPackage(String applcmEndPoint, String tenantId,
                                               String pkgId, String hostIp, String accessToken) {
         LOGGER.info("distribute application package");
-        //String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenant + "/packages/" + pkgId;
-        String url = "https://" + "lcmcontroller:8094" + "/lcmcontroller/v1/tenants/" + tenantId + "/packages/" + pkgId;
+        String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenantId + "/packages/" + pkgId;
 
         List<String> hosts = new LinkedList<>();
         hosts.add(hostIp);
@@ -385,11 +384,10 @@ public class ApmServiceFacade {
         apmService.sendPostRequest(url, new Gson().toJson(hostsMap).toString(), accessToken);
     }
 
-    private void uploadApplicationPackage(RestTemplate restTemplate, String applcmEndPoint, String tenantId,
+    private void uploadApplicationPackage(String applcmEndPoint, String tenantId,
                                           String appId, String pkgId, String hostIp, String accessToken) {
         LOGGER.info("upload application package");
-        //String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenant + "/packages";
-        String url = "https://" + "lcmcontroller:8094" + "/lcmcontroller/v1/tenants/" + tenantId + "/packages";
+        String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenantId + "/packages";
         try {
             String packagePath = localDirPath + File.separator + pkgId + "/" + pkgId + ".csar";
             FileSystemResource appPkgRes = new FileSystemResource(new File(packagePath));
@@ -401,7 +399,7 @@ public class ApmServiceFacade {
             parts.add("appId", appId);
             parts.add("origin", "MEO");
 
-            sendRequestWithMultipartFormData(restTemplate, url, parts, accessToken);
+            sendRequestWithMultipartFormData(url, parts, accessToken);
         } catch (InvalidPathException e) {
             LOGGER.info("package ID is invalid");
             throw new ApmException("invalid package path");
@@ -411,11 +409,12 @@ public class ApmServiceFacade {
     /**
      * Send request to remote entity.
      *
-     * @param restTemplate rest template
      * @param url          request url
+     * @param data         multipart request details
+     * @param accessToken  access token
      */
-    public void sendRequestWithMultipartFormData(RestTemplate restTemplate, String url,
-                                                 LinkedMultiValueMap<String, Object> data, String accessToken) {
+    private void sendRequestWithMultipartFormData(String url, LinkedMultiValueMap<String, Object> data,
+                                                 String accessToken) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("access_token", accessToken);

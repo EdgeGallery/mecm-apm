@@ -23,11 +23,16 @@ import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.ERROR;
 
+import com.google.gson.Gson;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.InvalidPathException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import lombok.Getter;
@@ -48,8 +53,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
 
 @Getter
 @Setter
@@ -66,6 +83,9 @@ public class ApmServiceFacade {
 
     @Value("${apm.package-dir:/usr/app/packages}")
     private String localDirPath;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     /**
      * Updates Db and distributes docker application image to host.
@@ -111,11 +131,10 @@ public class ApmServiceFacade {
             }
         }
 
-        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, false);
-
         if (!isPkgExist) {
             apmService.compressAppPackage(packageId);
         }
+        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, false, accessToken);
 
         if (!isPkgInSync) {
             addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
@@ -165,8 +184,6 @@ public class ApmServiceFacade {
             return;
         }
 
-        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, isDockerImgAvailable);
-
         if (dockerImgspath != null) {
             try {
                 FileUtils.forceDelete(new File(dockerImgspath + ".zip"));
@@ -176,6 +193,9 @@ public class ApmServiceFacade {
             }
         }
         apmService.compressAppPackage(packageId);
+
+        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, isDockerImgAvailable, accessToken);
+
         addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
         LOGGER.info("On-boading completed...");
     }
@@ -213,12 +233,36 @@ public class ApmServiceFacade {
      *
      * @param tenantId     tenant ID
      * @param appPackageId app package ID
+     * @return hosts on which app package to be deleted
      */
-    public void deleteAppPackage(String tenantId, String appPackageId) {
+    public List<String> deleteAppPackage(String tenantId, String appPackageId) {
         dbService.deleteAppPackage(tenantId, appPackageId);
-        dbService.deleteHost(tenantId, appPackageId);
+        List<String> hosts = dbService.deleteHost(tenantId, appPackageId);
         apmService.deleteAppPackageFile(getPackageDirPath(localDirPath, appPackageId));
         dbService.deleteAppPackageSyncInfoDb(appPackageId);
+        return hosts;
+    }
+
+    /**
+     * Deletes application package on host.
+     *
+     * @param hostIp      host ip
+     * @param packageId   package ID
+     * @param accessToken access token
+     * @throws ApmException exception if failed to get edge repository details
+     */
+    public void deleteAppPackageOnHost(String tenantId, String hostIp, String packageId, String accessToken) {
+        try {
+            String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
+
+            String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
+                    .append("/lcmcontroller/v1/tenants/").append(tenantId)
+                    .append("/packages/").append(packageId).append("/hosts/").append(hostIp).toString();
+
+            apmService.sendDeleteRequest(url, accessToken);
+        } catch (NoSuchElementException | ApmException ex) {
+            LOGGER.info("failed to delete package on host {}", hostIp);
+        }
     }
 
     /**
@@ -267,7 +311,7 @@ public class ApmServiceFacade {
 
     private void distributeApplication(String tenantId, AppPackageDto appPackageDto,
                                        List<SwImageDescr> imageInfoList, PkgSyncInfo syncAppPkg,
-                                       boolean skipDownload) {
+                                       boolean skipDownload, String accessToken) {
         String packageId = appPackageDto.getAppPkgId();
         Set<String> downloadedImgs = null;
         Set<String> uploadedImgs = null;
@@ -290,13 +334,113 @@ public class ApmServiceFacade {
                 distributionStatus = ERROR;
                 error = e.getMessage();
                 LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
+                dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus,
+                        error);
+                continue;
             } finally {
                 apmService.deleteAppPkgDockerImages(downloadedImgs);
                 apmService.deleteAppPkgDockerImages(uploadedImgs);
             }
-
-            dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus, error);
+            
+            uploadAndDistributeApplicationPackage(accessToken, host.getHostIp(), tenantId,
+                    appPackageDto.getAppId(), packageId);
         }
+    }
+
+    /**
+     * Upload and distribute application package on the edge host.
+     *
+     * @param accessToken  access token
+     * @param hostIp host IP
+     * @param tenantId tenant ID
+     * @param appId add ID 
+     * @param packageId package ID
+     */
+    @Async
+    public void uploadAndDistributeApplicationPackage(String accessToken, String hostIp, String tenantId,
+                                                      String appId, String packageId) {
+        try {
+            String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
+
+            uploadApplicationPackage(restTemplate, applcmEndPoint, tenantId, appId, packageId, hostIp, accessToken);
+
+            distributeApplicationPackage(restTemplate, applcmEndPoint, tenantId, packageId, hostIp, accessToken);
+        } catch (ApmException | NoSuchElementException ex) {
+            dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, "Error", "error");
+            return;
+        }
+        dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, "distributed", "success");
+    }
+
+    private void distributeApplicationPackage(RestTemplate restTemplate, String applcmEndPoint, String tenantId,
+                                              String pkgId, String hostIp, String accessToken) {
+        LOGGER.info("distribute application package");
+        //String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenant + "/packages/" + pkgId;
+        String url = "https://" + "lcmcontroller:8094" + "/lcmcontroller/v1/tenants/" + tenantId + "/packages/" + pkgId;
+
+        List<String> hosts = new LinkedList<>();
+        hosts.add(hostIp);
+        Map<String, List<String>> hostsMap = new HashMap<>();
+        hostsMap.put("hostIp", hosts);
+        apmService.sendPostRequest(url, new Gson().toJson(hostsMap).toString(), accessToken);
+    }
+
+    private void uploadApplicationPackage(RestTemplate restTemplate, String applcmEndPoint, String tenantId,
+                                          String appId, String pkgId, String hostIp, String accessToken) {
+        LOGGER.info("upload application package");
+        //String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenant + "/packages";
+        String url = "https://" + "lcmcontroller:8094" + "/lcmcontroller/v1/tenants/" + tenantId + "/packages";
+        try {
+            String packagePath = localDirPath + File.separator + pkgId + "/" + pkgId + ".csar";
+            FileSystemResource appPkgRes = new FileSystemResource(new File(packagePath));
+
+            // Preparing request parts.
+            LinkedMultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+            parts.add("package", appPkgRes);
+            parts.add("packageId", pkgId);
+            parts.add("appId", appId);
+            parts.add("origin", "MEO");
+
+            sendRequestWithMultipartFormData(restTemplate, url, parts, accessToken);
+        } catch (InvalidPathException e) {
+            LOGGER.info("package ID is invalid");
+            throw new ApmException("invalid package path");
+        }
+    }
+
+    /**
+     * Send request to remote entity.
+     *
+     * @param restTemplate rest template
+     * @param url          request url
+     */
+    public void sendRequestWithMultipartFormData(RestTemplate restTemplate, String url,
+                                                 LinkedMultiValueMap<String, Object> data, String accessToken) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("access_token", accessToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        HttpEntity<LinkedMultiValueMap<String, Object>> entity = new HttpEntity<>(data, headers);
+        try {
+            LOGGER.info("upload app package {}", url);
+
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+            if (!HttpStatus.OK.equals(response.getStatusCode())) {
+                LOGGER.error("upload failed, return code {}", response.getStatusCode());
+                throw new ApmException("returned error from remote entity, error code {}" + response.getStatusCode());
+            }
+        } catch (ResourceAccessException ex) {
+            LOGGER.error("upload failed, resource exception");
+            throw new ApmException("Resource access exception");
+        } catch (HttpServerErrorException | HttpClientErrorException ex) {
+            LOGGER.error("upload failed, http error exception");
+            throw new ApmException("failed to connect");
+        }
+        LOGGER.info("application package uploaded successfully");
+        return;
     }
 
     /**

@@ -614,6 +614,57 @@ public class ApmService {
     }
 
     /**
+     * Gets applcm endpoint from inventory.
+     *
+     * @param hostIp      host ip
+     * @param accessToken access token
+     * @return returns edge repository info
+     * @throws ApmException exception if failed to get edge repository details
+     */
+    public String getApplcmCfgOfHost(String hostIp, String accessToken) {
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
+                .append(inventoryPort).append("/inventory/v1").append("/mechosts/").append(hostIp).toString();
+
+        String response = sendGetRequest(url, accessToken);
+
+        LOGGER.info("response: {}", response);
+
+        JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
+        JsonElement applcmIp = jsonObject.get("applcmIp");
+        if (applcmIp == null) {
+            LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
+            throw new ApmException("applcm IP is null for host " + hostIp);
+        }
+
+        String ip = applcmIp.getAsString();
+        if (!isRegexMatched(Constants.IP_REGEX, ip)) {
+            LOGGER.error(Constants.REPO_IP_INVALID, hostIp);
+            throw new ApmException("edge repo ip is invalid for host " + hostIp);
+        }
+
+        url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
+                .append(inventoryPort).append("/inventory/v1").append("/applcms/").append(ip).toString();
+        response = sendGetRequest(url, accessToken);
+
+        LOGGER.info("response: {}", response);
+
+        jsonObject = new JsonParser().parse(response).getAsJsonObject();
+        JsonElement applcmPort = jsonObject.get("applcmPort");
+        if (applcmPort == null) {
+            LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
+            throw new ApmException("applcm port is null for host " + hostIp);
+        }
+
+        String port = applcmPort.getAsString();
+        if (!isRegexMatched(Constants.PORT_REGEX, port)) {
+            LOGGER.error(Constants.REPO_PORT_INVALID, hostIp);
+            throw new ApmException("applcm port is invalid for host " + hostIp);
+        }
+
+        return applcmIp.getAsString() + ":" + applcmPort.getAsString();
+    }
+
+    /**
      * Returns app package csar file.
      *
      * @param localFilePath local file path
@@ -696,13 +747,16 @@ public class ApmService {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append("/inventory/v1").append("/apprepos").toString();
 
-        String response = sendGetRequest(url, accessToken);
-
         List<AppRepo> appRepoRecords = new LinkedList<>();
-        JsonArray appRepoRecs = new JsonParser().parse(response).getAsJsonArray();
-        for (JsonElement appRepoRec : appRepoRecs) {
-            AppRepo apprepo = new Gson().fromJson(appRepoRec, AppRepo.class);
-            appRepoRecords.add(apprepo);
+        try {
+            String response = sendGetRequest(url, accessToken);
+            JsonArray appRepoRecs = new JsonParser().parse(response).getAsJsonArray();
+            for (JsonElement appRepoRec : appRepoRecs) {
+                AppRepo apprepo = new Gson().fromJson(appRepoRec, AppRepo.class);
+                appRepoRecords.add(apprepo);
+            }
+        } catch (NoSuchElementException | ApmException ex) {
+            LOGGER.info("failed to fetch app source repositories");
         }
         return appRepoRecords;
     }
@@ -744,6 +798,79 @@ public class ApmService {
         }
 
         return response.getBody();
+    }
+
+    /**
+     * Sends delete request.
+     *
+     * @param url         URL
+     * @param accessToken access token
+     * @throws ApmException exception if failed to delete
+     */
+    public void sendDeleteRequest(String url, String accessToken) {
+
+        LOGGER.info("DELETE request: {}", url);
+        ResponseEntity<String> response;
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("access_token", accessToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            response = restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
+        } catch (ResourceAccessException ex) {
+            LOGGER.error("connection failed {}", ex.getMessage());
+            throw new ApmException("failed to connect " + ex.getMessage());
+        } catch (HttpClientErrorException ex) {
+            LOGGER.error("failed {}", ex.getMessage());
+            throw new ApmException("error while delete " + ex.getMessage());
+        }
+
+        if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
+            LOGGER.error("data not found, status {}", response.getStatusCode());
+            throw new NoSuchElementException("not found status " + response.getStatusCode());
+        }
+
+        if (!HttpStatus.OK.equals(response.getStatusCode())) {
+            LOGGER.error("received failure response status {}", response.getStatusCode());
+            throw new ApmException("received failure response status " + response.getStatusCode());
+        }
+    }
+
+    /**
+     * Sends post request.
+     *
+     * @param url         URL
+     * @param reqBody     request body
+     * @param accessToken access token
+     * @throws ApmException exception if failed to delete
+     */
+    public void sendPostRequest(String url, String reqBody, String accessToken) {
+
+        LOGGER.info("POST request: {}", url);
+        ResponseEntity<String> response;
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("access_token", accessToken);
+            HttpEntity<String> entity = new HttpEntity<>(reqBody, headers);
+            response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        } catch (ResourceAccessException ex) {
+            LOGGER.error("connection failed {}", ex.getMessage());
+            throw new ApmException("failed to connect " + ex.getMessage());
+        } catch (HttpClientErrorException | HttpServerErrorException ex) {
+            LOGGER.error("failed {}", ex.getMessage());
+            throw new ApmException("error while delete " + ex.getMessage());
+        }
+
+        if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
+            LOGGER.error("data not found, status {}", response.getStatusCode());
+            throw new NoSuchElementException("not found status " + response.getStatusCode());
+        }
+
+        if (!HttpStatus.OK.equals(response.getStatusCode())) {
+            LOGGER.error("received failure response status {}", response.getStatusCode());
+            throw new ApmException("received failure response status " + response.getStatusCode());
+        }
     }
 
     /**

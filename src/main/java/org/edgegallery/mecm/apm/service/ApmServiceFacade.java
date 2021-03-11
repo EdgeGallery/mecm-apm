@@ -244,6 +244,29 @@ public class ApmServiceFacade {
     }
 
     /**
+     * Deletes distributed application package on host.
+     *
+     * @param hostIp      host ip
+     * @param packageId   package ID
+     * @param accessToken access token
+     * @throws ApmException exception if failed to get edge repository details
+     */
+    public void deleteDistributedAppPackageOnHost(String tenantId, String hostIp,
+                                                  String packageId, String accessToken) {
+        try {
+            String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
+
+            String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
+                    .append("/lcmcontroller/v1/tenants/").append(tenantId)
+                    .append("/packages/").append(packageId).append("/hosts/").append(hostIp).toString();
+
+            apmService.sendDeleteRequest(url, accessToken);
+        } catch (NoSuchElementException | ApmException ex) {
+            LOGGER.info("failed to delete package on host {}", hostIp);
+        }
+    }
+
+    /**
      * Deletes application package on host.
      *
      * @param hostIp      host ip
@@ -251,13 +274,13 @@ public class ApmServiceFacade {
      * @param accessToken access token
      * @throws ApmException exception if failed to get edge repository details
      */
-    public void deleteAppPackageOnHost(String tenantId, String hostIp, String packageId, String accessToken) {
+    public void deleteDistributedAppPackage(String tenantId, String hostIp, String packageId, String accessToken) {
         try {
             String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
 
             String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
                     .append("/lcmcontroller/v1/tenants/").append(tenantId)
-                    .append("/packages/").append(packageId).append("/hosts/").append(hostIp).toString();
+                    .append("/packages/").append(packageId).toString();
 
             apmService.sendDeleteRequest(url, accessToken);
         } catch (NoSuchElementException | ApmException ex) {

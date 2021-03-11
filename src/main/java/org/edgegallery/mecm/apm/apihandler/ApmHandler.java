@@ -241,7 +241,7 @@ public class ApmHandler {
 
         List<String> hosts = service.deleteAppPackage(tenantId, appPackageId);
         for (String host : hosts) {
-            service.deleteAppPackageOnHost(tenantId, host, appPackageId, accessToken);
+            service.deleteDistributedAppPackage(tenantId, host, appPackageId, accessToken);
         }
         return new ResponseEntity<>(Constants.SUCCESS, HttpStatus.OK);
     }
@@ -306,9 +306,10 @@ public class ApmHandler {
             @ApiParam(value = "host ip") @PathVariable("host_ip")
             @Size(max = Constants.MAX_COMMON_IP_LENGTH) @Pattern(regexp = HOST_IP_REGX) String hostIp) {
 
-        service.deleteAppPackageOnHost(tenantId, hostIp, appPackageId, accessToken);
+        service.deleteDistributedAppPackageOnHost(tenantId, hostIp, appPackageId, accessToken);
 
         service.deleteAppPackageInHost(tenantId, appPackageId, hostIp);
+
         return new ResponseEntity<>(Constants.SUCCESS, HttpStatus.OK);
     }
 

@@ -257,6 +257,7 @@ public class DbService {
         mecHostRepository.findAll().forEach((MecHost host) -> {
             if (host.getPkgHostKey().equals(id)) {
                 mecHostRepository.delete(host);
+                hosts.add(host.getHostIp());
                 LOGGER.info("host record for tenant {} and package {} deleted successfully",
                         tenantId, packageId);
             }

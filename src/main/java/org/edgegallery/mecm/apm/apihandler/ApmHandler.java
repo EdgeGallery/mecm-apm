@@ -125,6 +125,7 @@ public class ApmHandler {
 
         PkgSyncInfo syncAppPkg = new PkgSyncInfo();
         syncAppPkg.setAppstoreIp("-");
+        syncAppPkg.setAppstorePort("-");
         syncAppPkg.setAppId(appId);
         syncAppPkg.setPackageId(appPkgId);
 
@@ -435,7 +436,8 @@ public class ApmHandler {
                         isValidInput = false;
                     }
                 } else {
-                    service.addAppPackageInfoDB(appstore.getAppstoreIp(), appPkgInfoDto);
+                    service.addAppSyncPackageInfoDB(appstore.getAppstoreIp(),
+                                                    appstore.getAppstorePort(), appPkgInfoDto);
                 }
             } catch (NoSuchElementException | ApmException ex) {
                 response.put(Constants.STATUS, "failed");

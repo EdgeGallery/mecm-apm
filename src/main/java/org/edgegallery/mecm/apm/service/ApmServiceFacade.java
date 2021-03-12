@@ -213,8 +213,9 @@ public class ApmServiceFacade {
         pkgInfo.setProvider(appPackageDto.getAppProvider());
         pkgInfo.setAffinity(appPackageDto.getAppPkgAffinity());
         pkgInfo.setVersion(appPackageDto.getAppPkgVersion());
+        pkgInfo.setAppstoreEndpoint(syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort());
 
-        dbService.addAppPackageInfoDB(pkgInfo);
+        dbService.addAppSyncPackageInfoDB(pkgInfo);
     }
 
     /**
@@ -546,11 +547,12 @@ public class ApmServiceFacade {
     /**
      * Adds application package info.
      *
-     * @param appstoreIp appstore end point
+     * @param appstoreIp appstore IP
+     * @param appstorePort appstore port
      * @param appPkgInfo application package info
      */
-    public void addAppPackageInfoDB(String appstoreIp, AppPackageInfoDto appPkgInfo) {
-        dbService.addAppPackageInfoDB(appstoreIp, appPkgInfo);
+    public void addAppSyncPackageInfoDB(String appstoreIp, String appstorePort, AppPackageInfoDto appPkgInfo) {
+        dbService.addAppSyncPackageInfoDB(appstoreIp, appstorePort, appPkgInfo);
     }
 
     /**

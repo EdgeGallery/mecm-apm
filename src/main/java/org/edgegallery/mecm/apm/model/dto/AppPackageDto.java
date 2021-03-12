@@ -73,7 +73,6 @@ public class AppPackageDto {
     private String appPkgAffinity;
 
     @Size(max = Constants.MAX_DETAILS_STRING_LENGTH, message = "appIconUrl must not exceed more than 1024 characters")
-    @CustomConstraint(value = ConstraintType.URL, message = "invalid app icon path")
     private String appIconUrl;
 
     @Size(max = MAX_COMMON_STRING_LENGTH, message = "createdTime must not exceed more than 255 characters")

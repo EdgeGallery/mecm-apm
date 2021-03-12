@@ -62,7 +62,7 @@ public class DbService {
     private ApmTenantRepository tenantRepository;
 
     @Autowired
-    private AppPackageInfoRepository appPkgInfoRepository;
+    private AppPackageInfoRepository appPkgSyncRepository;
 
     @Value("${apm.package-dir:/usr/app/packages}")
     private String localDirPath;
@@ -349,7 +349,7 @@ public class DbService {
     }
 
     private void deleteAppPackageSyncInfo(String appstoreIp) {
-        List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
+        List<AppPackageInfo> appPkgInfosDb = appPkgSyncRepository.findByAppstoreId(appstoreIp);
         for (AppPackageInfo info : appPkgInfosDb) {
             String appPackage = info.getAppId() + info.getPackageId();
 
@@ -357,7 +357,7 @@ public class DbService {
             boolean result = FileSystemUtils.deleteRecursively(pkgFile);
             LOGGER.debug("application package {} delete result {}", appPackage, result);
 
-            appPkgInfoRepository.deleteById(appPackage);
+            appPkgSyncRepository.deleteById(appPackage);
             LOGGER.info("Deleted app package sync info from DB {}", appPackage);
         }
     }
@@ -385,11 +385,11 @@ public class DbService {
             inAppPkgInfosMap.put(inAppPkgInfo.getAppId() + inAppPkgInfo.getPackageId(), inAppPkgInfo);
         }
 
-        List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
+        List<AppPackageInfo> appPkgInfosDb = appPkgSyncRepository.findByAppstoreId(appstoreIp);
 
         for (AppPackageInfo dbAppPackageInfo : appPkgInfosDb) {
             if (!inAppPkgInfosMap.containsKey(dbAppPackageInfo.getAppPkgInfoId())) {
-                appPkgInfoRepository.deleteById(dbAppPackageInfo.getAppPkgInfoId());
+                appPkgSyncRepository.deleteById(dbAppPackageInfo.getAppPkgInfoId());
                 LOGGER.info("deleting package, info not available in appstore {}", dbAppPackageInfo.getPackageId());
                 File appPackage = new File(localDirPath + File.separator + dbAppPackageInfo.getAppPkgInfoId());
                 boolean result = FileSystemUtils.deleteRecursively(appPackage);
@@ -408,37 +408,38 @@ public class DbService {
      * @param appstoreIp   app store IP
      * @param inAppPkgInfo app package infos
      */
-    public void addAppPackageInfoDB(String appstoreIp, AppPackageInfoDto inAppPkgInfo) {
+    public void addAppSyncPackageInfoDB(String appstoreIp, String appstorePort, AppPackageInfoDto inAppPkgInfo) {
 
         ModelMapper mapper = new ModelMapper();
         AppPackageInfo pkgInfo = mapper.map(inAppPkgInfo, AppPackageInfo.class);
         String key = pkgInfo.getAppId() + pkgInfo.getPackageId();
-        if (!appPkgInfoRepository.existsById(key)) {
-            List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(appstoreIp);
+        if (!appPkgSyncRepository.existsById(key)) {
+            List<AppPackageInfo> appPkgInfosDb = appPkgSyncRepository.findByAppstoreId(appstoreIp);
             if (appPkgInfosDb.size() >= Constants.MAX_APPS_PER_APPSTORE) {
                 throw new ApmException("failed to update sync info DB, max limit is "
                         + Constants.MAX_APPS_PER_APPSTORE);
             }
         }
+        pkgInfo.setAppstoreEndpoint(appstoreIp + ":" + appstorePort);
         pkgInfo.setAppPkgInfoId(key);
         pkgInfo.setAppstoreIp(appstoreIp);
         pkgInfo.setSyncStatus(Constants.APP_NOT_IN_SYNC);
 
-        appPkgInfoRepository.save(pkgInfo);
+        appPkgSyncRepository.save(pkgInfo);
         LOGGER.info("application package info DB updated successfully");
     }
 
     /**
-     * Adds app package info records.
+     * Adds app sync package info records.
      *
      * @param pkgInfo package sync info
      */
-    public void addAppPackageInfoDB(AppPackageInfo pkgInfo) {
-        List<AppPackageInfo> appPkgInfosDb = appPkgInfoRepository.findByAppstoreId(pkgInfo.getAppstoreIp());
+    public void addAppSyncPackageInfoDB(AppPackageInfo pkgInfo) {
+        List<AppPackageInfo> appPkgInfosDb = appPkgSyncRepository.findByAppstoreId(pkgInfo.getAppstoreIp());
         if (!appPkgInfosDb.isEmpty() && (appPkgInfosDb.size() >= Constants.MAX_APPS_PER_APPSTORE)) {
             throw new ApmException("failed to add application sync info to DB, max limit reached");
         }
-        appPkgInfoRepository.save(pkgInfo);
+        appPkgSyncRepository.save(pkgInfo);
     }
 
     /**
@@ -452,14 +453,14 @@ public class DbService {
     public void updateAppPackageSyncStatus(String appId, String packageId,
                                            String syncStatus, String operationalinfo) {
         String pkgId = appId + packageId;
-        Optional<AppPackageInfo> appPkgInfo = appPkgInfoRepository.findById(pkgId);
+        Optional<AppPackageInfo> appPkgInfo = appPkgSyncRepository.findById(pkgId);
         if (!appPkgInfo.isPresent()) {
             throw new NoSuchElementException("package not found");
         }
         AppPackageInfo pkgInfo = appPkgInfo.get();
         pkgInfo.setSyncStatus(syncStatus);
         pkgInfo.setOperationalInfo(operationalinfo);
-        appPkgInfoRepository.save(pkgInfo);
+        appPkgSyncRepository.save(pkgInfo);
         LOGGER.info("updated app {}, sync status {}, operInfo {}", pkgInfo.getName(), syncStatus, operationalinfo);
     }
 
@@ -467,7 +468,7 @@ public class DbService {
      * Retrieves all app package info records.
      */
     public List<AppPackageInfo> getAppPackageSyncInfo() {
-        Iterable<AppPackageInfo> dbPkgInfo = appPkgInfoRepository.findAll();
+        Iterable<AppPackageInfo> dbPkgInfo = appPkgSyncRepository.findAll();
 
         Iterator<AppPackageInfo> itr = dbPkgInfo.iterator();
         List<AppPackageInfo> pkgInfos = new LinkedList<>();
@@ -491,7 +492,7 @@ public class DbService {
      * @return application package sync info
      */
     public AppPackageInfo getAppPackageSyncInfo(String id) {
-        Optional<AppPackageInfo> appPkgInfo = appPkgInfoRepository.findById(id);
+        Optional<AppPackageInfo> appPkgInfo = appPkgSyncRepository.findById(id);
         if (!appPkgInfo.isPresent()) {
             LOGGER.error(RECORD_NOT_FOUND);
             throw new NoSuchElementException(RECORD_NOT_FOUND);
@@ -506,7 +507,7 @@ public class DbService {
      * @return application package sync info
      */
     public boolean isAppPackageSyncInfoExistInDb(String id) {
-        return appPkgInfoRepository.existsById(id);
+        return appPkgSyncRepository.existsById(id);
     }
 
     /**
@@ -515,7 +516,7 @@ public class DbService {
      * @param appPkgInfoId app package info id
      */
     public void deleteAppPackageSyncInfoDb(String appPkgInfoId) {
-        Optional<AppPackageInfo> appPkgInfo = appPkgInfoRepository.findById(appPkgInfoId);
+        Optional<AppPackageInfo> appPkgInfo = appPkgSyncRepository.findById(appPkgInfoId);
         if (!appPkgInfo.isPresent()) {
             LOGGER.info(RECORD_NOT_FOUND);
             return;
@@ -523,7 +524,7 @@ public class DbService {
         //Delete only if added by atp flow where appstore is none
         AppPackageInfo deletePkg = appPkgInfo.get();
         if ("-".equals(deletePkg.getAppstoreIp())) {
-            appPkgInfoRepository.deleteById(appPkgInfoId);
+            appPkgSyncRepository.deleteById(appPkgInfoId);
         }
     }
 }

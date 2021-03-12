@@ -48,6 +48,9 @@ public final class AppPackageInfo {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "appstore_endpoint")
+    private String appstoreEndpoint;
+
     @Column(name = "pkg_size")
     private String size;
 

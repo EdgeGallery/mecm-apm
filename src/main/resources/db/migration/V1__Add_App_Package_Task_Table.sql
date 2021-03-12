@@ -38,6 +38,7 @@
         appstore_ip  varchar(255) not null,
         package_id  varchar(255) not null,
         name varchar(255) not null,
+        appstore_endpoint varchar(21) not null,
         pkg_size varchar(255),
         version varchar(255),
         type varchar(255),

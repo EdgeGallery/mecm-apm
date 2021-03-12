@@ -30,6 +30,7 @@ public final class AppPackageSyncStatusDto {
     private String appId;
     private String packageId;
     private String name;
+    private String appstoreEndpoint;
     private String size;
     private String version;
     private String type;

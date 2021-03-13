@@ -263,16 +263,11 @@ public class ApmService {
      * Update application package with MECM repo info.
      *
      * @param packageId        package ID
-     * @param swImgDescrUpdate if true, update swimageDescr othrewise no
      */
-    public void updateAppPackageWithRepoInfo(String packageId, boolean swImgDescrUpdate) {
+    public void updateAppPackageWithRepoInfo(String packageId) {
 
-        if (swImgDescrUpdate) {
-            LOGGER.info("update swImage path in descriptor file");
-
-            File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
-            updateRepoInfoInSwImageDescr(swImageDesc, mecmRepoEndpoint);
-        }
+        File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
+        updateRepoInfoInSwImageDescr(swImageDesc, mecmRepoEndpoint);
 
         File chartsTar = getFileFromPackage(packageId, "/Artifacts/Deployment/Charts/", "tar");
         try {

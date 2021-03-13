@@ -82,7 +82,7 @@ public final class Constants {
 
     public static final String APP_SYNC_INPROGRESS = "SYNC_INPROGRESS";
     public static final String APP_SYNC_FAILED = "SYNC_FAILED";
-    public static final String APP_SYNC = "IN_SYNC";
+    public static final String APP_IN_SYNC = "IN_SYNC";
     public static final String APP_NOT_IN_SYNC = "NOT_IN_SYNC";
 
     private Constants() {

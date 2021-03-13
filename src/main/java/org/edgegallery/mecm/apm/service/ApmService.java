@@ -268,6 +268,8 @@ public class ApmService {
     public void updateAppPackageWithRepoInfo(String packageId, boolean swImgDescrUpdate) {
 
         if (swImgDescrUpdate) {
+            LOGGER.info("update swImage path in descriptor file");
+
             File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
             updateRepoInfoInSwImageDescr(swImageDesc, mecmRepoEndpoint);
         }
@@ -305,6 +307,8 @@ public class ApmService {
             compress(valuesYaml.getParent());
 
             FileUtils.deleteDirectory(new File(valuesYaml.getParent()));
+
+            LOGGER.info("updateed application package charts with repo details");
         } catch (IOException e) {
             throw new ApmException("failed to find charts directory");
         }

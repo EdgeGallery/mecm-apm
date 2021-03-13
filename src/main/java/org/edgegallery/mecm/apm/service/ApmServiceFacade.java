@@ -100,11 +100,13 @@ public class ApmServiceFacade {
                                    PkgSyncInfo syncAppPkg) {
         String packageId = appPackageDto.getAppPkgId();
         List<SwImageDescr> imageInfoList = null;
+        AppPackageInfo appPkinfoDb;
+        boolean loadDockerImgs = false;
         boolean isPkgInSync = false;
-        boolean isPkgExist = false;
+
         try {
-            AppPackageInfo appPkinfoDb = dbService.getAppPackageSyncInfo(packageId);
-            if (Constants.APP_SYNC.equals(appPkinfoDb.getSyncStatus())) {
+            appPkinfoDb = dbService.getAppPackageSyncInfo(packageId);
+            if (Constants.APP_IN_SYNC.equals(appPkinfoDb.getSyncStatus())) {
                 isPkgInSync = true;
             }
         } catch (NoSuchElementException ex) {
@@ -112,29 +114,54 @@ public class ApmServiceFacade {
         }
 
         File packageFile = new File(localDirPath + File.separator + packageId);
-        if (packageFile.exists()) {
-            isPkgExist = true;
-        }
-
-        if (!isPkgInSync || !isPkgExist) {
+        if (!isPkgInSync || !packageFile.exists()) {
             try {
+                LOGGER.info("Downloading application package...");
+
                 InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(),
                         packageId, accessToken);
                 String localFilePath = saveInputStreamToFile(stream, packageId, null, localDirPath);
                 imageInfoList = apmService.getAppImageInfo(localFilePath, packageId);
 
-                apmService.updateAppPackageWithRepoInfo(packageId, true);
+                //application package contains docker images
+                for (SwImageDescr imageDescr : imageInfoList) {
+                    if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains("tar.gz")
+                            || imageDescr.getSwImage().contains(".tgz")) {
+                        loadDockerImgs = false;
+
+                        LOGGER.info("application package contains docker images");
+                        break;
+                    }
+                }
+                if (loadDockerImgs) {
+                    LOGGER.info("application package contains docker images...");
+                    String dockerImgspath = apmService.unzipDockerImages(appPackageDto.getAppPkgId());
+                    Set<String> loadedImgs = new HashSet<>();
+                    apmService.loadDockerImages(packageId, imageInfoList, loadedImgs);
+
+                    apmService.updateAppPackageWithRepoInfo(packageId, false);
+
+                    FileUtils.forceDelete(new File(dockerImgspath + ".zip"));
+                    FileUtils.forceDelete(new File(dockerImgspath));
+                } else {
+                    apmService.updateAppPackageWithRepoInfo(packageId, true);
+                }
+
+                apmService.compressAppPackage(packageId);
+
             } catch (ApmException | IllegalArgumentException e) {
                 LOGGER.error(DISTRIBUTION_FAILED, packageId);
                 dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
                 return;
+            } catch (IOException ex) {
+                LOGGER.error(DISTRIBUTION_FAILED, packageId);
+                dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, ex.getMessage());
+                return;
             }
         }
 
-        if (!isPkgExist) {
-            apmService.compressAppPackage(packageId);
-        }
-        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, false, accessToken);
+        distributeApplication(isPkgInSync, tenantId, appPackageDto, imageInfoList,
+                              syncAppPkg, !loadDockerImgs, accessToken);
 
         if (!isPkgInSync) {
             addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
@@ -153,28 +180,30 @@ public class ApmServiceFacade {
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto,
                                    String localFilePath, PkgSyncInfo syncAppPkg) {
         String packageId = appPackageDto.getAppPkgId();
-        List<SwImageDescr> imageInfoList;
+        List<SwImageDescr> imageInfoList = null;
         String dockerImgspath = null;
-        boolean isDockerImgAvailable = false;
+        boolean loadDockerImages = false;
         Set<String> loadedImgs = new HashSet<>();
         try {
             imageInfoList = apmService.getAppImageInfo(localFilePath, packageId);
             for (SwImageDescr imageDescr : imageInfoList) {
                 if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains("tar.gz")
                         || imageDescr.getSwImage().contains(".tgz")) {
-                    isDockerImgAvailable = true;
+                    loadDockerImages = true;
                     break;
                 }
             }
 
-            if (isDockerImgAvailable) {
+            if (loadDockerImages) {
                 LOGGER.info("application package contains docker images...");
                 dockerImgspath = apmService.unzipDockerImages(appPackageDto.getAppPkgId());
                 apmService.loadDockerImages(packageId, imageInfoList, loadedImgs);
 
                 apmService.updateAppPackageWithRepoInfo(packageId, false);
+
+                FileUtils.forceDelete(new File(dockerImgspath + ".zip"));
+                FileUtils.forceDelete(new File(dockerImgspath));
             } else {
-                LOGGER.info("application package has image repo info to download...");
                 apmService.updateAppPackageWithRepoInfo(packageId, true);
             }
         } catch (ApmException | IllegalArgumentException ex) {
@@ -182,19 +211,16 @@ public class ApmServiceFacade {
             apmService.deleteAppPkgDockerImages(loadedImgs);
             dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, ex.getMessage());
             return;
+        } catch (IOException e) {
+            LOGGER.error("failed to delete redundant files in packages");
+            apmService.deleteAppPkgDockerImages(loadedImgs);
+            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
         }
 
-        if (dockerImgspath != null) {
-            try {
-                FileUtils.forceDelete(new File(dockerImgspath + ".zip"));
-                FileUtils.forceDelete(new File(dockerImgspath));
-            } catch (IOException ex) {
-                LOGGER.debug("failed to delete docker images");
-            }
-        }
         apmService.compressAppPackage(packageId);
 
-        distributeApplication(tenantId, appPackageDto, imageInfoList, syncAppPkg, isDockerImgAvailable, accessToken);
+        distributeApplication(false, tenantId, appPackageDto, imageInfoList, syncAppPkg, !loadDockerImages,
+                accessToken);
 
         addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
         LOGGER.info("On-boading completed...");
@@ -206,7 +232,7 @@ public class ApmServiceFacade {
         pkgInfo.setAppId(appPackageDto.getAppId());
         pkgInfo.setPackageId(syncInfo.getPackageId());
         pkgInfo.setName(appPackageDto.getAppPkgName());
-        pkgInfo.setSyncStatus(Constants.APP_SYNC);
+        pkgInfo.setSyncStatus(Constants.APP_IN_SYNC);
         pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
         pkgInfo.setOperationalInfo(operationalInfo);
         pkgInfo.setShortDesc(appPackageDto.getAppPkgDesc());
@@ -333,9 +359,9 @@ public class ApmServiceFacade {
         dbService.createHost(tenantId, appPackageDto);
     }
 
-    private void distributeApplication(String tenantId, AppPackageDto appPackageDto,
+    private void distributeApplication(boolean isPkgInSync, String tenantId, AppPackageDto appPackageDto,
                                        List<SwImageDescr> imageInfoList, PkgSyncInfo syncAppPkg,
-                                       boolean skipDownload, String accessToken) {
+                                       boolean downloadImage, String accessToken) {
         String packageId = appPackageDto.getAppPkgId();
         Set<String> downloadedImgs = null;
         Set<String> uploadedImgs = null;
@@ -343,17 +369,26 @@ public class ApmServiceFacade {
         for (MecHostDto host : appPackageDto.getMecHostInfo()) {
             String distributionStatus = "Distributed";
             String error = "";
+
             try {
-                if (imageInfoList != null) {
-                    if (!skipDownload) {
+                if (!isPkgInSync) {
+                    LOGGER.info("application package not in sync, download images and upload to mecm repo");
+
+                    if (downloadImage) {
                         downloadedImgs = new HashSet<>();
                         apmService.downloadAppImage(syncAppPkg, imageInfoList, downloadedImgs);
                     }
 
                     uploadedImgs = new HashSet<>();
                     apmService.uploadAppImage(syncAppPkg, imageInfoList, uploadedImgs);
-
                 }
+
+                uploadAndDistributeApplicationPackage(accessToken, host.getHostIp(), tenantId,
+                        appPackageDto.getAppId(), packageId);
+
+                dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(),
+                                                         distributionStatus, error);
+
             } catch (ApmException e) {
                 distributionStatus = ERROR;
                 error = e.getMessage();
@@ -365,9 +400,6 @@ public class ApmServiceFacade {
                 apmService.deleteAppPkgDockerImages(downloadedImgs);
                 apmService.deleteAppPkgDockerImages(uploadedImgs);
             }
-            
-            uploadAndDistributeApplicationPackage(accessToken, host.getHostIp(), tenantId,
-                    appPackageDto.getAppId(), packageId);
         }
     }
 
@@ -390,10 +422,9 @@ public class ApmServiceFacade {
 
             distributeApplicationPackage(applcmEndPoint, tenantId, packageId, hostIp, accessToken);
         } catch (ApmException | NoSuchElementException ex) {
-            dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, "Error", "error");
-            return;
+            LOGGER.error("failed to upload and distribute application package {} on host {}", packageId, hostIp);
+            throw new ApmException("failed to upload and distribute application");
         }
-        dbService.updateDistributionStatusOfHost(tenantId, packageId, hostIp, "distributed", "success");
     }
 
     private void distributeApplicationPackage(String applcmEndPoint, String tenantId,
@@ -421,12 +452,14 @@ public class ApmServiceFacade {
             parts.add("package", appPkgRes);
             parts.add("packageId", pkgId);
             parts.add("appId", appId);
-            parts.add("origin", "MEO");
 
             sendRequestWithMultipartFormData(url, parts, accessToken);
         } catch (InvalidPathException e) {
             LOGGER.info("package ID is invalid");
             throw new ApmException("invalid package path");
+        } catch (ApmException e) {
+            LOGGER.info("failed to upload package  {}", e.getMessage());
+            throw new ApmException("upload package failed " + e.getMessage());
         }
     }
 
@@ -456,11 +489,11 @@ public class ApmServiceFacade {
                 throw new ApmException("returned error from remote entity, error code {}" + response.getStatusCode());
             }
         } catch (ResourceAccessException ex) {
-            LOGGER.error("upload failed, resource exception");
-            throw new ApmException("Resource access exception");
+            LOGGER.error("upload failed, resource exception {}", ex.getMessage());
+            throw new ApmException("Resource access exception" + ex.getMessage());
         } catch (HttpServerErrorException | HttpClientErrorException ex) {
-            LOGGER.error("upload failed, http error exception");
-            throw new ApmException("failed to connect");
+            LOGGER.error("upload failed, http error exception {}", ex.getMessage());
+            throw new ApmException("failed to connect" + ex.getMessage());
         }
         LOGGER.info("application package uploaded successfully");
         return;
@@ -631,6 +664,10 @@ public class ApmServiceFacade {
                 apmService.loadDockerImages(appPackageId, imageInfoList, downloadedImgs);
 
                 apmService.updateAppPackageWithRepoInfo(appPackageId, false);
+
+                FileUtils.forceDelete(new File(dockerImgPath + ".zip"));
+                FileUtils.forceDelete(new File(dockerImgPath));
+
             } else {
                 LOGGER.info("application package has image repo info to download...");
                 apmService.downloadAppImage(syncInfo, imageInfoList, downloadedImgs);
@@ -641,24 +678,18 @@ public class ApmServiceFacade {
 
             apmService.updateAppPackageWithRepoInfo(appPackageId, true);
             dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
-                    Constants.APP_SYNC, Constants.SUCCESS);
+                    Constants.APP_IN_SYNC, Constants.SUCCESS);
         } catch (ApmException | IllegalArgumentException | NoSuchElementException e) {
             LOGGER.error(Constants.SYNC_APP_FAILED, appPackageId);
             dbService.updateAppPackageSyncStatus(syncInfo.getAppId(),
                     syncInfo.getPackageId(), Constants.APP_SYNC_FAILED, e.getMessage());
+        } catch (IOException e) {
+            LOGGER.debug("file operation failed");
         } finally {
             apmService.deleteAppPkgDockerImages(downloadedImgs);
             apmService.deleteAppPkgDockerImages(uploadedImgs);
         }
 
-        if (dockerImgPath != null) {
-            try {
-                FileUtils.forceDelete(new File(dockerImgPath + ".zip"));
-                FileUtils.forceDelete(new File(dockerImgPath));
-            } catch (IOException ex) {
-                LOGGER.debug("failed to delete docker images");
-            }
-        }
         apmService.compressAppPackage(appPackageId);
     }
 }

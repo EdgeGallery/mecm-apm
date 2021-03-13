@@ -122,6 +122,9 @@ public class ApmHandler {
         dto.setAppId(appId);
         dto.setMecHostInfo(ApmServiceHelper.getHostList(hostList));
         dto.setAppPkgId(appId + appPkgId);
+        dto.setAppProvider("Huawei");
+        dto.setAppPkgVersion("1.0");
+        dto.setAppPkgDesc(appPackageName);
 
         PkgSyncInfo syncAppPkg = new PkgSyncInfo();
         syncAppPkg.setAppstoreIp("-");

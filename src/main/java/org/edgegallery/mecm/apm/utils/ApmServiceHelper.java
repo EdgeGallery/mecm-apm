@@ -335,14 +335,11 @@ public final class ApmServiceHelper {
 
             for (JsonElement descr : swImgDescrArray) {
                 JsonObject jsonObject = descr.getAsJsonObject();
-                String swImage = jsonObject.get("swImage").getAsString();
-                String[] image = swImage.split("/");
-
-                if (image.length > 1) {
-                    jsonObject.addProperty("swImage", mecmRepoEndpoint + "/mecm/" + image[image.length - 1]);
-                } else {
-                    jsonObject.addProperty("swImage", mecmRepoEndpoint + "/mecm/" + image[0]);
+                if (jsonObject.get("name") == null) {
+                    throw new ApmException("image not found in descriptor");
                 }
+                String imageName = jsonObject.get("name").getAsString();
+                jsonObject.addProperty("swImage", mecmRepoEndpoint + "/mecm/" + imageName);
             }
             FileUtils.writeStringToFile(swImageDescr, swImgDescrArray.toString(), StandardCharsets.UTF_8.name());
             LOGGER.info("Updated swImages : {}", swImgDescrArray);

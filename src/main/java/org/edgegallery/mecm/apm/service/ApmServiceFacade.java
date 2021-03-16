@@ -223,8 +223,7 @@ public class ApmServiceFacade {
 
         distributeApplication(false, tenantId, appPackageDto, imageInfoList, syncAppPkg, downloadImg,
                 accessToken);
-
-        addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
+        
         LOGGER.info("On-boading completed...");
     }
 
@@ -268,7 +267,6 @@ public class ApmServiceFacade {
         dbService.deleteAppPackage(tenantId, appPackageId);
         List<String> hosts = dbService.deleteHost(tenantId, appPackageId);
         apmService.deleteAppPackageFile(getPackageDirPath(localDirPath, appPackageId));
-        dbService.deleteAppPackageSyncInfoDb(appPackageId);
         return hosts;
     }
 

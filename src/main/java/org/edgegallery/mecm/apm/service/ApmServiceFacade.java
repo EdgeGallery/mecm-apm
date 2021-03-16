@@ -87,6 +87,9 @@ public class ApmServiceFacade {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Value("${apm.mecm-repo-endpoint:}")
+    private String mecmRepoEndpoint;
+
     /**
      * Updates Db and distributes docker application image to host.
      *
@@ -373,6 +376,8 @@ public class ApmServiceFacade {
                 if (!isPkgInSync) {
                     LOGGER.info("application package not in sync, download images and upload to mecm repo");
 
+                    imageInfoList = getImagesExcludingAlreadyUploaded(imageInfoList, accessToken);
+
                     if (downloadImage) {
                         downloadedImgs = new HashSet<>();
                         apmService.downloadAppImage(syncAppPkg, imageInfoList, downloadedImgs);
@@ -400,6 +405,65 @@ public class ApmServiceFacade {
                 apmService.deleteAppPkgDockerImages(uploadedImgs);
             }
         }
+    }
+
+
+    /**
+     * Returns manifest for a given docker image reference.
+     *
+     * @param repo        repository endpoint
+     * @param repository  docker repository
+     * @param tag         docker image tag
+     * @param accessToken access token
+     * @return returns appstore configuration info
+     * @throws ApmException exception if failed to get appstore configuration details
+     */
+    public String checkIfManifestPresentRepo(String repo, String repository, String tag, String accessToken) {
+        String url;
+        String repos[] = repo.split(":");
+
+        if (repos.length == 1) {
+            url = new StringBuilder(Constants.HTTPS_PROTO).append(repo).append(":")
+                    .append("443").append("/v2")
+                    .append(repository)
+                    .append("/manifests/")
+                    .append(tag).toString();
+        } else {
+            url = new StringBuilder(Constants.HTTPS_PROTO).append(repo).append("/v2/")
+                    .append(repository)
+                    .append("/manifests/")
+                    .append(tag).toString();
+        }
+        LOGGER.info("check if manifest available in repo: {}", url);
+
+        String response = apmService.sendGetRequest(url, accessToken);
+        LOGGER.info("manifest query result {}", response);
+        return response;
+    }
+
+    private List<SwImageDescr> getImagesExcludingAlreadyUploaded(List<SwImageDescr> imageInfoList,
+                                                                 String accessToken) {
+
+        List<SwImageDescr> imagesLstExcImgsInRepo = new LinkedList<>();
+        for (SwImageDescr imageInfo : imageInfoList) {
+            try {
+                String tag = imageInfo.getVersion();
+                String name = imageInfo.getName();
+                if (tag == null || name == null) {
+                    throw new ApmException("could not find image name or image version in descriptor");
+                }
+                String[] imageName = name.split(":");
+                String mecmRepository = "/mecm/" + imageName[0];
+
+                checkIfManifestPresentRepo(mecmRepoEndpoint, mecmRepository, tag, accessToken);
+
+                LOGGER.info("image is available in repo, skip download/upload {}", imageInfo.getSwImage());
+            } catch (ApmException | NoSuchElementException ex) {
+                imagesLstExcImgsInRepo.add(imageInfo);
+                LOGGER.info("image is not available in repo, download image: {}", imageInfo.getSwImage());
+            }
+        }
+        return imagesLstExcImgsInRepo;
     }
 
     /**

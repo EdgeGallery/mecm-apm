@@ -197,6 +197,8 @@ public class ApmService {
                 throw new ApmException("docker image download failed source repo not configured " + sourceRepoHost[0]);
             }
 
+            LOGGER.info("download docker image {}", imageInfo.getSwImage());
+
             DockerClient dockerClient = getDockerClient(sourceRepoHost[0], repo.getRepoUserName(),
                     repo.getRepoPassword());
 
@@ -997,7 +999,7 @@ public class ApmService {
                         .append("/mecm/").append(dockerImageNames[0]).toString();
             }
 
-            LOGGER.info("tag image to upload: {}", uploadImgName);
+            LOGGER.info("tagged image upload: {}", uploadImgName);
             String id = dockerClient.inspectImageCmd(imageInfo.getSwImage()).exec().getId();
             dockerClient.tagImageCmd(id, uploadImgName, imageInfo.getVersion()).withForce().exec();
 

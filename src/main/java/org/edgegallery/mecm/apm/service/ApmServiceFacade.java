@@ -123,8 +123,8 @@ public class ApmServiceFacade {
 
                 distributeApplication(true, tenantId, appPackageDto, null,
                         syncAppPkg, false, accessToken);
+                return;
             }
-            return;
         } catch (NoSuchElementException ex) {
             LOGGER.info("application package not synchronized...");
         }
@@ -418,7 +418,7 @@ public class ApmServiceFacade {
      */
     public String checkIfManifestPresentRepo(String repo, String repository, String tag, String accessToken) {
         String url;
-        String repos[] = repo.split(":");
+        String[] repos = repo.split(":");
 
         if (repos.length == 1) {
             url = new StringBuilder(Constants.HTTPS_PROTO).append(repo).append(":")
@@ -443,6 +443,11 @@ public class ApmServiceFacade {
                                                                  String accessToken) {
 
         List<SwImageDescr> imagesLstExcImgsInRepo = new LinkedList<>();
+        if (imageInfoList == null) {
+            LOGGER.error("swImageDescr image info list is null");
+            throw new ApmException("swImageDescr image info list is null");
+        }
+
         for (SwImageDescr imageInfo : imageInfoList) {
             try {
                 String tag = imageInfo.getVersion();

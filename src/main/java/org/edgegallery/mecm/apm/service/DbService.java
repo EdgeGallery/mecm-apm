@@ -110,6 +110,31 @@ public class DbService {
     }
 
     /**
+     * Updates app package record.
+     *
+     * @param tenantId      tenant ID
+     * @param appPackageDto appPackageDto
+     */
+    public void updateAppPackage(String tenantId, AppPackageDto appPackageDto) {
+
+        ModelMapper mapper = new ModelMapper();
+        AppPackage appPackage = mapper.map(appPackageDto, AppPackage.class);
+        appPackage.setId(appPackageDto.getAppPkgId() + tenantId);
+        appPackage.setTenantId(tenantId);
+
+        Optional<AppPackage> info = appPackageRepository.findById(appPackage.getAppPkgId());
+        if (!info.isPresent()) {
+            LOGGER.error("App package does not exist {}", appPackage.getAppPkgId());
+            throw new ApmException("App package does not exist");
+        }
+
+        appPackageRepository.save(appPackage);
+
+        LOGGER.info("app package record updated successfully",
+                tenantId, appPackageDto.getAppPkgId());
+    }
+
+    /**
      * Deletes app package record.
      *
      * @param tenantId tenant ID
@@ -226,12 +251,22 @@ public class DbService {
                             mecHostDto.getHostIp());
             if (existingHost != null) {
                 LOGGER.info("host {} already exists, updating the record", mecHostDto.getHostIp());
-                existingHost.setDistributionStatus("Processing");
+                if (mecHostDto.getStatus() == null
+                        || !Constants.DISTRIBUTE_STATE_DISTRIBUTED.equals(existingHost.getDistributionStatus())) {
+                    existingHost.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
+                } else {
+                    existingHost.setDistributionStatus(mecHostDto.getStatus());
+                }
                 host = existingHost;
             } else {
                 host = new MecHost();
                 host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
-                host.setDistributionStatus("Processing");
+
+                if (mecHostDto.getStatus() == null) {
+                    host.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
+                } else {
+                    host.setDistributionStatus(mecHostDto.getStatus());
+                }
                 host.setHostIp(mecHostDto.getHostIp());
                 host.setAppPkgId(appPackageDto.getAppPkgId());
                 host.setTenantId(tenantId);

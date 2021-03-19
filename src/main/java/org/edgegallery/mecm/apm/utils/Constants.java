@@ -63,6 +63,8 @@ public final class Constants {
     public static final String FAILED_TO_CREATE_DIR = "failed to create local directory";
     public static final String FAILED_TO_GET_FAIL_PATH = "failed to get local directory path";
     public static final String ELEMENT_NOT_FOUND = " not found in MainServiceTemplate.yaml";
+    public static final String DISTRIBUTE_STATE_PROCESSING = "Processing";
+    public static final String DISTRIBUTE_STATE_DISTRIBUTED = "Distributed";
     public static final String ERROR_ELEMENT_NOT_FOUND = "{}" + ELEMENT_NOT_FOUND;
     public static final String ERROR = "Error";
     public static final String FILENAME_BLANK = " :fileName contain blank";

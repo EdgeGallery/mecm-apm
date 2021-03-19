@@ -27,6 +27,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public final class ImageLocation {
 
-    private String domainame;
+    private String domainname;
     private String project;
 }

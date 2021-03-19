@@ -286,7 +286,7 @@ public class ApmService {
                 if (key.equals(Constants.IMAGE_LOCATION)) {
                     ModelMapper mapper = new ModelMapper();
                     imageLocn = mapper.map(values.get(Constants.IMAGE_LOCATION), ImageLocation.class);
-                    imageLocn.setDomainame(mecmRepoEndpoint);
+                    imageLocn.setDomainname(mecmRepoEndpoint);
                     imageLocn.setProject("mecm");
                     break;
                 }

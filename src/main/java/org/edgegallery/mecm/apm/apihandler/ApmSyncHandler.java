@@ -84,13 +84,15 @@ public class ApmSyncHandler {
      *
      * @param tenantId       tenant ID
      */
-    @ApiOperation(value = "Synchronizes application package management information from all edges.", response = String.class)
+    @ApiOperation(value = "Synchronizes application package management information from all edges.",
+            response = String.class)
     @PostMapping(value = "/tenants/{tenant_id}/app_package_infos/sync", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
     public ResponseEntity<String> syncAppPackageInfos(@ApiParam(value = "access token")
-                                                             @RequestHeader("access_token") String accessToken,
-                                                             @ApiParam(value = "tenant id") @PathVariable("tenant_id")
-                                                             @Pattern(regexp = TENENT_ID_REGEX) @Size(max = 64) String tenantId) {
+                                                      @RequestHeader("access_token") String accessToken,
+                                                      @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+                                                      @Pattern(regexp = TENENT_ID_REGEX)
+                                                      @Size(max = 64) String tenantId) {
         synchronizePackageMgmtDataFromEdges(tenantId, accessToken);
         return new ResponseEntity<>("accepted", HttpStatus.ACCEPTED);
     }

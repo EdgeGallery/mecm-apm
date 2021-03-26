@@ -190,22 +190,5 @@ public class ApmServiceTest {
 			assertTrue(true);
 		}
     }
-	@Test
-    public void testsendPostRequest() throws AssertionError {
-        String url = "http:// + applcmEndPoint + LCMCONTROLLER_URL + tenantId + PACKAGES_URL + pkgId";
-		try {
-			apmService.sendPostRequest(url,"reqBody","access token");
-		} catch (Exception e) {
-			assertTrue(true);
-		}
-    }
-	@Test
-    public void testsendDeleteRequest() throws AssertionError {
-        String url = "http:// + applcmEndPoint + LCMCONTROLLER_URL + tenantId + PACKAGES_URL + pkgId";
-		try {
-			apmService.sendDeleteRequest(url,"access token");
-		} catch (Exception e) {
-			assertTrue(true);
-		}
-    }
+	
 }

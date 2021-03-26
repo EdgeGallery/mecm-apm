@@ -190,5 +190,35 @@ public class ApmServiceTest {
 			assertTrue(true);
 		}
     }
-	
+
+	@Test
+    public void testsendPostRequest() throws AssertionError {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'edgerepoIp': '1.1.1.1', 'edgerepoPort': 'edgerepoPort',"
+                + " 'edgerepoUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+		try {
+			apmService.sendPostRequest(url,"reqBody","access token");
+		} catch (Exception e) {
+			assertTrue(true);
+		}
+    }
+	@Test
+    public void testsendDeleteRequest() throws AssertionError {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'edgerepoIp': '1.1.1.1', 'edgerepoPort': 'edgerepoPort',"
+                + " 'edgerepoUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.DELETE))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+		try {
+			apmService.sendDeleteRequest(url,"access token");
+		} catch (Exception e) {
+			assertTrue(true);
+		}
+    }
 }

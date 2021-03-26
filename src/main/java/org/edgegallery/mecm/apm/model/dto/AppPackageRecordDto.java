@@ -16,11 +16,6 @@
 
 package org.edgegallery.mecm.apm.model.dto;
 
-import static org.edgegallery.mecm.apm.utils.Constants.MAX_COMMON_STRING_LENGTH;
-
-import java.util.LinkedList;
-import java.util.List;
-import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -29,8 +24,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.edgegallery.mecm.apm.apihandler.validator.ConstraintType;
-import org.edgegallery.mecm.apm.apihandler.validator.CustomConstraint;
 import org.edgegallery.mecm.apm.utils.Constants;
 
 /**

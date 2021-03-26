@@ -508,7 +508,6 @@ public class ApmService {
 
                 IOUtils.copy(bufferedInputStream, tarArchive);
                 tarArchive.closeArchiveEntry();
-                bufferedInputStream.close();
             } else if (file.isDirectory()) {
                 tarArchive.closeArchiveEntry();
                 File[] files = file.listFiles();

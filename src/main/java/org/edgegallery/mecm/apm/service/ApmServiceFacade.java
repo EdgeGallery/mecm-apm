@@ -402,7 +402,6 @@ public class ApmServiceFacade {
                 LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
                 dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus,
                         error);
-                continue;
             } finally {
                 apmService.deleteAppPkgDockerImages(downloadedImgs);
                 apmService.deleteAppPkgDockerImages(uploadedImgs);
@@ -706,8 +705,8 @@ public class ApmServiceFacade {
         String appPkgPath = HTTPS + host + "/mec/appstore/v1/apps/" + syncInfo.getAppId()
                 + PACKAGES_URL + syncInfo.getPackageId() + "/action/download";
 
-        Set<String> uploadedImgs = new HashSet<String>();
-        Set<String> downloadedImgs = new HashSet<String>();
+        Set<String> uploadedImgs = new HashSet<>();
+        Set<String> downloadedImgs = new HashSet<>();
         boolean isDockerImgAvailable = false;
         List<SwImageDescr> imageInfoList;
         String dockerImgPath = null;

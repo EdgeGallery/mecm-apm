@@ -62,6 +62,7 @@ public final class ApmServiceHelper {
     static final int TOO_MANY = 1024;
     static final int TOO_BIG = 104857600;
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceHelper.class);
+    private static final String CSAR = ".csar";
 
     private ApmServiceHelper() {
     }
@@ -98,7 +99,7 @@ public final class ApmServiceHelper {
     public static String getLocalFilePath(String baseDirPath, String packageId) {
         return new StringBuilder(baseDirPath).append(File.separator)
                 .append(packageId).append(File.separator)
-                .append(packageId + ".csar").toString();
+                .append(packageId + CSAR).toString();
     }
 
     /**
@@ -136,7 +137,7 @@ public final class ApmServiceHelper {
             localDirPath = createDir(localDirBasePath + File.separator + packageId);
         }
 
-        String localFilePath = localDirPath + File.separator + packageId + ".csar";
+        String localFilePath = localDirPath + File.separator + packageId + CSAR;
         File file = new File(localFilePath);
         try {
             FileUtils.copyInputStreamToFile(resourceStream, file);
@@ -162,12 +163,12 @@ public final class ApmServiceHelper {
                                            String localDirBasePath) {
         FileChecker.check(multipartFile);
         if (tenantId == null) {
-            String localDirPath = createDir(localDirBasePath + File.separator + packageId);
+            createDir(localDirBasePath + File.separator + packageId);
         } else {
-            String localDirPath = createDir(localDirBasePath + File.separator + packageId + tenantId);
+            createDir(localDirBasePath + File.separator + packageId + tenantId);
         }
 
-        String localFilePath = localDirBasePath + File.separator + packageId + File.separator + packageId + ".csar";
+        String localFilePath = localDirBasePath + File.separator + packageId + File.separator + packageId + CSAR;
         File file = new File(localFilePath);
         try {
             multipartFile.transferTo(file);

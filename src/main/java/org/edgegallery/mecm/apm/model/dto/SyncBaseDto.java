@@ -17,6 +17,6 @@
 package org.edgegallery.mecm.apm.model.dto;
 
 // Base sync DTO for synchronization
-public class SyncBaseDto {
+public interface SyncBaseDto {
     // do nothing
 }

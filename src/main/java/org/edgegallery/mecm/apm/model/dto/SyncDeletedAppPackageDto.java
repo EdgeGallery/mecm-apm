@@ -36,7 +36,7 @@ import org.springframework.validation.annotation.Validated;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class SyncDeletedAppPackageDto   extends SyncBaseDto {
+public class SyncDeletedAppPackageDto implements SyncBaseDto {
     @Size(max = 50, message = "App instance deleted records exceeds max limit 50")
     private List<@Valid AppPackageDeletedDto> appPackageStaleRec = new LinkedList<>();
 

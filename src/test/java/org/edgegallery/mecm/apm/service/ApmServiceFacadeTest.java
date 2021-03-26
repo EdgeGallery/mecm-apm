@@ -27,17 +27,25 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
+import org.edgegallery.mecm.apm.model.PkgSyncInfo;
+import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
+import org.edgegallery.mecm.apm.utils.Constants;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.ResourceUtils;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ApmApplicationTest.class)
 public class ApmServiceFacadeTest {
@@ -46,11 +54,22 @@ public class ApmServiceFacadeTest {
     private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
 
     private AppPackageDto packageDto = new AppPackageDto();
+	
+	private PkgSyncInfo syncAppPkg = new PkgSyncInfo();
 
     @Autowired
+    private DbService dbServices;
+
+    @Autowired
+    private ApmServiceFacade facades;
+	
+	@Mock
+	private ApmService apmService;
+	
+	@Mock
     private DbService dbService;
 
-    @Autowired
+    @InjectMocks
     private ApmServiceFacade facade;
 
     @Before
@@ -73,21 +92,61 @@ public class ApmServiceFacadeTest {
         hostDtos.add(hostDto);
         hostDtos.add(hostDto2);
         packageDto.setMecHostInfo(hostDtos);
+		syncAppPkg.setPackageId(PACKAGE_ID);
+		syncAppPkg.setAppstoreIp("OK");
     }
 
     @Test
     public void getAppPackageFile() throws IOException {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createHost(TENANT_ID, packageDto));
         File file = ResourceUtils.getFile("classpath:packages");
-        facade.setLocalDirPath(file.getPath());
+        facades.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
         String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, null, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
-        InputStream stream = facade.getAppPackageFile(TENANT_ID, PACKAGE_ID);
+        InputStream stream = facades.getAppPackageFile(TENANT_ID, PACKAGE_ID);
         assertNotNull(stream);
-        assertDoesNotThrow(() -> facade.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> facades.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
+	
+	@Test
+	public void addAppSyncInfoDb() throws Exception {
+		
+		Object[] obj = {packageDto,syncAppPkg,Constants.SUCCESS};
+		Method method = ApmServiceFacade.class.getDeclaredMethod("addAppSyncInfoDb",AppPackageDto.class,PkgSyncInfo.class,String.class);
+		method.setAccessible(true);
+		method.invoke(facade,obj);
+	}
+	@Test
+	public void distributeApplication() throws Exception {
+		
+		List<SwImageDescr> imageInfoList = null;
+		Object[] obj = {true,"tenant-id",packageDto,imageInfoList,syncAppPkg,true,"access_token"};
+		
+		Method method = ApmServiceFacade.class.getDeclaredMethod("distributeApplication",boolean.class,String.class,AppPackageDto.class,List.class,PkgSyncInfo.class,boolean.class,String.class);
+		
+		
+		method.setAccessible(true);
+		
+		try {
+		    method.invoke(facade,obj);
+		}
+		catch(Exception e)
+		{
+			assertTrue(true);
+		}
+	}
+		
+	@Test
+	public void onboardApplication() {
+		String localFilePath = "/";
+		
+		facades.onboardApplication("access_token","tenant id",packageDto,syncAppPkg);
+		facades.onboardApplication("access_token","tenant id",packageDto,localFilePath,syncAppPkg);
+		facades.deleteDistributedAppPackage("tenant id","host ip","app package id","access_token");
+		facades.deleteDistributedAppPackageOnHost("tenant id","host ip","app package id","access_token");
+	}
 }

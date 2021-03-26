@@ -32,10 +32,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.PkgSyncInfo;
+import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,6 +70,7 @@ public class ApmServiceTest {
 
     private MockRestServiceServer mockServer;
 
+    private PkgSyncInfo syncInfo;
 
     @Test
     public void downloadAppPackageTest() throws FileNotFoundException {
@@ -162,5 +168,44 @@ public class ApmServiceTest {
         File file = ResourceUtils.getFile("classpath:sampleapp.csar");
         List<String> imageInfo = apmService.getAppImageInfo(file.getPath(), PACKAGE_ID, TENANT_ID);
         assertEquals(2, imageInfo.size());
+    }
+	
+	@Test
+    public void testdeleteAppPkgDockerImagesFromRepo() throws Exception {
+        Set<String> imageInfoList = new HashSet<String>();
+		imageInfoList.add("Test");
+		try {
+			apmService.deleteAppPkgDockerImagesFromRepo(imageInfoList);
+		} catch (Exception e) {
+			assertTrue(true);
+		}
+    }
+	@Test
+    public void testdeleteAppPkgDockerImages() throws Exception {
+        Set<String> imageInfoList = new HashSet<String>();
+		imageInfoList.add("Test");
+		try {
+			apmService.deleteAppPkgDockerImages(imageInfoList);
+		} catch (Exception e) {
+			assertTrue(true);
+		}
+    }
+	@Test
+    public void testsendPostRequest() throws AssertionError {
+        String url = "http:// + applcmEndPoint + LCMCONTROLLER_URL + tenantId + PACKAGES_URL + pkgId";
+		try {
+			apmService.sendPostRequest(url,"reqBody","access token");
+		} catch (Exception e) {
+			assertTrue(true);
+		}
+    }
+	@Test
+    public void testsendDeleteRequest() throws AssertionError {
+        String url = "http:// + applcmEndPoint + LCMCONTROLLER_URL + tenantId + PACKAGES_URL + pkgId";
+		try {
+			apmService.sendDeleteRequest(url,"access token");
+		} catch (Exception e) {
+			assertTrue(true);
+		}
     }
 }

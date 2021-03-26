@@ -33,7 +33,7 @@ import org.springframework.validation.annotation.Validated;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class SyncUpdatedAppPackageDto extends SyncBaseDto {
+public class SyncUpdatedAppPackageDto implements SyncBaseDto {
     @Size(max = 50, message = "App package info updated records exceeds max limit 50")
     private List<@Valid AppPackageRecordDto> appPackageRecord = new LinkedList<>();
 }

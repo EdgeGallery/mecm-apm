@@ -74,6 +74,11 @@ import org.springframework.web.client.RestTemplate;
 public class ApmServiceFacade {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceFacade.class);
+    private static final String TAR_GZ = "tar.gz";
+    private static final String LCMCONTROLLER_URL = "/lcmcontroller/v1/tenants/";
+    private static final String PACKAGES_URL = "/packages/";
+    private static final String HTTPS = "https://";
+    private static final String PATH_DELIMITER = "/";
 
     @Autowired
     private ApmService apmService;
@@ -113,7 +118,7 @@ public class ApmServiceFacade {
                 File packageFile = new File(localDirPath + File.separator + packageId);
                 if (!packageFile.exists()) {
                     InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(),
-                                                                       packageId, accessToken);
+                            packageId, accessToken);
                     String localFilePath = saveInputStreamToFile(stream, packageId, null, localDirPath);
 
                     apmService.getAppImageInfo(localFilePath, packageId);
@@ -141,7 +146,7 @@ public class ApmServiceFacade {
 
                 //application package contains docker images
                 for (SwImageDescr imageDescr : imageInfoList) {
-                    if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains("tar.gz")
+                    if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains(TAR_GZ)
                             || imageDescr.getSwImage().contains(".tgz")) {
 
                         downloadImage = false;
@@ -194,7 +199,7 @@ public class ApmServiceFacade {
         try {
             imageInfoList = apmService.getAppImageInfo(localFilePath, packageId);
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains("tar.gz")
+                if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains(TAR_GZ)
                         || imageDescr.getSwImage().contains(".tgz")) {
                     downloadImg = false;
 
@@ -223,7 +228,7 @@ public class ApmServiceFacade {
 
         distributeApplication(false, tenantId, appPackageDto, imageInfoList, syncAppPkg, downloadImg,
                 accessToken);
-        
+
         LOGGER.info("On-boading completed...");
     }
 
@@ -284,8 +289,8 @@ public class ApmServiceFacade {
             String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
 
             String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
-                    .append("/lcmcontroller/v1/tenants/").append(tenantId)
-                    .append("/packages/").append(packageId).append("/hosts/").append(hostIp).toString();
+                    .append(LCMCONTROLLER_URL).append(tenantId)
+                    .append(PACKAGES_URL).append(packageId).append("/hosts/").append(hostIp).toString();
 
             apmService.sendDeleteRequest(url, accessToken);
         } catch (NoSuchElementException | ApmException ex) {
@@ -306,8 +311,8 @@ public class ApmServiceFacade {
             String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
 
             String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
-                    .append("/lcmcontroller/v1/tenants/").append(tenantId)
-                    .append("/packages/").append(packageId).toString();
+                    .append(LCMCONTROLLER_URL).append(tenantId)
+                    .append(PACKAGES_URL).append(packageId).toString();
 
             apmService.sendDeleteRequest(url, accessToken);
         } catch (NoSuchElementException | ApmException ex) {
@@ -389,7 +394,7 @@ public class ApmServiceFacade {
                         appPackageDto.getAppId(), packageId);
 
                 dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(),
-                                                         distributionStatus, error);
+                        distributionStatus, error);
 
             } catch (ApmException e) {
                 distributionStatus = ERROR;
@@ -472,11 +477,11 @@ public class ApmServiceFacade {
     /**
      * Upload and distribute application package on the edge host.
      *
-     * @param accessToken  access token
-     * @param hostIp host IP
-     * @param tenantId tenant ID
-     * @param appId add ID 
-     * @param packageId package ID
+     * @param accessToken access token
+     * @param hostIp      host IP
+     * @param tenantId    tenant ID
+     * @param appId       add ID
+     * @param packageId   package ID
      */
     @Async
     public void uploadAndDistributeApplicationPackage(String accessToken, String hostIp, String tenantId,
@@ -484,7 +489,7 @@ public class ApmServiceFacade {
         try {
             String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
 
-            uploadApplicationPackage(applcmEndPoint, tenantId, appId, packageId, hostIp, accessToken);
+            uploadApplicationPackage(applcmEndPoint, tenantId, appId, packageId, accessToken);
 
             distributeApplicationPackage(applcmEndPoint, tenantId, packageId, hostIp, accessToken);
         } catch (ApmException | NoSuchElementException ex) {
@@ -496,7 +501,7 @@ public class ApmServiceFacade {
     private void distributeApplicationPackage(String applcmEndPoint, String tenantId,
                                               String pkgId, String hostIp, String accessToken) {
         LOGGER.info("distribute application package");
-        String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenantId + "/packages/" + pkgId;
+        String url = HTTPS + applcmEndPoint + LCMCONTROLLER_URL + tenantId + PACKAGES_URL + pkgId;
 
         List<String> hosts = new LinkedList<>();
         hosts.add(hostIp);
@@ -506,11 +511,11 @@ public class ApmServiceFacade {
     }
 
     private void uploadApplicationPackage(String applcmEndPoint, String tenantId,
-                                          String appId, String pkgId, String hostIp, String accessToken) {
+                                          String appId, String pkgId, String accessToken) {
         LOGGER.info("upload application package");
-        String url = "https://" + applcmEndPoint + "/lcmcontroller/v1/tenants/" + tenantId + "/packages";
+        String url = HTTPS + applcmEndPoint + LCMCONTROLLER_URL + tenantId + "/packages";
         try {
-            String packagePath = localDirPath + File.separator + pkgId + "/" + pkgId + ".csar";
+            String packagePath = localDirPath + File.separator + pkgId + PATH_DELIMITER + pkgId + ".csar";
             FileSystemResource appPkgRes = new FileSystemResource(new File(packagePath));
 
             // Preparing request parts.
@@ -532,12 +537,12 @@ public class ApmServiceFacade {
     /**
      * Send request to remote entity.
      *
-     * @param url          request url
-     * @param data         multipart request details
-     * @param accessToken  access token
+     * @param url         request url
+     * @param data        multipart request details
+     * @param accessToken access token
      */
     private void sendRequestWithMultipartFormData(String url, LinkedMultiValueMap<String, Object> data,
-                                                 String accessToken) {
+                                                  String accessToken) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("access_token", accessToken);
@@ -562,7 +567,6 @@ public class ApmServiceFacade {
             throw new ApmException("failed to connect" + ex.getMessage());
         }
         LOGGER.info("application package uploaded successfully");
-        return;
     }
 
     /**
@@ -646,9 +650,9 @@ public class ApmServiceFacade {
     /**
      * Adds application package info.
      *
-     * @param appstoreIp appstore IP
+     * @param appstoreIp   appstore IP
      * @param appstorePort appstore port
-     * @param appPkgInfo application package info
+     * @param appPkgInfo   application package info
      */
     public void addAppSyncPackageInfoDB(String appstoreIp, String appstorePort, AppPackageInfoDto appPkgInfo) {
         dbService.addAppSyncPackageInfoDB(appstoreIp, appstorePort, appPkgInfo);
@@ -699,11 +703,11 @@ public class ApmServiceFacade {
         String host = syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort();
         String appPackageId = syncInfo.getAppId() + syncInfo.getPackageId();
 
-        String appPkgPath = "https://" + host + "/mec/appstore/v1/apps/" + syncInfo.getAppId()
-                + "/packages/" + syncInfo.getPackageId() + "/action/download";
+        String appPkgPath = HTTPS + host + "/mec/appstore/v1/apps/" + syncInfo.getAppId()
+                + PACKAGES_URL + syncInfo.getPackageId() + "/action/download";
 
-        Set<String> uploadedImgs = new HashSet();
-        Set<String> downloadedImgs = new HashSet();
+        Set<String> uploadedImgs = new HashSet<String>();
+        Set<String> downloadedImgs = new HashSet<String>();
         boolean isDockerImgAvailable = false;
         List<SwImageDescr> imageInfoList;
         String dockerImgPath = null;
@@ -717,7 +721,7 @@ public class ApmServiceFacade {
 
             imageInfoList = apmService.getAppImageInfo(localFilePath, appPackageId);
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains("tar.gz")
+                if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains(TAR_GZ)
                         || imageDescr.getSwImage().contains(".tgz")) {
                     isDockerImgAvailable = true;
                     break;

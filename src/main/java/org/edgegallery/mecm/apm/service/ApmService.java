@@ -99,6 +99,17 @@ import org.yaml.snakeyaml.Yaml;
 public class ApmService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmService.class);
+    private static final String ACCESS_TOKEN = "access_token";
+    private static final String INVENTORY_URL = "/inventory/v1";
+    private static final String EMPTY_RESPONSE = "response: {}";
+    private static final String CONNECTION_FALED = "connection failed {}";
+    private static final String FAILED_TO_CONNECT = "failed to connect ";
+    private static final String FAILED = "failed {}";
+    private static final String DATA_NOT_FOUND = "data not found sttaus {}";
+    private static final String NOT_FOUND_STATUS = "not found status ";
+    private static final String FAILURE_RESPONSE_STATUS = "received failure response status {}";
+    private static final String FAILURE_RESPONSE_STATUS_CODE = "received failure response status ";
+    private static final String HTTPS = "https://";
 
     @Value("${apm.inventory-endpoint}")
     private String inventoryIp;
@@ -136,7 +147,7 @@ public class ApmService {
 
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("access_token", accessToken);
+            headers.set("ACCESS_TOKEN", accessToken);
             HttpEntity<String> entity = new HttpEntity<>(headers);
             response = restTemplate.exchange(appPkgPath, HttpMethod.GET, entity, Resource.class);
         } catch (ResourceAccessException ex) {
@@ -264,7 +275,7 @@ public class ApmService {
     /**
      * Update application package with MECM repo info.
      *
-     * @param packageId        package ID
+     * @param packageId package ID
      */
     public void updateAppPackageWithRepoInfo(String packageId) {
 
@@ -446,9 +457,8 @@ public class ApmService {
 
             TarArchiveEntry tarEntry;
             while ((tarEntry = tis.getNextTarEntry()) != null) {
-                if (tarEntry.isDirectory()) {
-                    continue;
-                } else {
+                if (!tarEntry.isDirectory()) {
+
                     File outputFile = new File(destFile + File.separator + tarEntry.getName());
                     LOGGER.info("deCompressing... {}", outputFile.getName());
                     boolean result = outputFile.getParentFile().mkdirs();
@@ -476,8 +486,8 @@ public class ApmService {
 
         File destination = new File(sourceDir);
         try (FileOutputStream destOutStream = new FileOutputStream(destination.getCanonicalPath().concat(".tgz"));
-                GZIPOutputStream gipOutStream = new GZIPOutputStream(new BufferedOutputStream(destOutStream));
-                TarArchiveOutputStream outStream = new TarArchiveOutputStream(gipOutStream)) {
+             GZIPOutputStream gipOutStream = new GZIPOutputStream(new BufferedOutputStream(destOutStream));
+             TarArchiveOutputStream outStream = new TarArchiveOutputStream(gipOutStream)) {
 
             addFileToTar(sourceDir, "", outStream);
 
@@ -490,13 +500,11 @@ public class ApmService {
 
         File file = new File(filePath);
         LOGGER.info("compressing... {}", file.getName());
-        FileInputStream inputStream = null;
         String entry = parent + file.getName();
-        try {
+        try (FileInputStream inputStream = new FileInputStream(file);
+             BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
             tarArchive.putArchiveEntry(new TarArchiveEntry(file, entry));
             if (file.isFile()) {
-                inputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
                 IOUtils.copy(bufferedInputStream, tarArchive);
                 tarArchive.closeArchiveEntry();
@@ -512,10 +520,6 @@ public class ApmService {
             }
         } catch (IOException e) {
             throw new ApmException("failed to compress " + e.getMessage());
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();  
-            }
         }
     }
 
@@ -585,11 +589,11 @@ public class ApmService {
      */
     public String getRepoInfoOfHost(String hostIp, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1").append("/mechosts/").append(hostIp).toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/mechosts/").append(hostIp).toString();
 
         String response = sendGetRequest(url, accessToken);
 
-        LOGGER.info("response: {}", response);
+        LOGGER.info(EMPTY_RESPONSE, response);
 
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
         JsonElement edgeRepoIp = jsonObject.get("edgerepoIp");
@@ -624,11 +628,11 @@ public class ApmService {
      */
     public String getApplcmCfgOfHost(String hostIp, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1").append("/mechosts/").append(hostIp).toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/mechosts/").append(hostIp).toString();
 
         String response = sendGetRequest(url, accessToken);
 
-        LOGGER.info("response: {}", response);
+        LOGGER.info(EMPTY_RESPONSE, response);
 
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
         JsonElement applcmIp = jsonObject.get("applcmIp");
@@ -644,10 +648,10 @@ public class ApmService {
         }
 
         url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1").append("/applcms/").append(ip).toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/applcms/").append(ip).toString();
         response = sendGetRequest(url, accessToken);
 
-        LOGGER.info("response: {}", response);
+        LOGGER.info(EMPTY_RESPONSE, response);
 
         jsonObject = new JsonParser().parse(response).getAsJsonObject();
         JsonElement applcmPort = jsonObject.get("applcmPort");
@@ -707,7 +711,7 @@ public class ApmService {
      */
     public AppStore getAppStoreCfgFromInventory(String appstoreIp, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1")
+                .append(inventoryPort).append(INVENTORY_URL)
                 .append("/appstores/").append(appstoreIp).toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -724,7 +728,7 @@ public class ApmService {
      */
     public List<AppStore> getAppStoreCfgFromInventory(String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1").append("/appstores").toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/appstores").toString();
 
         String response = sendGetRequest(url, accessToken);
 
@@ -746,7 +750,7 @@ public class ApmService {
      */
     public List<AppRepo> getAllAppRepoCfgFromInventory(String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1").append("/apprepos").toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/apprepos").toString();
 
         List<AppRepo> appRepoRecords = new LinkedList<>();
         try {
@@ -765,7 +769,7 @@ public class ApmService {
     /**
      * Returns edge repository address.
      *
-     * @param url    URL
+     * @param url         URL
      * @param accessToken access token
      * @return returns all appstore configurations
      * @throws ApmException exception if failed to get appstore configuration details
@@ -777,25 +781,25 @@ public class ApmService {
 
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("access_token", accessToken);
+            headers.set(ACCESS_TOKEN, accessToken);
             HttpEntity<String> entity = new HttpEntity<>(headers);
             response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
         } catch (ResourceAccessException ex) {
-            LOGGER.error("connection failed {}", ex.getMessage());
-            throw new ApmException("failed to connect " + ex.getMessage());
+            LOGGER.error(CONNECTION_FALED, ex.getMessage());
+            throw new ApmException(FAILED_TO_CONNECT + ex.getMessage());
         } catch (HttpClientErrorException ex) {
-            LOGGER.error("failed {}", ex.getMessage());
+            LOGGER.error(FAILED, ex.getMessage());
             throw new ApmException("error while fetching " + ex.getMessage());
         }
 
         if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
-            LOGGER.error("data not found, status {}", response.getStatusCode());
-            throw new NoSuchElementException("not found status " + response.getStatusCode());
+            LOGGER.error(DATA_NOT_FOUND, response.getStatusCode());
+            throw new NoSuchElementException(NOT_FOUND_STATUS + response.getStatusCode());
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            LOGGER.error("received failure response status {}", response.getStatusCode());
-            throw new ApmException("received failure response status " + response.getStatusCode());
+            LOGGER.error(FAILURE_RESPONSE_STATUS, response.getStatusCode());
+            throw new ApmException(FAILURE_RESPONSE_STATUS_CODE + response.getStatusCode());
         }
 
         return response.getBody();
@@ -815,25 +819,25 @@ public class ApmService {
 
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("access_token", accessToken);
+            headers.set(ACCESS_TOKEN, accessToken);
             HttpEntity<String> entity = new HttpEntity<>(headers);
             response = restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
         } catch (ResourceAccessException ex) {
-            LOGGER.error("connection failed {}", ex.getMessage());
-            throw new ApmException("failed to connect " + ex.getMessage());
+            LOGGER.error(CONNECTION_FALED, ex.getMessage());
+            throw new ApmException(FAILED_TO_CONNECT + ex.getMessage());
         } catch (HttpClientErrorException ex) {
-            LOGGER.error("failed {}", ex.getMessage());
+            LOGGER.error(FAILED, ex.getMessage());
             throw new ApmException("error while delete " + ex.getMessage());
         }
 
         if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
-            LOGGER.error("data not found, status {}", response.getStatusCode());
-            throw new NoSuchElementException("not found status " + response.getStatusCode());
+            LOGGER.error(DATA_NOT_FOUND, response.getStatusCode());
+            throw new NoSuchElementException(NOT_FOUND_STATUS + response.getStatusCode());
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            LOGGER.error("received failure response status {}", response.getStatusCode());
-            throw new ApmException("received failure response status " + response.getStatusCode());
+            LOGGER.error(FAILURE_RESPONSE_STATUS, response.getStatusCode());
+            throw new ApmException(FAILURE_RESPONSE_STATUS_CODE + response.getStatusCode());
         }
     }
 
@@ -852,25 +856,25 @@ public class ApmService {
 
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("access_token", accessToken);
+            headers.set(ACCESS_TOKEN, accessToken);
             HttpEntity<String> entity = new HttpEntity<>(reqBody, headers);
             response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
         } catch (ResourceAccessException ex) {
-            LOGGER.error("connection failed {}", ex.getMessage());
-            throw new ApmException("failed to connect " + ex.getMessage());
+            LOGGER.error(CONNECTION_FALED, ex.getMessage());
+            throw new ApmException(FAILED_TO_CONNECT + ex.getMessage());
         } catch (HttpClientErrorException | HttpServerErrorException ex) {
-            LOGGER.error("failed {}", ex.getMessage());
+            LOGGER.error(FAILED, ex.getMessage());
             throw new ApmException("error while delete " + ex.getMessage());
         }
 
         if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
-            LOGGER.error("data not found, status {}", response.getStatusCode());
-            throw new NoSuchElementException("not found status " + response.getStatusCode());
+            LOGGER.error(DATA_NOT_FOUND, response.getStatusCode());
+            throw new NoSuchElementException(NOT_FOUND_STATUS + response.getStatusCode());
         }
 
         if (!HttpStatus.OK.equals(response.getStatusCode())) {
-            LOGGER.error("received failure response status {}", response.getStatusCode());
-            throw new ApmException("received failure response status " + response.getStatusCode());
+            LOGGER.error(FAILURE_RESPONSE_STATUS, response.getStatusCode());
+            throw new ApmException(FAILURE_RESPONSE_STATUS_CODE + response.getStatusCode());
         }
     }
 
@@ -885,7 +889,7 @@ public class ApmService {
      */
     public AppRepo getAppRepoCfgFromInventory(String tenantId, String host, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append("/inventory/v1").append("/apprepos/").append(host).toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/apprepos/").append(host).toString();
 
         return new Gson().fromJson(sendGetRequest(url, accessToken), AppRepo.class);
     }
@@ -899,7 +903,7 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public List<AppPackageInfoDto> getAppPackagesInfoFromAppStore(String appstoreEndpoint, String accessToken) {
-        String appsUrl = new StringBuilder("https://").append(appstoreEndpoint)
+        String appsUrl = new StringBuilder(HTTPS).append(appstoreEndpoint)
                 .append("/mec/appstore/v1/apps").toString();
 
         String response = sendGetRequest(appsUrl, accessToken);
@@ -939,7 +943,7 @@ public class ApmService {
      */
     public AppPackageInfoDto getAppPkgInfoFromAppStore(String appstoreEndpoint, String appId,
                                                        String packageId, String accessToken) {
-        String appsUrl = new StringBuilder("https://").append(appstoreEndpoint)
+        String appsUrl = new StringBuilder(HTTPS).append(appstoreEndpoint)
                 .append("/mec/appstore/v1/apps/").append(appId).append("/packages/").append(packageId).toString();
 
         String response = sendGetRequest(appsUrl, accessToken);
@@ -958,7 +962,7 @@ public class ApmService {
      */
     private List<AppPackageInfoDto> getAppPackagesInfoBasedOnAppId(String appstoreEndpoint, String appId,
                                                                    String accessToken) {
-        String appsUrl = new StringBuilder("https://").append(appstoreEndpoint)
+        String appsUrl = new StringBuilder(HTTPS).append(appstoreEndpoint)
                 .append("/mec/appstore/v1/apps/").append(appId).append("/packages").toString();
 
         String response = sendGetRequest(appsUrl, accessToken);

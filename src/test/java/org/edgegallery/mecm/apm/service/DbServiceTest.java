@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.LinkedList;
 import java.util.List;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
+import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
@@ -209,4 +210,12 @@ public class DbServiceTest {
     public void testDeleteAppPackageRecordIfNotExist() {
         assertThrows(IllegalArgumentException.class, () -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
+	
+	@Test
+	public void testupdateAppPackage() {
+		assertThrows(ApmException.class,() -> dbService.updateAppPackage(TENANT_ID,packageDto));
+		assertThrows(IllegalArgumentException.class,() -> dbService.getAppPackage(TENANT_ID,PACKAGE_ID));
+		dbService.deleteAppPackageSyncInfoDb("OK");
+
+	}
 }

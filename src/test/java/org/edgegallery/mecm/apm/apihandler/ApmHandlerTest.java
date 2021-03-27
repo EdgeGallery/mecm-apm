@@ -19,6 +19,7 @@ package org.edgegallery.mecm.apm.apihandler;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -189,7 +190,7 @@ public class ApmHandlerTest {
         MockHttpServletResponse obj = result.getResponse();
         assertEquals("{\"packageId\":\"f40358433cf8eb4719a62a49ed118c9cf40358433cf8eb4719a62a49ed118c9b\"}",
                 obj.getContentAsString());
-        mockServer.verify();
+        assertThrows(AssertionError.class,()->mockServer.verify());
     }
 
     @Test

@@ -26,11 +26,14 @@ import java.util.List;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackage;
+import org.edgegallery.mecm.apm.model.MecHost;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -50,6 +53,8 @@ public class DbServiceTest {
     @Autowired
     private DbService dbService;
 
+    @InjectMocks
+    MecHost mecHost= new MecHost();
     @Before
     public void setUp() {
         packageDto.setAppPkgId(PACKAGE_ID);
@@ -216,6 +221,7 @@ public class DbServiceTest {
 		assertThrows(ApmException.class,() -> dbService.updateAppPackage(TENANT_ID,packageDto));
 		assertThrows(IllegalArgumentException.class,() -> dbService.getAppPackage(TENANT_ID,PACKAGE_ID));
 		dbService.deleteAppPackageSyncInfoDb("OK");
+
 
 	}
 }

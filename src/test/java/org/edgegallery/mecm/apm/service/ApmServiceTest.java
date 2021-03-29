@@ -35,15 +35,22 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
+import org.edgegallery.mecm.apm.utils.Constants;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.InputStreamResource;
@@ -67,10 +74,16 @@ public class ApmServiceTest {
 
     @Autowired
     private RestTemplate restTemplate;
+    RestClientHelper restClientHelper;
 
     private MockRestServiceServer mockServer;
 
-    private PkgSyncInfo syncInfo;
+    @InjectMocks
+    PkgSyncInfo pkgSyncInfo = new PkgSyncInfo();
+    SwImageDescr swImageDescr =new SwImageDescr();
+    AppRepo appRepo=new AppRepo();
+
+
 
     @Test
     public void downloadAppPackageTest() throws FileNotFoundException {
@@ -221,4 +234,24 @@ public class ApmServiceTest {
 			assertTrue(true);
 		}
     }
+
+    @Test(expected = ApmException.class)
+    public void downloadAppImageTest() {
+
+        Map<String, AppRepo> repoMap = new HashMap<>();
+        repoMap.put("repoInfo" , appRepo);
+        pkgSyncInfo.setRepoInfo(repoMap);
+
+        swImageDescr.setSwImage("swImage");
+
+        List<SwImageDescr> imageInfoList= new ArrayList<>();
+        imageInfoList.add(swImageDescr);
+
+        Set<String> downloadedImgs = new HashSet<>();
+        downloadedImgs.add("image1");
+        downloadedImgs.add("image2");
+
+        apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs);
+    }
+
 }

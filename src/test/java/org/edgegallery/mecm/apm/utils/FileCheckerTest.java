@@ -21,10 +21,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+
+import org.junit.Before;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.ResourceUtils;
 
 class FileCheckerTest {
+
+    @Mock
+    FileChecker fileChecker;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+    }
 
     @Test
     void testValidFile() throws FileNotFoundException {
@@ -61,4 +76,18 @@ class FileCheckerTest {
                 + "ccccccccccccccc.txt");
         assertThrows(IllegalArgumentException.class, () -> FileChecker.check(newfile));
     }
+
+
+
+
+    @Test
+    public void testSaveOnflyMaplayerdataCsv() {
+        //no file is path is used as simpley mocking is done just to Mock in method level
+        MockMultipartFile csvFile = new MockMultipartFile("data", "filename.csv", "text/plain", "some csv".getBytes());
+        assertThrows(IllegalArgumentException.class, () -> FileChecker.check(csvFile));
+
+        MockMultipartFile blankFile = new MockMultipartFile("data", "file name.csv", "text/plain", "some csv".getBytes());
+        assertThrows(IllegalArgumentException.class, () -> FileChecker.check(blankFile));
+    }
+
 }

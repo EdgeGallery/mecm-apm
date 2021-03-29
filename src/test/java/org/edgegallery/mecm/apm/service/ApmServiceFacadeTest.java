@@ -149,4 +149,12 @@ public class ApmServiceFacadeTest {
 		facades.deleteDistributedAppPackage("tenant id","host ip","app package id","access_token");
 		facades.deleteDistributedAppPackageOnHost("tenant id","host ip","app package id","access_token");
 	}
+
+    @Test
+    public void uploadAndDistributeApplicationPackageTest() {
+        String localFilePath = "/";
+       // facades.uploadAndDistributeApplicationPackage("accesstoken", "hostIp", "tenantId", packageDto.getAppId(), packageDto.getAppPkgId());
+        apmService.updateAppPackageWithRepoInfo("package_id");
+
+    }
 }

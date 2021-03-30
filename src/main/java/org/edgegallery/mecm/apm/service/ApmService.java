@@ -504,14 +504,17 @@ public class ApmService {
 
         File file = new File(filePath);
         LOGGER.info("compressing... {}", file.getName());
+        FileInputStream inputStream = null;
         String entry = parent + file.getName();
-        try (FileInputStream inputStream = new FileInputStream(file);
-             BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream)) {
+        try {
             tarArchive.putArchiveEntry(new TarArchiveEntry(file, entry));
             if (file.isFile()) {
+                inputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
                 IOUtils.copy(bufferedInputStream, tarArchive);
                 tarArchive.closeArchiveEntry();
+                bufferedInputStream.close();
             } else if (file.isDirectory()) {
                 tarArchive.closeArchiveEntry();
                 File[] files = file.listFiles();
@@ -523,6 +526,10 @@ public class ApmService {
             }
         } catch (IOException e) {
             throw new ApmException("failed to compress " + e.getMessage());
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
         }
     }
 

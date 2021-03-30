@@ -27,6 +27,8 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
+import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
@@ -39,6 +41,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -71,9 +74,11 @@ public class ApmServiceFacadeTest {
 
     @InjectMocks
     private ApmServiceFacade facade;
+    SwImageDescr swImageDescr = new SwImageDescr();
 
     @Before
     public void setUp() {
+        MockitoAnnotations.initMocks(this);
         packageDto.setAppPkgId(PACKAGE_ID);
         packageDto.setAppId("f50358433cf8eb4719a62a49ed118c9c");
         packageDto.setAppIconUrl("http://1.1.1.1:1234/mec");
@@ -120,6 +125,7 @@ public class ApmServiceFacadeTest {
 		method.setAccessible(true);
 		method.invoke(facade,obj);
 	}
+
 	@Test
 	public void distributeApplication() throws Exception {
 		
@@ -151,10 +157,30 @@ public class ApmServiceFacadeTest {
 	}
 
     @Test
-    public void uploadAndDistributeApplicationPackageTest() {
-        String localFilePath = "/";
-       // facades.uploadAndDistributeApplicationPackage("accesstoken", "hostIp", "tenantId", packageDto.getAppId(), packageDto.getAppPkgId());
-        apmService.updateAppPackageWithRepoInfo("package_id");
+    public void deleteAppPackageInHostTest() {
+        facades.deleteAppPackageInHost(TENANT_ID,PACKAGE_ID,"1.1.1.1");
+    }
+
+    @Test(expected = ApmException.class)
+    public void checkIfManifestPresentRepoTest() {
+
+        facades.checkIfManifestPresentRepo("repo", "repository", "tag" , "accessToken");
+    }
+
+    @Test(expected = ApmException.class)
+    public void checkIfManifestPresentRepoTests() {
+
+        facades.checkIfManifestPresentRepo("repo:test", "repository", "tag" , "accessToken");
+    }
+
+    @Test
+    public void onboardApplicationtest() {
+        String localFilePath = "/test";
+
+        AppPackageInfo appPackageInfo = new AppPackageInfo();
+        appPackageInfo.setSyncStatus(Constants.APP_IN_SYNC);
+
+        facades.onboardApplication("access_token", "tenant id", packageDto, localFilePath, syncAppPkg);
+    }
 
     }
-}

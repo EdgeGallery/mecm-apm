@@ -16,27 +16,36 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import java.util.LinkedList;
+import java.util.List;
+import org.edgegallery.mecm.apm.ApmApplicationTest;
+import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
+import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.exception.ApmExceptionHandler;
+import org.edgegallery.mecm.apm.model.AppPackage;
+import org.edgegallery.mecm.apm.model.AppPackageInfo;
+import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.context.junit4.SpringRunner;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.NoSuchElementException;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.LinkedList;
-import java.util.List;
-import org.edgegallery.mecm.apm.ApmApplicationTest;
-import org.edgegallery.mecm.apm.exception.ApmException;
-import org.edgegallery.mecm.apm.model.AppPackage;
-import org.edgegallery.mecm.apm.model.MecHost;
-import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
-import org.edgegallery.mecm.apm.model.dto.MecHostDto;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ApmApplicationTest.class)
@@ -53,8 +62,12 @@ public class DbServiceTest {
     @Autowired
     private DbService dbService;
 
+    RestServiceImpl restServiceImpl = new RestServiceImpl();
+    ApmExceptionHandler apm = new ApmExceptionHandler();
+
     @InjectMocks
-    MecHost mecHost= new MecHost();
+    private AccessTokenFilter accessTokenFilter;
+
     @Before
     public void setUp() {
         packageDto.setAppPkgId(PACKAGE_ID);
@@ -215,13 +228,51 @@ public class DbServiceTest {
     public void testDeleteAppPackageRecordIfNotExist() {
         assertThrows(IllegalArgumentException.class, () -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
-	
-	@Test
-	public void testupdateAppPackage() {
-		assertThrows(ApmException.class,() -> dbService.updateAppPackage(TENANT_ID,packageDto));
-		assertThrows(IllegalArgumentException.class,() -> dbService.getAppPackage(TENANT_ID,PACKAGE_ID));
-		dbService.deleteAppPackageSyncInfoDb("OK");
 
+    @Test
+    public void testupdateAppPackages() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        assertThrows(ApmException.class,() -> dbService.updateAppPackage(TENANT_ID,packageDto));
+        assertThrows(IllegalArgumentException.class,() -> dbService.getAppPackage(TENANT_ID,PACKAGE_ID));
+        dbService.deleteAppPackageSyncInfoDb("OK");
+        dbService.deleteHostWithIp(TENANT_ID,PACKAGE_ID,"host");
 
-	}
+        Object[] obj={"app"};
+        Method method = DbService.class.getDeclaredMethod("deleteAppPackageSyncInfo",String.class);
+        method.setAccessible(true);
+        method.invoke(dbService,obj);
+
+        HttpMethod m = HttpMethod.POST;
+        try {
+            restServiceImpl.sendRequest("a",m,"b","b");
+        }
+        catch(Exception e)
+        {
+            assertTrue(true);
+        }
+        try {
+            restServiceImpl.syncRecords("a",SyncUpdatedAppPackageDto.class,"b");
+        }
+        catch(Exception e)
+        {
+            assertTrue(true);
+        }
+        AccessDeniedException ex=null;
+        RuntimeException ex1=null;
+        NoSuchElementException ex2 = new NoSuchElementException("ok");
+        apm.handleAccessDeniedException(ex);
+        apm.handleRuntimeException(ex1);
+        apm.handleNoSuchElementException(ex2);
+
+        Object[] obj1={"ok/success/yes"};
+        Method method1 = AccessTokenFilter.class.getDeclaredMethod("getTenantId",String.class);
+        method1.setAccessible(true);
+        method1.invoke(accessTokenFilter,obj1);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void addAppSyncPackageInfoDBTest() {
+        AppPackageInfo appPackageInfo=new AppPackageInfo();
+        appPackageInfo.setAppstoreIp("1.1.1.1");
+        dbService.addAppSyncPackageInfoDB(appPackageInfo);
+    }
 }

@@ -457,13 +457,17 @@ public class ApmService {
 
             TarArchiveEntry tarEntry;
             while ((tarEntry = tis.getNextTarEntry()) != null) {
-                if (!tarEntry.isDirectory()) {
+                if (tarEntry.isDirectory()) {
+                    LOGGER.debug("skip directory");
+                } else {
+                    if (!tarEntry.isDirectory()) {
 
-                    File outputFile = new File(destFile + File.separator + tarEntry.getName());
-                    LOGGER.info("deCompressing... {}", outputFile.getName());
-                    boolean result = outputFile.getParentFile().mkdirs();
-                    LOGGER.debug("create directory result {}", result);
-                    IOUtils.copy(tis, new FileOutputStream(outputFile));
+                        File outputFile = new File(destFile + File.separator + tarEntry.getName());
+                        LOGGER.info("deCompressing... {}", outputFile.getName());
+                        boolean result = outputFile.getParentFile().mkdirs();
+                        LOGGER.debug("create directory result {}", result);
+                        IOUtils.copy(tis, new FileOutputStream(outputFile));
+                    }
                 }
             }
         } catch (IOException ex) {

@@ -329,15 +329,6 @@ if [ ! -z "$PUSH_IMAGE" ] ; then
   fi
 fi
 
-if [ ! -z "$EDGE_REPO_PASSWORD" ] ; then
-  validate_password "$EDGE_REPO_PASSWORD"
-  valid_edge_repo_password="$?"
-  if [ ! "$valid_edge_repo_password" -eq "0" ] ; then
-    echo "invalid edge repo password"
-    exit 1
-  fi
-fi
-
 if [ ! -z "$LOG_DIR" ] ; then
   validate_dir_exists "$LOG_DIR"
   valid_log_dir="$?"

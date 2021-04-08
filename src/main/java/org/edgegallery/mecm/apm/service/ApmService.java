@@ -94,6 +94,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 @Service("ApmService")
 public class ApmService {
@@ -325,7 +326,7 @@ public class ApmService {
     private Map<String, Object> loadvaluesYaml(File valuesYaml) {
 
         Map<String, Object> valuesYamlMap;
-        Yaml yaml = new Yaml();
+        Yaml yaml = new Yaml(new SafeConstructor());
         try (InputStream inputStream = new FileInputStream(valuesYaml)) {
             valuesYamlMap = yaml.load(inputStream);
         } catch (FileNotFoundException e) {

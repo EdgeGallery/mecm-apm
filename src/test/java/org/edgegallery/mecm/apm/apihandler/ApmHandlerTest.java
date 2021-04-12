@@ -153,7 +153,7 @@ public class ApmHandlerTest {
 
         String url3 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";
         serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
-                + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
+                + "'admin', 'appstoreRepoPassword': '12345' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url3))
                 .andExpect(method(HttpMethod.GET))
@@ -161,7 +161,7 @@ public class ApmHandlerTest {
 
         String url1 = "https://1.1.1.1:8080/inventory/v1/apprepos";
         serviceResponseBody = "[{'repoEndPoint': '1.1.1.1:4443', 'repoName': 'AppRepo1', 'repoUserName': "
-                + "'admin', 'repoPassword': 'admin@12345' }]";
+                + "'admin', 'repoPassword': '12345' }]";
         mockServer.expect(requestTo(url1))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
@@ -198,7 +198,7 @@ public class ApmHandlerTest {
 
         String url1 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";
         String serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
-                + "'admin', 'appstoreRepoPassword': 'admin@12345' }";
+                + "'admin', 'appstoreRepoPassword': '12345' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url1))
                 .andExpect(method(HttpMethod.GET))

@@ -19,7 +19,7 @@ servicecomb-config-order: 1
 APPLICATION_ID: edgegallery
 service_description:
   name: mecm-apm
-  version: 1.1.0
+  version: 1.1.1
   environment: development
 servicecomb:
   service:
@@ -33,11 +33,9 @@ servicecomb:
 ### Server port #########
 server:
   port: 8092
-#  address: ${LISTEN_IP:}
-  contextPath: /home
 
   ssl:
-    enabled: true
+    enabled: ${SSL_ENABLED:false}
     protocol: TLS
     enabled-Protocols: [TLSv1.2]
     ciphers: [TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,

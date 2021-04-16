@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import org.apache.servicecomb.provider.rest.common.RestSchema;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDeletedDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
@@ -60,6 +61,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Apm sync API handler.
  */
+@RestSchema(schemaId = "apm-sync")
 @Api(value = "Application instance info api system")
 @Validated
 @RequestMapping("/apm/v1")

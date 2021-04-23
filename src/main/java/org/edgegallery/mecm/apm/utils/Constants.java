@@ -76,7 +76,6 @@ public final class Constants {
     public static final String IMAGE_LOCATION = "imagelocation";
     public static final String IMAGE_INPATH = "/Image";
     public static final String HTTPS_PROTO = "https://";
-    public static final String HTTP_PROTO = "http://";
 
     public static final int MAX_ENTRY_PER_TENANT_PER_MODEL = 50;
     public static final int MAX_TENANTS = 20;

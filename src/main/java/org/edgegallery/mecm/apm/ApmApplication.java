@@ -27,6 +27,7 @@ import javax.net.ssl.X509TrustManager;
 import javax.servlet.MultipartConfigElement;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.servicecomb.springboot2.starter.EnableServiceComb;
 import org.edgegallery.mecm.apm.service.RestClientHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
 @EnableAsync
+@EnableServiceComb
 public class ApmApplication {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmApplication.class);
@@ -71,20 +73,6 @@ public class ApmApplication {
     @Value("${server.ssl.trust-store-password:}")
     private String trustStorePasswd;
 
-    /**
-     * Returns new instance of restTemplate with required configuration.
-     *
-     * @return restTemplate with required configuration
-     */
-    @Bean
-    public RestTemplate restTemplate() {
-        RestClientHelper builder =
-                new RestClientHelper(Boolean.parseBoolean(isSslEnabled), trustStorePath, trustStorePasswd);
-        CloseableHttpClient client = builder.buildHttpClient();
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(client);
-        factory.setBufferRequestBody(false);
-        return new RestTemplate(factory);
-    }
 
     /**
      * Application package management entry function.

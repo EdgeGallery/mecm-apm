@@ -37,6 +37,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import org.apache.servicecomb.provider.rest.common.RestSchema;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
@@ -76,6 +77,7 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Application package management API handler.
  */
+@RestSchema(schemaId = "apm-appstore")
 @Api(tags = {"APM api system"})
 @Validated
 @RequestMapping("/apm/v1")
@@ -99,7 +101,7 @@ public class ApmHandler {
      * @param file           CSAR package
      * @return application package identifier on success, error code on failure
      */
-    @ApiOperation(value = "Onboard application package", response = Map.class)
+    @ApiOperation(value = "Onboard application package", response = String.class)
     @PostMapping(path = "/tenants/{tenant_id}/packages/upload",
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -157,7 +159,7 @@ public class ApmHandler {
      * @param appPackageDto application package
      * @return application package identifier on success, error code on failure
      */
-    @ApiOperation(value = "Onboard application package", response = Map.class)
+    @ApiOperation(value = "Onboard application package", response = String.class)
     @PostMapping(path = "/tenants/{tenant_id}/packages",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
@@ -495,7 +497,7 @@ public class ApmHandler {
     @GetMapping(path = "/apps/{app_id}/packages/{package_id}/syncstatus",
             produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
-    public ResponseEntity<AppPackageSyncStatusDto> getAllAppPackageSyncStatus(
+    public ResponseEntity<AppPackageSyncStatusDto> getAppPackageSyncStatus(
             @RequestHeader("access_token") String accessToken,
             @ApiParam(value = "app id") @PathVariable("app_id")
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appId,

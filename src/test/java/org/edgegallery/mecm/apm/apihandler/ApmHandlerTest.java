@@ -19,6 +19,7 @@ package org.edgegallery.mecm.apm.apihandler;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -295,7 +296,7 @@ public class ApmHandlerTest {
                 mvc.perform(MockMvcRequestBuilders.post("/apm/v1/tenants/" + TENANT_ID
                         + "/packages")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON).with(csrf())
                         .header("access_token", "aasdjk")
                         .content(request))
                         .andExpect(MockMvcResultMatchers.status().isBadRequest());
@@ -409,7 +410,7 @@ public class ApmHandlerTest {
                 mvc.perform(MockMvcRequestBuilders.post("/apm/v1/tenants/" + TENANT_ID
                         + "/packages")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON).with(csrf())
                         .header("access_token", "aasdjk")
                         .content(request))
                         .andExpect(MockMvcResultMatchers.status().isBadRequest());

@@ -181,7 +181,7 @@ public class ApmHandlerTest {
                 mvc.perform(MockMvcRequestBuilders.post("/apm/v1/tenants/" + TENANT_ID
                         + "/packages")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON).with(csrf())
                         .header("access_token", "aasdjk")
                         .content(request))
                         .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());

@@ -18,6 +18,7 @@ package org.edgegallery.mecm.apm.apihandler;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -184,7 +185,7 @@ public class SyncAppPackageTest {
         ResultActions resultActions =
                 mvc.perform(MockMvcRequestBuilders.post("/apm/v1/apps/sync")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON).with(csrf())
                         .header("access_token", "aasdjk")
                         .content(" [{\n"
                                 + "\n"

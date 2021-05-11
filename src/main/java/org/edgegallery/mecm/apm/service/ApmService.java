@@ -262,7 +262,7 @@ public class ApmService {
         try {
             FileUtils.forceDelete(new File(localFilePath));
         } catch (IOException ex) {
-            LOGGER.debug("failed to delete csar package {}", ex.getMessage());
+            LOGGER.error("failed to delete csar package {}", ex.getMessage());
         }
 
         File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
@@ -1062,7 +1062,7 @@ public class ApmService {
                     dockerClient.removeImageCmd(id).withForce(true).exec();
                 }
             } catch (NotFoundException | ConflictException ex) {
-                LOGGER.debug("docker image {} not found {}", image, ex.getMessage());
+                LOGGER.error("docker image {} not found {}", image, ex.getMessage());
             }
         }
     }
@@ -1092,7 +1092,7 @@ public class ApmService {
                     LOGGER.debug("delete docker image from repo {}", image);
                 }
             } catch (NotFoundException | ConflictException ex) {
-                LOGGER.debug("docker image {} not found {}", image, ex.getMessage());
+                LOGGER.error("docker image {} not found {}", image, ex.getMessage());
             }
         }
     }

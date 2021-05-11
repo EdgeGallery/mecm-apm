@@ -246,35 +246,37 @@ public class DbService {
     public void createHost(String tenantId, AppPackageDto appPackageDto) {
         List<MecHostDto> hostList = appPackageDto.getMecHostInfo();
         MecHost host;
-        for (MecHostDto mecHostDto : hostList) {
-            MecHost existingHost = findHostWithIp(tenantId, appPackageDto.getAppPkgId(),
-                            mecHostDto.getHostIp());
-            if (existingHost != null) {
-                LOGGER.info("host {} already exists, updating the record", mecHostDto.getHostIp());
-                if (mecHostDto.getStatus() == null
-                        || !Constants.DISTRIBUTE_STATE_DISTRIBUTED.equals(existingHost.getDistributionStatus())) {
-                    existingHost.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
+        if (hostList != null && !hostList.isEmpty()) {
+            for (MecHostDto mecHostDto : hostList) {
+                MecHost existingHost = findHostWithIp(tenantId, appPackageDto.getAppPkgId(),
+                        mecHostDto.getHostIp());
+                if (existingHost != null) {
+                    LOGGER.info("host {} already exists, updating the record", mecHostDto.getHostIp());
+                    if (mecHostDto.getStatus() == null
+                            || !Constants.DISTRIBUTE_STATE_DISTRIBUTED.equals(existingHost.getDistributionStatus())) {
+                        existingHost.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
+                    } else {
+                        existingHost.setDistributionStatus(mecHostDto.getStatus());
+                    }
+                    host = existingHost;
                 } else {
-                    existingHost.setDistributionStatus(mecHostDto.getStatus());
-                }
-                host = existingHost;
-            } else {
-                host = new MecHost();
-                host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
+                    host = new MecHost();
+                    host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
 
-                if (mecHostDto.getStatus() == null) {
-                    host.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
-                } else {
-                    host.setDistributionStatus(mecHostDto.getStatus());
+                    if (mecHostDto.getStatus() == null) {
+                        host.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
+                    } else {
+                        host.setDistributionStatus(mecHostDto.getStatus());
+                    }
+                    host.setHostIp(mecHostDto.getHostIp());
+                    host.setAppPkgId(appPackageDto.getAppPkgId());
+                    host.setTenantId(tenantId);
                 }
-                host.setHostIp(mecHostDto.getHostIp());
-                host.setAppPkgId(appPackageDto.getAppPkgId());
-                host.setTenantId(tenantId);
+
+                mecHostRepository.save(host);
+                LOGGER.info("host record for tenant {}, appId {} package {} and host {} created successfully",
+                        tenantId, appPackageDto.getAppId(), appPackageDto.getAppPkgId(), mecHostDto.getHostIp());
             }
-
-            mecHostRepository.save(host);
-            LOGGER.info("host record for tenant {}, appId {} package {} and host {} created successfully",
-                    tenantId, appPackageDto.getAppId(), appPackageDto.getAppPkgId(), mecHostDto.getHostIp());
         }
     }
 
@@ -501,6 +503,8 @@ public class DbService {
 
     /**
      * Retrieves all app package info records.
+     *
+     * @return application package info
      */
     public List<AppPackageInfo> getAppPackageSyncInfo() {
         Iterable<AppPackageInfo> dbPkgInfo = appPkgSyncRepository.findAll();

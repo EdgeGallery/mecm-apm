@@ -111,6 +111,7 @@ public class ApmService {
     private static final String FAILURE_RESPONSE_STATUS = "received failure response status {}";
     private static final String FAILURE_RESPONSE_STATUS_CODE = "received failure response status ";
     private static final String HTTPS = "https://";
+    private static final String SSL = "/usr/app/ssl";
 
     @Value("${apm.inventory-endpoint}")
     private String inventoryIp;
@@ -179,7 +180,7 @@ public class ApmService {
     private DockerClient getDockerClient(String repo, String userName, String password) {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerTlsVerify(true)
-                .withDockerCertPath("/usr/app/ssl")
+                .withDockerCertPath(SSL)
                 .withRegistryUrl(Constants.HTTPS_PROTO + repo)
                 .withRegistryUsername(userName)
                 .withRegistryPassword(password)

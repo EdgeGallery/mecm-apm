@@ -85,7 +85,7 @@ public final class ApmServiceHelper {
             }
             return localFileDir.getCanonicalPath();
         } catch (IOException e) {
-            LOGGER.info(Constants.FAILED_TO_GET_FAIL_PATH);
+            LOGGER.error(Constants.FAILED_TO_GET_FAIL_PATH);
             throw new ApmException(Constants.FAILED_TO_GET_FAIL_PATH);
         }
     }
@@ -345,7 +345,7 @@ public final class ApmServiceHelper {
             FileUtils.writeStringToFile(swImageDescr, swImgDescrArray.toString(), StandardCharsets.UTF_8.name());
             LOGGER.info("Updated swImages : {}", swImgDescrArray);
         } catch (IOException e) {
-            LOGGER.info("failed to update sw image descriptor");
+            LOGGER.error("failed to update sw image descriptor");
             throw new ApmException("Failed to update repo info to image descriptor file");
         }
     }

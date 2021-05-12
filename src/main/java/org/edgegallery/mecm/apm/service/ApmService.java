@@ -111,6 +111,7 @@ public class ApmService {
     private static final String FAILURE_RESPONSE_STATUS = "received failure response status {}";
     private static final String FAILURE_RESPONSE_STATUS_CODE = "received failure response status ";
     private static final String HTTPS = "https://";
+    private static final String SSL = "/usr/app/ssl";
 
     @Value("${apm.inventory-endpoint}")
     private String inventoryIp;
@@ -179,7 +180,7 @@ public class ApmService {
     private DockerClient getDockerClient(String repo, String userName, String password) {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerTlsVerify(true)
-                .withDockerCertPath("/usr/app/ssl")
+                .withDockerCertPath(SSL)
                 .withRegistryUrl(Constants.HTTPS_PROTO + repo)
                 .withRegistryUsername(userName)
                 .withRegistryPassword(password)
@@ -261,7 +262,7 @@ public class ApmService {
         try {
             FileUtils.forceDelete(new File(localFilePath));
         } catch (IOException ex) {
-            LOGGER.debug("failed to delete csar package {}", ex.getMessage());
+            LOGGER.error("failed to delete csar package {}", ex.getMessage());
         }
 
         File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
@@ -1061,7 +1062,7 @@ public class ApmService {
                     dockerClient.removeImageCmd(id).withForce(true).exec();
                 }
             } catch (NotFoundException | ConflictException ex) {
-                LOGGER.debug("docker image {} not found {}", image, ex.getMessage());
+                LOGGER.error("docker image {} not found {}", image, ex.getMessage());
             }
         }
     }
@@ -1091,7 +1092,7 @@ public class ApmService {
                     LOGGER.debug("delete docker image from repo {}", image);
                 }
             } catch (NotFoundException | ConflictException ex) {
-                LOGGER.debug("docker image {} not found {}", image, ex.getMessage());
+                LOGGER.error("docker image {} not found {}", image, ex.getMessage());
             }
         }
     }

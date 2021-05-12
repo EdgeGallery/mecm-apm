@@ -84,6 +84,7 @@ public class ApmSyncHandler {
     /**
      * Synchronizes application package management information from all edges.
      *
+     * @param accessToken   access token
      * @param tenantId       tenant ID
      */
     @ApiOperation(value = "Synchronizes application package management information from all edges.",

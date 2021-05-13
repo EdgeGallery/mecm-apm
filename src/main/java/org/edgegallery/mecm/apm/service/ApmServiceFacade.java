@@ -500,7 +500,9 @@ public class ApmServiceFacade {
     private void distributeApplicationPackage(String applcmEndPoint, String tenantId,
                                               String pkgId, String hostIp, String accessToken) {
         LOGGER.info("distribute application package");
-        String url = HTTPS + applcmEndPoint + LCMCONTROLLER_URL + tenantId + PACKAGES_URL + pkgId;
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
+                .append(LCMCONTROLLER_URL).append(tenantId)
+                .append(PACKAGES_URL).append(pkgId).toString();
 
         List<String> hosts = new LinkedList<>();
         hosts.add(hostIp);

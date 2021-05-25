@@ -631,14 +631,14 @@ public class ApmService {
     }
 
     /**
-     * Gets applcm endpoint from inventory.
+     * Gets MEPM endpoint from inventory.
      *
      * @param hostIp      host ip
      * @param accessToken access token
-     * @return returns edge repository info
-     * @throws ApmException exception if failed to get edge repository details
+     * @return returns MEPM config info
+     * @throws ApmException exception if failed to get MEPM config details
      */
-    public String getApplcmCfgOfHost(String hostIp, String accessToken) {
+    public String getMepmCfgOfHost(String hostIp, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append(INVENTORY_URL).append("/mechosts/").append(hostIp).toString();
 
@@ -647,38 +647,38 @@ public class ApmService {
         LOGGER.info(EMPTY_RESPONSE, response);
 
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
-        JsonElement applcmIp = jsonObject.get("applcmIp");
-        if (applcmIp == null) {
+        JsonElement mepmIp = jsonObject.get("mepmIp");
+        if (mepmIp == null) {
             LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
-            throw new ApmException("applcm IP is null for host " + hostIp);
+            throw new ApmException("MEPM IP is null for host " + hostIp);
         }
 
-        String ip = applcmIp.getAsString();
+        String ip = mepmIp.getAsString();
         if (!isRegexMatched(Constants.IP_REGEX, ip)) {
             LOGGER.error(Constants.REPO_IP_INVALID, hostIp);
-            throw new ApmException("edge repo ip is invalid for host " + hostIp);
+            throw new ApmException("MEPM ip is invalid for host " + hostIp);
         }
 
         url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append(INVENTORY_URL).append("/applcms/").append(ip).toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/mepms/").append(ip).toString();
         response = sendGetRequest(url, accessToken);
 
         LOGGER.info(EMPTY_RESPONSE, response);
 
         jsonObject = new JsonParser().parse(response).getAsJsonObject();
-        JsonElement applcmPort = jsonObject.get("applcmPort");
-        if (applcmPort == null) {
+        JsonElement mepmPort = jsonObject.get("mepmPort");
+        if (mepmPort == null) {
             LOGGER.error(Constants.REPO_INFO_NULL, hostIp);
-            throw new ApmException("applcm port is null for host " + hostIp);
+            throw new ApmException("MEPM port is null for host " + hostIp);
         }
 
-        String port = applcmPort.getAsString();
+        String port = mepmPort.getAsString();
         if (!isRegexMatched(Constants.PORT_REGEX, port)) {
             LOGGER.error(Constants.REPO_PORT_INVALID, hostIp);
-            throw new ApmException("applcm port is invalid for host " + hostIp);
+            throw new ApmException("MEPM port is invalid for host " + hostIp);
         }
 
-        return applcmIp.getAsString() + ":" + applcmPort.getAsString();
+        return mepmIp.getAsString() + ":" + mepmPort.getAsString();
     }
 
     /**

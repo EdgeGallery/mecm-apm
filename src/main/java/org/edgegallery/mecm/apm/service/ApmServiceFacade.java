@@ -286,9 +286,9 @@ public class ApmServiceFacade {
     public void deleteDistributedAppPackageOnHost(String tenantId, String hostIp,
                                                   String packageId, String accessToken) {
         try {
-            String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
+            String mepmEndPoint = apmService.getMepmCfgOfHost(hostIp, accessToken);
 
-            String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
+            String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
                     .append(LCMCONTROLLER_URL).append(tenantId)
                     .append(PACKAGES_URL).append(packageId).append("/hosts/").append(hostIp).toString();
 
@@ -308,9 +308,9 @@ public class ApmServiceFacade {
      */
     public void deleteDistributedAppPackage(String tenantId, String hostIp, String packageId, String accessToken) {
         try {
-            String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
+            String mepmEndPoint = apmService.getMepmCfgOfHost(hostIp, accessToken);
 
-            String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
+            String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
                     .append(LCMCONTROLLER_URL).append(tenantId)
                     .append(PACKAGES_URL).append(packageId).toString();
 
@@ -486,21 +486,21 @@ public class ApmServiceFacade {
     public void uploadAndDistributeApplicationPackage(String accessToken, String hostIp, String tenantId,
                                                       String appId, String packageId) {
         try {
-            String applcmEndPoint = apmService.getApplcmCfgOfHost(hostIp, accessToken);
+            String mepmEndPoint = apmService.getMepmCfgOfHost(hostIp, accessToken);
 
-            uploadApplicationPackage(applcmEndPoint, tenantId, appId, packageId, accessToken);
+            uploadApplicationPackage(mepmEndPoint, tenantId, appId, packageId, accessToken);
 
-            distributeApplicationPackage(applcmEndPoint, tenantId, packageId, hostIp, accessToken);
+            distributeApplicationPackage(mepmEndPoint, tenantId, packageId, hostIp, accessToken);
         } catch (ApmException | NoSuchElementException ex) {
             LOGGER.error("failed to upload and distribute application package {} on host {}", packageId, hostIp);
             throw new ApmException("failed to upload and distribute application");
         }
     }
 
-    private void distributeApplicationPackage(String applcmEndPoint, String tenantId,
+    private void distributeApplicationPackage(String mepmEndPoint, String tenantId,
                                               String pkgId, String hostIp, String accessToken) {
         LOGGER.info("distribute application package");
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(applcmEndPoint)
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
                 .append(LCMCONTROLLER_URL).append(tenantId)
                 .append(PACKAGES_URL).append(pkgId).toString();
 
@@ -511,10 +511,10 @@ public class ApmServiceFacade {
         apmService.sendPostRequest(url, new Gson().toJson(hostsMap).toString(), accessToken);
     }
 
-    private void uploadApplicationPackage(String applcmEndPoint, String tenantId,
+    private void uploadApplicationPackage(String mepmEndPoint, String tenantId,
                                           String appId, String pkgId, String accessToken) {
         LOGGER.info("upload application package");
-        String url = HTTPS + applcmEndPoint + LCMCONTROLLER_URL + tenantId + "/packages";
+        String url = HTTPS + mepmEndPoint + LCMCONTROLLER_URL + tenantId + "/packages";
         try {
             String packagePath = localDirPath + File.separator + pkgId + PATH_DELIMITER + pkgId + ".csar";
             FileSystemResource appPkgRes = new FileSystemResource(new File(packagePath));

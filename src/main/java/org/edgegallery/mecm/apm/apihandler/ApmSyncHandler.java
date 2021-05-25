@@ -104,10 +104,10 @@ public class ApmSyncHandler {
     private void synchronizePackageMgmtDataFromEdges(String tenantId,  String accessToken) {
         LOGGER.info("Sync application package from edge");
         try {
-            Set<String> applcms = getInventoryMecHostsCfg(accessToken);
-            for (String applcm: applcms) {
-                LOGGER.info("Sync application package infos from edge {}", applcm);
-                String appLcmEndPoint = getInventoryApplcmCfg(applcm, accessToken);
+            Set<String> mepms = getInventoryMecHostsCfg(accessToken);
+            for (String mepm: mepms) {
+                LOGGER.info("Sync application package infos from edge {}", mepm);
+                String appLcmEndPoint = getInventoryMepmCfg(mepm, accessToken);
 
                 getSyncPackageStaleRecords(appLcmEndPoint, tenantId, accessToken);
                 getSyncPackageUpdateRecords(appLcmEndPoint, tenantId, accessToken);
@@ -200,36 +200,36 @@ public class ApmSyncHandler {
     }
 
     /**
-     * Gets applcm endpoint from inventory.
+     * Gets MEPM endpoint from inventory.
      *
      * @param hostIp      host ip
      * @param accessToken access token
-     * @return returns edge repository info
-     * @throws ApmException exception if failed to get edge repository details
+     * @return returns MEPM configuration data
+     * @throws ApmException exception if failed to get MEPM config details
      */
-    private String getInventoryApplcmCfg(String hostIp, String accessToken) {
+    private String getInventoryMepmCfg(String hostIp, String accessToken) {
 
         String url = new StringBuilder(inventoryService).append(":")
-                .append(inventoryServicePort).append("/inventory/v1").append("/applcms/").append(hostIp).toString();
+                .append(inventoryServicePort).append("/inventory/v1").append("/mepms/").append(hostIp).toString();
 
         ResponseEntity<String> response = syncService.sendRequest(url, HttpMethod.GET, accessToken, null);
 
         LOGGER.info("response: {}", response);
 
         JsonObject jsonObject = new JsonParser().parse(response.getBody()).getAsJsonObject();
-        JsonElement applcmPort = jsonObject.get("applcmPort");
-        if (applcmPort == null) {
-            throw new ApmException("applcm port is null for host " + hostIp);
+        JsonElement mepmPort = jsonObject.get("mepmPort");
+        if (mepmPort == null) {
+            throw new ApmException("MEPM port is null for host " + hostIp);
         }
 
-        return hostIp + ":" + applcmPort.getAsString();
+        return hostIp + ":" + mepmPort.getAsString();
     }
 
     /**
-     * Gets applcm configurations from inventory.
+     * Gets MEPM configurations from inventory.
      *
      * @param accessToken access token
-     * @return returns applcms
+     * @return returns MEPM configurations
      * @throws ApmException exception if failed to get edge repository details
      */
     private Set<String> getInventoryMecHostsCfg(String accessToken) {
@@ -242,13 +242,13 @@ public class ApmSyncHandler {
         LOGGER.info("response: {}", response);
         JsonArray jsonArray = new JsonParser().parse(response.getBody()).getAsJsonArray();
 
-        Set<String> applcms = new HashSet<>();
-        String applcm;
+        Set<String> mepms = new HashSet<>();
+        String mepm;
         for (JsonElement host: jsonArray) {
-            applcm = host.getAsJsonObject().get("applcmIp").getAsString();
-            applcms.add(applcm);
+            mepm = host.getAsJsonObject().get("mepmIp").getAsString();
+            mepms.add(mepm);
         }
 
-        return applcms;
+        return mepms;
     }
 }

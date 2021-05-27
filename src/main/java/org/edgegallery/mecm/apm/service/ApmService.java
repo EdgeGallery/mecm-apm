@@ -70,6 +70,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.AppPackageMf;
 import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.AppStore;
 import org.edgegallery.mecm.apm.model.ImageLocation;
@@ -95,6 +96,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.YAMLException;
 
 @Service("ApmService")
 public class ApmService {
@@ -244,7 +246,7 @@ public class ApmService {
      * @param tenantId      tenant Id
      * @return list of image info
      */
-    public List<String> getAppImageInfo(String localFilePath, String packageId, String tenantId) {
+    public List<String> getAppImageInfoFromMainService(String localFilePath, String packageId, String tenantId) {
         String yaml = getMainServiceYaml(localFilePath, getLocalIntendedDir(packageId, tenantId));
         return getImageInfo(yaml);
     }
@@ -256,8 +258,8 @@ public class ApmService {
      * @param packageId     package Id
      * @return list of image info
      */
-    public List<SwImageDescr> getAppImageInfo(String localFilePath, String packageId) {
-        String intendedDir = getLocalIntendedDir(packageId, null);
+    public List<SwImageDescr> getAppImageInfo(String tenantId, String localFilePath, String packageId) {
+        String intendedDir = getLocalIntendedDir(packageId, tenantId);
         unzipApplicationPacakge(localFilePath, intendedDir);
         try {
             FileUtils.forceDelete(new File(localFilePath));
@@ -265,7 +267,7 @@ public class ApmService {
             LOGGER.error("failed to delete csar package {}", ex.getMessage());
         }
 
-        File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
+        File swImageDesc = getFileFromPackage(tenantId, packageId, "Image/SwImageDesc", "json");
         try {
             return getSwImageDescrInfo(FileUtils.readFileToString(swImageDesc, StandardCharsets.UTF_8));
         } catch (IOException e) {
@@ -275,22 +277,65 @@ public class ApmService {
     }
 
     /**
+     * Returns application deployment type.
+     *
+     * @param packageId     package Id
+     * @return app package deployment type
+     */
+    public String getAppPackageDeploymentType(String tenantId, String packageId) {
+        Map<String, Object> mfFile;
+        File mf;
+
+        try {
+            mf = getFileFromPackage(tenantId, packageId, ".mf", "mf");
+        } catch (ApmException e) {
+            LOGGER.error("failed to get deployment type {}", e.getMessage());
+            throw new ApmException("failed to get sw image descriptor file");
+        }
+
+        try (InputStream inputStream = new FileInputStream(new File(mf.getPath()))) {
+
+
+            Yaml yaml = new Yaml(new SafeConstructor());
+            mfFile = yaml.load(inputStream);
+
+            ModelMapper mapper = new ModelMapper();
+            AppPackageMf appPkgMf = mapper.map(mfFile, AppPackageMf.class);
+
+            String appClass = appPkgMf.getApp_class();
+            if ("container".equalsIgnoreCase(appClass)) {
+                return appClass;
+            } else if ("vm".equalsIgnoreCase(appClass)) {
+                return appClass;
+            } else {
+                throw new ApmException("invalid app class");
+            }
+        } catch (ApmException | YAMLException e) {
+            LOGGER.error("failed to get deployment type {}", e.getMessage());
+            throw new ApmException("failed to get sw image descriptor file");
+        } catch (IOException ex) {
+            LOGGER.error("failed to get deployment type");
+            throw new ApmException("failed to get deployment type");
+        }
+    }
+
+    /**
      * Update application package with MECM repo info.
      *
      * @param packageId package ID
      */
-    public void updateAppPackageWithRepoInfo(String packageId) {
+    public void updateAppPackageWithRepoInfo(String tenantId, String packageId) {
 
-        File swImageDesc = getFileFromPackage(packageId, "Image/SwImageDesc", "json");
+        File swImageDesc = getFileFromPackage(tenantId, packageId, "Image/SwImageDesc", "json");
         updateRepoInfoInSwImageDescr(swImageDesc, mecmRepoEndpoint);
 
-        File chartsTar = getFileFromPackage(packageId, "/Artifacts/Deployment/Charts/", "tar");
+        File chartsTar = getFileFromPackage(tenantId, packageId, "/Artifacts/Deployment/Charts/", "tar");
         try {
             deCompress(chartsTar.getCanonicalFile().toString(),
                     new File(chartsTar.getCanonicalFile().getParent()));
 
             FileUtils.forceDelete(chartsTar);
-            File valuesYaml = getFileFromPackage(packageId, "/values.yaml", "yaml");
+            File valuesYaml = getFileFromPackage(tenantId, packageId, "/values.yaml", "yaml");
 
             //update values.yaml
             Map<String, Object> values = loadvaluesYaml(valuesYaml);
@@ -343,9 +388,9 @@ public class ApmService {
      *
      * @param packageId application package ID
      */
-    public void compressAppPackage(String packageId) {
+    public void compressAppPackage(String tenantId, String packageId) {
         LOGGER.info("Compress application package to csar...");
-        String intendedDir = getLocalIntendedDir(packageId, null);
+        String intendedDir = getLocalIntendedDir(packageId, tenantId);
         final Path srcDir = Paths.get(intendedDir);
         String zipFileName = intendedDir.concat(".csar");
         try (ZipOutputStream os = new ZipOutputStream(new FileOutputStream(zipFileName))) {
@@ -379,7 +424,9 @@ public class ApmService {
         }
         try {
             FileUtils.deleteDirectory(new File(intendedDir));
-            FileUtils.moveFileToDirectory(new File(zipFileName), new File(intendedDir), true);
+            FileUtils.forceMkdir(new File(intendedDir));
+            FileUtils.moveFile(new File(zipFileName), new File(intendedDir + File.separator + packageId + ".csar"));
+            
         } catch (IOException e) {
             throw new ApmException("failed to delete redundant files from app package");
         }
@@ -391,9 +438,10 @@ public class ApmService {
      * @param packageId package Id
      * @return docker image path
      */
-    public String unzipDockerImages(String packageId) {
-        String intendedDir = getLocalIntendedDir(packageId, null);
-        File dockerZip = getFileFromPackage(packageId + Constants.IMAGE_INPATH, Constants.IMAGE_INPATH, "zip");
+    public String unzipDockerImages(String packageId, String tenantId) {
+        String intendedDir = getLocalIntendedDir(packageId, tenantId);
+        File dockerZip = getFileFromPackage(tenantId, packageId + Constants.IMAGE_INPATH, Constants.IMAGE_INPATH,
+                "zip");
 
         try {
             unzipApplicationPacakge(dockerZip.getCanonicalPath(), intendedDir + Constants.IMAGE_INPATH);
@@ -415,12 +463,8 @@ public class ApmService {
         String intendedDir = getLocalIntendedDir(packageId, null);
 
         for (SwImageDescr imgDescr : loadDockerImages) {
-            DockerClientConfig config = DefaultDockerClientConfig
-                    .createDefaultConfigBuilder()
-                    //.withRegistryUsername(syncAppPackage.getAppstoreRepoUserName())
-                    //.withRegistryPassword(syncAppPackage.getAppstoreRepoPassword())
-                    .build();
 
+            DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
             DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
 
             LOGGER.info("image to load {} ", imgDescr.getSwImage());
@@ -543,8 +587,8 @@ public class ApmService {
      * @param extension file extension
      * @return file,
      */
-    public File getFileFromPackage(String packageId, String file, String extension) {
-        String dir = getLocalIntendedDir(packageId, null);
+    public File getFileFromPackage(String tenantId, String packageId, String file, String extension) {
+        String dir = getLocalIntendedDir(packageId, tenantId);
         String ext;
 
         List<File> files = (List<File>) FileUtils.listFiles(new File(dir), null, true);
@@ -568,7 +612,7 @@ public class ApmService {
     }
 
     private String getFileExtension(String file) {
-        List<String> extensions = Arrays.asList("tar", "tar.gz", "tgz", "gz", "zip", "json", "yaml", "yml");
+        List<String> extensions = Arrays.asList("tar", "tar.gz", "tgz", "gz", "zip", "json", "yaml", "yml", "mf");
         for (String ext : extensions) {
             if (file.endsWith("." + ext)) {
                 return ext;

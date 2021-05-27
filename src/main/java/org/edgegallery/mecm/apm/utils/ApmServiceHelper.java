@@ -96,9 +96,14 @@ public final class ApmServiceHelper {
      * @param packageId package ID
      * @return local file path
      */
-    public static String getLocalFilePath(String baseDirPath, String packageId) {
+    public static String getLocalFilePath(String baseDirPath, String packageId, String tenantId) {
+        if (tenantId == null) {
+            return new StringBuilder(baseDirPath).append(File.separator)
+                    .append(packageId).append(File.separator)
+                    .append(packageId + CSAR).toString();
+        }
         return new StringBuilder(baseDirPath).append(File.separator)
-                .append(packageId).append(File.separator)
+                .append(packageId).append(tenantId).append(File.separator)
                 .append(packageId + CSAR).toString();
     }
 
@@ -108,9 +113,14 @@ public final class ApmServiceHelper {
      * @param packageId package ID
      * @return local package directory path
      */
-    public static String getPackageDirPath(String baseDirPath, String packageId) {
-        return new StringBuilder(baseDirPath).append(File.separator)
-                .append(packageId).toString();
+    public static String getPackageDirPath(String baseDirPath, String packageId, String tenantId) {
+        if (tenantId == null) {
+            return new StringBuilder(baseDirPath).append(File.separator)
+                    .append(packageId).toString();
+        } else {
+            return new StringBuilder(baseDirPath).append(File.separator)
+                    .append(packageId).append(tenantId).toString();
+        }
     }
 
     /**
@@ -162,13 +172,17 @@ public final class ApmServiceHelper {
     public static String saveMultipartFile(MultipartFile multipartFile, String packageId, String tenantId,
                                            String localDirBasePath) {
         FileChecker.check(multipartFile);
+        String localFilePath;
         if (tenantId == null) {
             createDir(localDirBasePath + File.separator + packageId);
+            localFilePath = localDirBasePath + File.separator + packageId
+                    + File.separator + packageId + CSAR;
         } else {
             createDir(localDirBasePath + File.separator + packageId + tenantId);
+            localFilePath = localDirBasePath + File.separator + packageId + tenantId
+                    + File.separator + packageId + tenantId + CSAR;
         }
 
-        String localFilePath = localDirBasePath + File.separator + packageId + File.separator + packageId + CSAR;
         File file = new File(localFilePath);
         try {
             multipartFile.transferTo(file);

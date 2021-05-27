@@ -46,11 +46,9 @@ import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
-import org.edgegallery.mecm.apm.utils.Constants;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.InputStreamResource;
@@ -179,7 +177,7 @@ public class ApmServiceTest {
     @Test
     public void testGetAppImageInfo() throws FileNotFoundException {
         File file = ResourceUtils.getFile("classpath:sampleapp.csar");
-        List<String> imageInfo = apmService.getAppImageInfo(file.getPath(), PACKAGE_ID, TENANT_ID);
+        List<String> imageInfo = apmService.getAppImageInfoFromMainService(file.getPath(), PACKAGE_ID, TENANT_ID);
         assertEquals(2, imageInfo.size());
     }
 	

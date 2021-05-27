@@ -373,6 +373,9 @@
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <violationSeverity>warning</violationSeverity>
+          <excludes>
+            **/org/edgegallery/mecm/apm/model/AppPackageMf.java,
+          </excludes>
         </configuration>
         <executions>
           <execution>

@@ -143,7 +143,7 @@ public class ApmHandler {
         }
         syncAppPkg.setRepoInfo(repoInfo);
 
-        String localFilePath = ApmServiceHelper.saveMultipartFile(file, dto.getAppPkgId(), null, localDirPath);
+        String localFilePath = ApmServiceHelper.saveMultipartFile(file, dto.getAppPkgId(), tenantId, localDirPath);
         service.onboardApplication(accessToken, tenantId, dto, localFilePath, syncAppPkg);
 
         Map<String, String> response = new HashMap<>();

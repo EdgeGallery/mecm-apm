@@ -124,7 +124,7 @@ public class SyncAppPackageTest {
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
-        InputStream stream = apmServiceFacade.getAppPackageFile(TENANT_ID, packageDto.getAppPkgId());
+        InputStream stream = apmServiceFacade.getAppPackageFile(null, packageDto.getAppPkgId());
         assertNotNull(stream);
     }
 

@@ -108,7 +108,7 @@ public class ApmServiceFacadeTest {
         File file = ResourceUtils.getFile("classpath:packages");
         facades.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
-        String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, null, file.getPath());
+        String response = ApmServiceHelper.saveInputStreamToFile(inputStream, PACKAGE_ID, TENANT_ID, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());
@@ -125,26 +125,7 @@ public class ApmServiceFacadeTest {
 		method.setAccessible(true);
 		method.invoke(facade,obj);
 	}
-
-	@Test
-	public void distributeApplication() throws Exception {
-		
-		List<SwImageDescr> imageInfoList = null;
-		Object[] obj = {true,"tenant-id",packageDto,imageInfoList,syncAppPkg,true,"access_token"};
-		
-		Method method = ApmServiceFacade.class.getDeclaredMethod("distributeApplication",boolean.class,String.class,AppPackageDto.class,List.class,PkgSyncInfo.class,boolean.class,String.class);
-		
-		
-		method.setAccessible(true);
-		
-		try {
-		    method.invoke(facade,obj);
-		}
-		catch(Exception e)
-		{
-			assertTrue(true);
-		}
-	}
+	
 		
 	@Test
 	public void onboardApplication() {

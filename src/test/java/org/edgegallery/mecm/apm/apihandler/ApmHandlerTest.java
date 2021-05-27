@@ -121,7 +121,7 @@ public class ApmHandlerTest {
         apmServiceFacade.setLocalDirPath(file.getPath());
         InputStream inputStream = IOUtils.toInputStream("mock data for test", "UTF-8");
         String response = ApmServiceHelper.saveInputStreamToFile(inputStream,
-                packageDto.getAppPkgId(), null, file.getPath());
+                packageDto.getAppPkgId(), TENANT_ID, file.getPath());
         assertNotNull(response);
         File responseFile = new File(response);
         assertTrue(responseFile.exists());

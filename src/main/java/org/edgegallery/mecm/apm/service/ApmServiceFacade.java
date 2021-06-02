@@ -740,7 +740,7 @@ public class ApmServiceFacade {
             String localFilePath = saveInputStreamToFile(stream, appPackageId, null, localDirPath);
 
             imageInfoList = apmService.getAppImageInfo(null, localFilePath, appPackageId);
-            String appDeployType = apmService.getAppPackageDeploymentType(null, syncInfo.getPackageId());
+            String appDeployType = apmService.getAppPackageDeploymentType(null, appPackageId);
 
             if ("vm".equalsIgnoreCase(appDeployType)) {
                 apmService.compressAppPackage(null, appPackageId);

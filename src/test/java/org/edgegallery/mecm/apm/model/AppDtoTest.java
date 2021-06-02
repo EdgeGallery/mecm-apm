@@ -17,16 +17,20 @@
 package org.edgegallery.mecm.apm.model;
 
 
-import org.edgegallery.mecm.apm.model.dto.*;
+import java.util.ArrayList;
+import java.util.List;
+import org.edgegallery.mecm.apm.model.dto.AppPackageDeletedDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageHostDeletedDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageRecordDto;
+import org.edgegallery.mecm.apm.model.dto.SyncDeletedAppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AppDtoTest {

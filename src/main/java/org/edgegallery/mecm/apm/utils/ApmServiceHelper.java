@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,8 @@ import javax.validation.ValidatorFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
+import org.edgegallery.mecm.apm.model.AppTemplate;
+import org.edgegallery.mecm.apm.model.AppTemplateInputAttr;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.slf4j.Logger;
@@ -63,6 +66,7 @@ public final class ApmServiceHelper {
     static final int TOO_BIG = 104857600;
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceHelper.class);
     private static final String CSAR = ".csar";
+    private static final String INPUT_DEFAULT_ATTR = "default";
 
     private ApmServiceHelper() {
     }
@@ -430,5 +434,44 @@ public final class ApmServiceHelper {
             mecHostDtos.add(dto);
         }
         return mecHostDtos;
+    }
+
+    /**
+     * Returns application template.
+     *
+     * @param mainServiceYaml main service template file content
+     * @return list of image details
+     */
+    public static AppTemplate getApplicationTemplate(String mainServiceYaml, String tenantId, String packageId) {
+        ObjectMapper om = new ObjectMapper(new YAMLFactory());
+        ObjectMapper jsonWriter = new ObjectMapper();
+        String response;
+        try {
+            response = jsonWriter.writeValueAsString(om.readValue(mainServiceYaml, Object.class));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(Constants.FAILED_TO_CONVERT_YAML_TO_JSON, e.getMessage());
+            throw new ApmException(Constants.FAILED_TO_CONVERT_YAML_TO_JSON);
+        }
+
+        JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
+
+        JsonObject topologyTemplate = getChildJsonObject(jsonObject, "topology_template");
+        JsonObject inputs = getChildJsonObject(topologyTemplate, "inputs");
+
+        Set<Entry<String, JsonElement>> entrySet = inputs.entrySet();
+        Set<AppTemplateInputAttr> inputAttrList = new HashSet<>();
+        AppTemplate appTemplate = new AppTemplate();
+        for (Map.Entry<String, JsonElement> entry : entrySet) {
+            AppTemplateInputAttr inputAttr = new Gson().fromJson(entry.getValue(), AppTemplateInputAttr.class);
+            if (entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR) != null) {
+                inputAttr.setDefaultValue(entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR).getAsString());
+            }
+            inputAttr.setName(entry.getKey());
+            inputAttr.setAppTemplate(appTemplate);
+            inputAttrList.add(inputAttr);
+        }
+
+        appTemplate.setInputs(inputAttrList);
+        return appTemplate;
     }
 }

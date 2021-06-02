@@ -43,6 +43,7 @@ import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
 import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.AppStore;
+import org.edgegallery.mecm.apm.model.AppTemplate;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
@@ -119,6 +120,9 @@ public class ApmServiceFacade {
             imageInfoList = apmService.getAppImageInfo(tenantId, localFilePath, appPackageDto.getAppPkgId());
             String appDeployType = apmService.getAppPackageDeploymentType(tenantId, appPackageDto.getAppPkgId());
 
+            AppTemplate appTemplate = apmService.getApplicationTemplateInfo(appPackageDto, tenantId);
+            dbService.createOrUpdateAppTemplate(tenantId, appTemplate);
+
             if ("container".equalsIgnoreCase(appDeployType)) {
                 onboardContainerBasedAppPkg(accessToken, tenantId, appPackageDto, syncAppPkg, imageInfoList);
                 addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
@@ -148,6 +152,10 @@ public class ApmServiceFacade {
             List<SwImageDescr> imageInfoList = apmService.getAppImageInfo(tenantId, localFilePath,
                                                                           appPackageDto.getAppPkgId());
             String appDeployType = apmService.getAppPackageDeploymentType(tenantId, appPackageDto.getAppPkgId());
+
+            AppTemplate appTemplate = apmService.getApplicationTemplateInfo(appPackageDto, tenantId);
+            dbService.createOrUpdateAppTemplate(tenantId, appTemplate);
+
             if ("container".equalsIgnoreCase(appDeployType)) {
                 onboardContainerBasedAppPkg(accessToken, tenantId, appPackageDto, syncAppPkg, imageInfoList);
             } else if ("vm".equalsIgnoreCase(appDeployType)) {
@@ -238,6 +246,17 @@ public class ApmServiceFacade {
      */
     public AppPackageDto getAppPackageInfo(String tenantId, String appPackageId) {
         return dbService.getAppPackageWithHost(tenantId, appPackageId);
+    }
+
+    /**
+     * Returns app template info.
+     *
+     * @param tenantId     tenant ID
+     * @param appPackageId app package ID
+     * @return app package info
+     */
+    public AppTemplate getAppTemplateInfo(String tenantId, String appPackageId) {
+        return dbService.getApplicationTemplate(tenantId, appPackageId);
     }
 
     /**

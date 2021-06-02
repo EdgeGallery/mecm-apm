@@ -284,6 +284,7 @@ public class ApmService {
             appTemplate.setAppId(appPackageDto.getAppId());
             appTemplate.setAppPkgName(appPackageDto.getAppPkgName());
             appTemplate.setVersion(appPackageDto.getAppPkgVersion());
+            appTemplate.setTenantId(tenantId);
             String appPkgId = appPackageDto.getAppPkgId().substring(appPackageDto.getAppPkgId().length() - 32);
             appTemplate.setAppPackageId(appPkgId);
             return appTemplate;
@@ -304,7 +305,7 @@ public class ApmService {
         String intendedDir = getLocalIntendedDir(packageId, tenantId);
         unzipApplicationPacakge(localFilePath, intendedDir);
         try {
-            FileUtils.forceDelete(new File(localFilePath));
+            FileUtils.forceDeleteOnExit(new File(localFilePath));
         } catch (IOException ex) {
             LOGGER.error("failed to delete csar package {}", ex.getMessage());
         }
@@ -376,7 +377,7 @@ public class ApmService {
             deCompress(chartsTar.getCanonicalFile().toString(),
                     new File(chartsTar.getCanonicalFile().getParent()));
 
-            FileUtils.forceDelete(chartsTar);
+            FileUtils.forceDeleteOnExit(chartsTar);
             File valuesYaml = getFileFromPackage(tenantId, packageId, "/values.yaml", "yaml");
 
             //update values.yaml
@@ -403,11 +404,10 @@ public class ApmService {
 
             compress(valuesYaml.getParent());
 
-            FileUtils.deleteDirectory(new File(valuesYaml.getParent()));
-
-            LOGGER.info("updateed application package charts with repo details");
+            FileUtils.forceDeleteOnExit(new File(valuesYaml.getParent()));
+            LOGGER.info("updated application package charts with repo details");
         } catch (IOException e) {
-            throw new ApmException("failed to find charts directory");
+            throw new ApmException("failed to update repo info in charts, IO Exception ");
         }
     }
 
@@ -465,7 +465,7 @@ public class ApmService {
             throw new ApmException("failed to zip application package IO exception");
         }
         try {
-            FileUtils.deleteDirectory(new File(intendedDir));
+            FileUtils.forceDeleteOnExit(new File(intendedDir));
             FileUtils.forceMkdir(new File(intendedDir));
             FileUtils.moveFile(new File(zipFileName), new File(intendedDir + File.separator + packageId + ".csar"));
             
@@ -793,7 +793,7 @@ public class ApmService {
             throw new ApmException(Constants.LOCAL_FILE_PATH_NULL);
         }
         try {
-            FileUtils.forceDelete(new File(localFilePath));
+            FileUtils.forceDeleteOnExit(new File(localFilePath));
         } catch (IOException e) {
             LOGGER.error("failed to delete csar file");
         }

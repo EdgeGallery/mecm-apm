@@ -17,6 +17,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getApplicationTemplate;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getSwImageDescrInfo;
@@ -73,9 +74,11 @@ import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackageMf;
 import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.AppStore;
+import org.edgegallery.mecm.apm.model.AppTemplate;
 import org.edgegallery.mecm.apm.model.ImageLocation;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
+import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.modelmapper.ModelMapper;
@@ -101,6 +104,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 @Service("ApmService")
 public class ApmService {
 
+    static final int TOO_BIG = 104857600;
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmService.class);
     private static final String ACCESS_TOKEN = "access_token";
     private static final String INVENTORY_URL = "/inventory/v1";
@@ -249,6 +253,44 @@ public class ApmService {
     public List<String> getAppImageInfoFromMainService(String localFilePath, String packageId, String tenantId) {
         String yaml = getMainServiceYaml(localFilePath, getLocalIntendedDir(packageId, tenantId));
         return getImageInfo(yaml);
+    }
+
+    /**
+     * Returns application template.
+     *
+     * @param appPackageDto application package info
+     * @param tenantId      tenant Id
+     * @return list of image info
+     */
+    public AppTemplate getApplicationTemplateInfo(AppPackageDto appPackageDto, String tenantId) {
+        File yamlFile;
+
+        try {
+            yamlFile = getFileFromPackage(tenantId, appPackageDto.getAppPkgId(), "APPD/Definition/MainServiceTemplate"
+                    + ".yaml", "yaml");
+        } catch (ApmException e) {
+            LOGGER.error("failed to get main service template yaml {}", e.getMessage());
+            throw new ApmException("failed to get main service template yaml");
+        }
+
+        try (InputStream inputStream = new FileInputStream(yamlFile)) {
+            byte[] byteArray = IOUtils.toByteArray(inputStream);
+            if (byteArray.length > TOO_BIG) {
+                throw new IllegalStateException("file being unzipped is too big");
+            }
+            AppTemplate appTemplate = getApplicationTemplate(new String(byteArray,
+                    StandardCharsets.UTF_8), tenantId, appPackageDto.getAppPkgId());
+
+            appTemplate.setAppId(appPackageDto.getAppId());
+            appTemplate.setAppPkgName(appPackageDto.getAppPkgName());
+            appTemplate.setVersion(appPackageDto.getAppPkgVersion());
+            String appPkgId = appPackageDto.getAppPkgId().substring(appPackageDto.getAppPkgId().length() - 32);
+            appTemplate.setAppPackageId(appPkgId);
+            return appTemplate;
+        } catch (IOException e) {
+            LOGGER.error("failed to get app template {}", e.getMessage());
+            throw new ApmException("failed to get app template");
+        }
     }
 
     /**

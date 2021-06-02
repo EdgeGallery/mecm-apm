@@ -43,10 +43,12 @@ import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
 import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.AppStore;
+import org.edgegallery.mecm.apm.model.AppTemplate;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageSyncStatusDto;
+import org.edgegallery.mecm.apm.model.dto.AppTemplateDto;
 import org.edgegallery.mecm.apm.model.dto.SyncAppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
@@ -225,6 +227,28 @@ public class ApmHandler {
             @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId) {
         AppPackageDto response = service.getAppPackageInfo(tenantId, appPackageId);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Retrieves application template of the package.
+     *
+     * @param tenantId     tenant identifier
+     * @param appPackageId application package identifier
+     * @return application package on success, error code on failure
+     */
+    @ApiOperation(value = "Retrieves application template from package", response = AppTemplateDto.class)
+    @GetMapping(path = "/tenants/{tenant_id}/packages/{app_package_id}/apptemplate",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
+    public ResponseEntity<AppTemplateDto> getAppTemplatePackageInfo(
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APPD_ID_PKG_ID_REGEX) String appPackageId) {
+        AppTemplate response = service.getAppTemplateInfo(tenantId, appPackageId);
+        ModelMapper mapper = new ModelMapper();
+        AppTemplateDto appTemplate = mapper.map(response, AppTemplateDto.class);
+        return new ResponseEntity<>(appTemplate, HttpStatus.OK);
     }
 
     /**

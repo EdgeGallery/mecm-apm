@@ -48,14 +48,12 @@ class ApmServiceHelperTest {
         File file = ResourceUtils.getFile("classpath:sampleapp.csar");
         File packagesDir = ResourceUtils.getFile("classpath:packages");
         String indentedDir = packagesDir.getPath() + File.separator + PACKAGE_ID + TENANT_ID;
-		try {
+        try {
             String response = ApmServiceHelper.getMainServiceYaml(file.getPath(), indentedDir);
             assertNotNull(response);
-		}
-		catch(Exception e)
-		{
-			assertTrue(true);
-		}
+        } catch (Exception e) {
+            assertTrue(true);
+        }
     }
 
     @Test
@@ -63,19 +61,17 @@ class ApmServiceHelperTest {
         File file = ResourceUtils.getFile("classpath:sampleapp.csar");
         File packagesDir = ResourceUtils.getFile("classpath:packages");
         String indentedDir = packagesDir.getPath() + File.separator + PACKAGE_ID + TENANT_ID;
-       // String response = ApmServiceHelper.getMainServiceYaml(file.getPath(), indentedDir);
-	    try {
-	        String response = "OK";
+        // String response = ApmServiceHelper.getMainServiceYaml(file.getPath(), indentedDir);
+        try {
+            String response = "OK";
             List<String> imageInfoList = ApmServiceHelper.getImageInfo(response);
             assertNotNull(imageInfoList);
             assertEquals(2, imageInfoList.size());
             String imageInfo = imageInfoList.get(0);
             assertEquals("swr.ap-southeast-1.myhuaweicloud.com/edgegallery/mep-agent:1.0", imageInfo);
-		}
-		catch(Exception e)
-		{
-			assertTrue(true);
-		}
+        } catch (Exception e) {
+            assertTrue(true);
+        }
     }
 
     @Test

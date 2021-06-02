@@ -30,6 +30,7 @@ import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.ApmTenant;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.AppPackageInfo;
+import org.edgegallery.mecm.apm.model.AppTemplate;
 import org.edgegallery.mecm.apm.model.MecHost;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
@@ -37,6 +38,7 @@ import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.repository.ApmTenantRepository;
 import org.edgegallery.mecm.apm.repository.AppPackageInfoRepository;
 import org.edgegallery.mecm.apm.repository.AppPackageRepository;
+import org.edgegallery.mecm.apm.repository.AppTemplateRepository;
 import org.edgegallery.mecm.apm.repository.MecHostRepository;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.modelmapper.ModelMapper;
@@ -63,6 +65,9 @@ public class DbService {
 
     @Autowired
     private AppPackageInfoRepository appPkgSyncRepository;
+
+    @Autowired
+    private AppTemplateRepository appTemplateRepository;
 
     @Value("${apm.package-dir:/usr/app/packages}")
     private String localDirPath;
@@ -150,6 +155,11 @@ public class DbService {
 
         LOGGER.info("app package record for tenant {} and package {} deleted successfully",
                 tenantId, packageId);
+
+        Optional<AppTemplate> appTemplate = appTemplateRepository.findById(packageId + tenantId);
+        if (appTemplate.isPresent()) {
+            appTemplateRepository.delete(appTemplate.get());
+        }
 
         List<AppPackage> record = appPackageRepository.findByTenantId(tenantId);
         if (record.isEmpty()) {
@@ -565,5 +575,81 @@ public class DbService {
         if ("-".equals(deletePkg.getAppstoreIp())) {
             appPkgSyncRepository.deleteById(appPkgInfoId);
         }
+    }
+
+    /**
+     * Create app package record.
+     *
+     * @param tenantId    tenant ID
+     * @param appTemplate application template
+     */
+    public void createOrUpdateAppTemplate(String tenantId, AppTemplate appTemplate) {
+        boolean addTenant = false;
+
+        appTemplate.setId(appTemplate.getAppId() + appTemplate.getAppPackageId() + tenantId);
+        appTemplate.setTenantId(tenantId);
+
+        try {
+            AppTemplate appTemplateDb = getApplicationTemplate(tenantId, appTemplate.getAppPackageId());
+            ;
+
+            appTemplateDb.setInputs(appTemplate.getInputs());
+            appTemplateDb.setAppPkgName(appTemplate.getAppPkgName());
+            appTemplateDb.setVersion(appTemplate.getVersion());
+            appTemplateDb.setAppId(appTemplate.getAppId());
+            appTemplateDb.setAppPackageId(appTemplate.getAppPackageId());
+            appTemplateRepository.save(appTemplateDb);
+
+            LOGGER.info("app template record for tenant {} and package {} updated successfully",
+                    tenantId, appTemplate.getAppPackageId());
+            return;
+        } catch (NoSuchElementException ex) {
+            LOGGER.info("Add app template record for tenant {} and package {}",
+                    tenantId, appTemplate.getAppPackageId());
+        }
+
+        Optional<ApmTenant> info = tenantRepository.findById(tenantId);
+        if (info.isPresent()) {
+            List<AppTemplate> record = appTemplateRepository.findByTenantId(tenantId);
+            if (record.size() == Constants.MAX_ENTRY_PER_TENANT_PER_MODEL) {
+                LOGGER.error("Max application template's limit {} reached", Constants.MAX_ENTRY_PER_TENANT_PER_MODEL);
+                throw new ApmException(Constants.MAX_LIMIT_REACHED_ERROR);
+            }
+        } else {
+            if (tenantRepository.count() == Constants.MAX_TENANTS) {
+                LOGGER.error("Max tenant limit {} reached", Constants.MAX_TENANTS);
+                throw new ApmException(Constants.MAX_LIMIT_REACHED_ERROR);
+            }
+            addTenant = true;
+        }
+
+        appTemplateRepository.save(appTemplate);
+
+        if (addTenant) {
+            LOGGER.info("Add tenant {}", tenantId);
+            ApmTenant tenant = new ApmTenant();
+            tenant.setTenant(tenantId);
+            tenantRepository.save(tenant);
+        }
+
+        LOGGER.info("app template record for tenant {} and package {} created successfully",
+                tenantId, appTemplate.getAppPackageId());
+    }
+
+    /**
+     * Returns applicaiton template record.
+     *
+     * @param tenantId  tenant ID
+     * @param packageId package ID
+     * @return app package record with mec host
+     */
+    public AppTemplate getApplicationTemplate(String tenantId, String packageId) {
+        String id = packageId + tenantId;
+        Optional<AppTemplate> info = appTemplateRepository.findById(id);
+        if (!info.isPresent()) {
+            LOGGER.error(RECORD_NOT_FOUND);
+            throw new NoSuchElementException(RECORD_NOT_FOUND);
+        }
+        return info.get();
     }
 }

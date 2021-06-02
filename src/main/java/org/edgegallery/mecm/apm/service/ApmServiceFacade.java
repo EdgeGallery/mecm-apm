@@ -184,8 +184,8 @@ public class ApmServiceFacade {
                     dockerImgspath = apmService.unzipDockerImages(appPackageDto.getAppPkgId(), tenantId);
                     apmService.loadDockerImages(packageId, imageInfoList, loadedImgs);
 
-                    FileUtils.forceDelete(new File(dockerImgspath + ".zip"));
-                    FileUtils.forceDelete(new File(dockerImgspath));
+                    FileUtils.forceDeleteOnExit(new File(dockerImgspath + ".zip"));
+                    FileUtils.forceDeleteOnExit(new File(dockerImgspath));
 
                     break;
                 }
@@ -762,8 +762,8 @@ public class ApmServiceFacade {
                 dockerImgPath = apmService.unzipDockerImages(appPackageId, null);
                 apmService.loadDockerImages(appPackageId, imageInfoList, downloadedImgs);
 
-                FileUtils.forceDelete(new File(dockerImgPath + ".zip"));
-                FileUtils.forceDelete(new File(dockerImgPath));
+                FileUtils.forceDeleteOnExit(new File(dockerImgPath + ".zip"));
+                FileUtils.forceDeleteOnExit(new File(dockerImgPath));
 
             } else {
                 LOGGER.info("application package has image repo info to download...");

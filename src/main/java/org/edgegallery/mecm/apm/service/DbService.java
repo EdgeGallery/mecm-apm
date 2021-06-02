@@ -591,8 +591,6 @@ public class DbService {
 
         try {
             AppTemplate appTemplateDb = getApplicationTemplate(tenantId, appTemplate.getAppPackageId());
-            ;
-
             appTemplateDb.setInputs(appTemplate.getInputs());
             appTemplateDb.setAppPkgName(appTemplate.getAppPkgName());
             appTemplateDb.setVersion(appTemplate.getVersion());

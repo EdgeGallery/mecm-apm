@@ -176,7 +176,7 @@ public class ApmServiceFacade {
         Set<String> loadedImgs = new HashSet<>();
         try {
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains(TAR_GZ)
+                if (imageDescr.getSwImage().contains(".tar") || imageDescr.getSwImage().contains(TAR_GZ)
                         || imageDescr.getSwImage().contains(".tgz")) {
                     downloadImg = false;
 
@@ -750,7 +750,7 @@ public class ApmServiceFacade {
             }
 
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (imageDescr.getSwImage().contains("tar") || imageDescr.getSwImage().contains(TAR_GZ)
+                if (imageDescr.getSwImage().contains(".tar") || imageDescr.getSwImage().contains(TAR_GZ)
                         || imageDescr.getSwImage().contains(".tgz")) {
                     isDockerImgAvailable = true;
                     break;

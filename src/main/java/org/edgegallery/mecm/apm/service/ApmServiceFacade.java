@@ -169,6 +169,14 @@ public class ApmServiceFacade {
         LOGGER.info("On-boading completed...");
     }
 
+    private boolean isDockerImageAvailableInPkg(String dockerImage) {
+        if (isSuffixExist(dockerImage, ".tar") || isSuffixExist(dockerImage, TAR_GZ)
+                || isSuffixExist(dockerImage, ".tgz")) {
+            return true;
+        }
+        return false;
+    }
+
     private void onboardContainerBasedAppPkg(String accessToken, String tenantId, AppPackageDto appPackageDto,
                                              PkgSyncInfo syncAppPkg, List<SwImageDescr> imageInfoList) {
         String packageId = appPackageDto.getAppPkgId();
@@ -177,8 +185,7 @@ public class ApmServiceFacade {
         Set<String> loadedImgs = new HashSet<>();
         try {
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (isSuffixExist(imageDescr.getSwImage(), ".tar") || isSuffixExist(imageDescr.getSwImage(), TAR_GZ)
-                        || isSuffixExist(imageDescr.getSwImage(), ".tgz")) {
+                if (isDockerImageAvailableInPkg(imageDescr.getSwImage())) {
                     downloadImg = false;
 
                     LOGGER.info("application package contains docker images...");
@@ -751,8 +758,7 @@ public class ApmServiceFacade {
             }
 
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (isSuffixExist(imageDescr.getSwImage(), ".tar") || isSuffixExist(imageDescr.getSwImage(), TAR_GZ)
-                        || isSuffixExist(imageDescr.getSwImage(), ".tgz")) {
+                if (isDockerImageAvailableInPkg(imageDescr.getSwImage())) {
                     isDockerImgAvailable = true;
                     break;
                 }

@@ -192,8 +192,8 @@ public class ApmServiceFacade {
                     dockerImgspath = apmService.unzipDockerImages(appPackageDto.getAppPkgId(), tenantId);
                     apmService.loadDockerImages(packageId, imageInfoList, loadedImgs);
 
-                    FileUtils.forceDeleteOnExit(new File(dockerImgspath + ".zip"));
-                    FileUtils.forceDeleteOnExit(new File(dockerImgspath));
+                    FileUtils.deleteQuietly(new File(dockerImgspath + ".zip"));
+                    FileUtils.deleteQuietly(new File(dockerImgspath));
 
                     break;
                 }
@@ -208,11 +208,6 @@ public class ApmServiceFacade {
             apmService.deleteAppPkgDockerImages(loadedImgs);
             dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, ex.getMessage());
             throw new ApmException(ex.getMessage());
-        } catch (IOException e) {
-            LOGGER.error("docker images sync failed due to IO exception");
-            apmService.deleteAppPkgDockerImages(loadedImgs);
-            dbService.updateDistributionStatusOfAllHost(tenantId, packageId, ERROR, e.getMessage());
-            throw new ApmException("docker images sync failed due to IO exception");
         }
 
         distributeApplication(tenantId, appPackageDto, accessToken);
@@ -770,8 +765,8 @@ public class ApmServiceFacade {
                     dockerImgPath = apmService.unzipDockerImages(appPackageId, null);
                     apmService.loadDockerImages(appPackageId, imageInfoList, downloadedImgs);
 
-                    FileUtils.forceDeleteOnExit(new File(dockerImgPath + ".zip"));
-                    FileUtils.forceDeleteOnExit(new File(dockerImgPath));
+                    FileUtils.deleteQuietly(new File(dockerImgPath + ".zip"));
+                    FileUtils.deleteQuietly(new File(dockerImgPath));
 
                 } else {
                     LOGGER.info("application package has image repo info to download...");
@@ -786,10 +781,6 @@ public class ApmServiceFacade {
                     Constants.APP_IN_SYNC, Constants.SUCCESS);
         } catch (ApmException | IllegalArgumentException | NoSuchElementException e) {
             LOGGER.error(Constants.SYNC_APP_FAILED, appPackageId);
-            dbService.updateAppPackageSyncStatus(syncInfo.getAppId(),
-                    syncInfo.getPackageId(), Constants.APP_SYNC_FAILED, e.getMessage());
-        } catch (IOException e) {
-            LOGGER.debug("file operation failed");
             dbService.updateAppPackageSyncStatus(syncInfo.getAppId(),
                     syncInfo.getPackageId(), Constants.APP_SYNC_FAILED, e.getMessage());
         } finally {

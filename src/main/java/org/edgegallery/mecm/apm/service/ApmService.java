@@ -304,11 +304,8 @@ public class ApmService {
     public List<SwImageDescr> getAppImageInfo(String tenantId, String localFilePath, String packageId) {
         String intendedDir = getLocalIntendedDir(packageId, tenantId);
         unzipApplicationPacakge(localFilePath, intendedDir);
-        try {
-            FileUtils.forceDeleteOnExit(new File(localFilePath));
-        } catch (IOException ex) {
-            LOGGER.error("failed to delete csar package {}", ex.getMessage());
-        }
+
+        FileUtils.deleteQuietly(new File(localFilePath));
 
         File swImageDesc = getFileFromPackage(tenantId, packageId, "Image/SwImageDesc", "json");
         try {
@@ -377,7 +374,8 @@ public class ApmService {
             deCompress(chartsTar.getCanonicalFile().toString(),
                     new File(chartsTar.getCanonicalFile().getParent()));
 
-            FileUtils.forceDeleteOnExit(chartsTar);
+            FileUtils.deleteQuietly(chartsTar);
+
             File valuesYaml = getFileFromPackage(tenantId, packageId, "/values.yaml", "yaml");
 
             //update values.yaml
@@ -404,7 +402,8 @@ public class ApmService {
 
             compress(valuesYaml.getParent());
 
-            FileUtils.forceDeleteOnExit(new File(valuesYaml.getParent()));
+            FileUtils.deleteQuietly(new File(valuesYaml.getParent()));
+
             LOGGER.info("updated application package charts with repo details");
         } catch (IOException e) {
             throw new ApmException("failed to update repo info in charts, IO Exception ");
@@ -465,7 +464,7 @@ public class ApmService {
             throw new ApmException("failed to zip application package IO exception");
         }
         try {
-            FileUtils.forceDeleteOnExit(new File(intendedDir));
+            FileUtils.deleteQuietly(new File(intendedDir));
             FileUtils.forceMkdir(new File(intendedDir));
             FileUtils.moveFile(new File(zipFileName), new File(intendedDir + File.separator + packageId + ".csar"));
             
@@ -793,11 +792,7 @@ public class ApmService {
             LOGGER.error(Constants.LOCAL_FILE_PATH_NULL);
             throw new ApmException(Constants.LOCAL_FILE_PATH_NULL);
         }
-        try {
-            FileUtils.forceDeleteOnExit(new File(localFilePath));
-        } catch (IOException e) {
-            LOGGER.error("failed to delete csar file");
-        }
+        FileUtils.deleteQuietly(new File(localFilePath));
     }
 
     /**

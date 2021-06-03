@@ -757,28 +757,29 @@ public class ApmServiceFacade {
                 return;
             }
 
-            for (SwImageDescr imageDescr : imageInfoList) {
-                if (isDockerImageAvailableInPkg(imageDescr.getSwImage())) {
-                    isDockerImgAvailable = true;
-                    break;
+            if (Boolean.parseBoolean(uploadDockerImage)) {
+                for (SwImageDescr imageDescr : imageInfoList) {
+                    if (isDockerImageAvailableInPkg(imageDescr.getSwImage())) {
+                        isDockerImgAvailable = true;
+                        break;
+                    }
                 }
+
+                if (isDockerImgAvailable) {
+                    LOGGER.info("application package contains docker images...");
+                    dockerImgPath = apmService.unzipDockerImages(appPackageId, null);
+                    apmService.loadDockerImages(appPackageId, imageInfoList, downloadedImgs);
+
+                    FileUtils.forceDeleteOnExit(new File(dockerImgPath + ".zip"));
+                    FileUtils.forceDeleteOnExit(new File(dockerImgPath));
+
+                } else {
+                    LOGGER.info("application package has image repo info to download...");
+                    apmService.downloadAppImage(syncInfo, imageInfoList, downloadedImgs);
+
+                }
+                apmService.uploadAppImage(syncInfo, imageInfoList, uploadedImgs);
             }
-
-            if (isDockerImgAvailable) {
-                LOGGER.info("application package contains docker images...");
-                dockerImgPath = apmService.unzipDockerImages(appPackageId, null);
-                apmService.loadDockerImages(appPackageId, imageInfoList, downloadedImgs);
-
-                FileUtils.forceDeleteOnExit(new File(dockerImgPath + ".zip"));
-                FileUtils.forceDeleteOnExit(new File(dockerImgPath));
-
-            } else {
-                LOGGER.info("application package has image repo info to download...");
-                apmService.downloadAppImage(syncInfo, imageInfoList, downloadedImgs);
-
-            }
-            apmService.updateAppPackageWithRepoInfo(null, appPackageId);
-            apmService.uploadAppImage(syncInfo, imageInfoList, uploadedImgs);
 
             apmService.updateAppPackageWithRepoInfo(null, appPackageId);
             dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),

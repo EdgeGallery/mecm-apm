@@ -431,7 +431,7 @@ public class ApmService {
      * @param packageId application package ID
      */
     public void compressAppPackage(String tenantId, String packageId) {
-        LOGGER.info("Compress application package to csar...");
+        LOGGER.info("Compress application package");
         String intendedDir = getLocalIntendedDir(packageId, tenantId);
         final Path srcDir = Paths.get(intendedDir);
         String zipFileName = intendedDir.concat(".csar");
@@ -472,6 +472,7 @@ public class ApmService {
         } catch (IOException e) {
             throw new ApmException("failed to delete redundant files from app package");
         }
+        LOGGER.info("compressed application package successfully");
     }
 
     /**

@@ -3,7 +3,7 @@ server:
   port: 8092
 spring:
   datasource:
-    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
@@ -18,7 +18,7 @@ apm:
   inventory-endpoint: ${INVENTORY_ENDPOINT:1.1.1.1}
   inventory-port: ${INVENTORY_PORT:8080}
   package-dir: classpath:packages
-  push-image: ${PUSH_IMAGE:true}
+  push-image: false
   edge-repo-password: ${EDGE_REPO_PASSWORD:}
   edge-repo-username: ${EDGE_REPO_USERNAME:}
 

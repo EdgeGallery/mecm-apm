@@ -18,6 +18,7 @@ package org.edgegallery.mecm.apm.service;
 
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getLocalFilePath;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getPackageDirPath;
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isSuffixExist;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
@@ -75,7 +76,7 @@ import org.springframework.web.client.RestTemplate;
 public class ApmServiceFacade {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceFacade.class);
-    private static final String TAR_GZ = "tar.gz";
+    private static final String TAR_GZ = ".tar.gz";
     private static final String LCMCONTROLLER_URL = "/lcmcontroller/v1/tenants/";
     private static final String PACKAGES_URL = "/packages/";
     private static final String HTTPS = "https://";
@@ -176,8 +177,8 @@ public class ApmServiceFacade {
         Set<String> loadedImgs = new HashSet<>();
         try {
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (imageDescr.getSwImage().contains(".tar") || imageDescr.getSwImage().contains(TAR_GZ)
-                        || imageDescr.getSwImage().contains(".tgz")) {
+                if (isSuffixExist(imageDescr.getSwImage(), ".tar") || isSuffixExist(imageDescr.getSwImage(), TAR_GZ)
+                        || isSuffixExist(imageDescr.getSwImage(), ".tgz")) {
                     downloadImg = false;
 
                     LOGGER.info("application package contains docker images...");
@@ -750,8 +751,8 @@ public class ApmServiceFacade {
             }
 
             for (SwImageDescr imageDescr : imageInfoList) {
-                if (imageDescr.getSwImage().contains(".tar") || imageDescr.getSwImage().contains(TAR_GZ)
-                        || imageDescr.getSwImage().contains(".tgz")) {
+                if (isSuffixExist(imageDescr.getSwImage(), ".tar") || isSuffixExist(imageDescr.getSwImage(), TAR_GZ)
+                        || isSuffixExist(imageDescr.getSwImage(), ".tgz")) {
                     isDockerImgAvailable = true;
                     break;
                 }

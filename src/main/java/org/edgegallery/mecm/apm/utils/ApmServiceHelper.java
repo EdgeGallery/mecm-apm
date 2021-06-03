@@ -51,6 +51,7 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppTemplate;
 import org.edgegallery.mecm.apm.model.AppTemplateInputAttr;
@@ -473,5 +474,9 @@ public final class ApmServiceHelper {
 
         appTemplate.setInputs(inputAttrList);
         return appTemplate;
+    }
+
+    public static boolean isSuffixExist(String str, String suffix) {
+        return StringUtils.endsWith(str, suffix);
     }
 }

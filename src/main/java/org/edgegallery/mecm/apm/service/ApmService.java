@@ -554,7 +554,9 @@ public class ApmService {
                         LOGGER.info("deCompressing... {}", outputFile.getName());
                         boolean result = outputFile.getParentFile().mkdirs();
                         LOGGER.debug("create directory result {}", result);
-                        IOUtils.copy(tis, new FileOutputStream(outputFile));
+                        FileOutputStream fos = new FileOutputStream(outputFile);
+                        IOUtils.copy(tis, fos);
+                        fos.close();
                     }
                 }
             }

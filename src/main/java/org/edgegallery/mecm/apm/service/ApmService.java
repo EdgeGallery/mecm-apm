@@ -22,6 +22,7 @@ import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getSwImageDescrInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isSuffixExist;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.unzipApplicationPacakge;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.updateRepoInfoInSwImageDescr;
 
@@ -80,6 +81,7 @@ import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
+import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -255,6 +257,22 @@ public class ApmService {
         return getImageInfo(yaml);
     }
 
+    private String getEntryDefinitionFromMetadata(String appPkgDir) {
+        List<File> files = (List<File>) FileUtils.listFiles(new File(appPkgDir), null, true);
+        for (File file: files) {
+            if (isSuffixExist(file.getName(), ".meta")) {
+                try (InputStream inputStream = new FileInputStream(file)) {
+                    Yaml yaml = new Yaml(new SafeConstructor());
+                    Map<String, Object> meatData = yaml.load(inputStream);
+                    return meatData.get("Entry-Definitions").toString();
+                } catch (IOException e) {
+                    throw new ApmException("failed to read metadata from app package");
+                }
+            }
+        }
+        throw new ApmException("failed, main service yaml not available in app package");
+    }
+
     /**
      * Returns application template.
      *
@@ -262,12 +280,23 @@ public class ApmService {
      * @param tenantId      tenant Id
      * @return list of image info
      */
-    public AppTemplate getApplicationTemplateInfo(AppPackageDto appPackageDto, String tenantId) {
-        File yamlFile;
+    public AppTemplate getApplicationTemplateInfo(AppPackageDto appPackageDto, String tenantId, String appDeployType) {
+        File yamlFile = null;
 
         try {
-            yamlFile = getFileFromPackage(tenantId, appPackageDto.getAppPkgId(), "APPD/Definition/MainServiceTemplate"
-                    + ".yaml", "yaml");
+            if ("container".equalsIgnoreCase(appDeployType)) {
+                yamlFile = getFileFromPackage(tenantId, appPackageDto.getAppPkgId(),
+                        "APPD/Definition/MainServiceTemplate.yaml", "yaml");
+            } else if ("vm".equalsIgnoreCase(appDeployType)) {
+                String appPkgDir = getLocalIntendedDir(appPackageDto.getAppPkgId(), tenantId);
+
+                String mainServiceYaml = appPkgDir + "/" + getEntryDefinitionFromMetadata(appPkgDir);
+
+                String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
+                ApmServiceHelper.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
+
+                yamlFile = new File(appDefnDir + "/" + getEntryDefinitionFromMetadata(appDefnDir));
+            }
         } catch (ApmException e) {
             LOGGER.error("failed to get main service template yaml {}", e.getMessage());
             throw new ApmException("failed to get main service template yaml");

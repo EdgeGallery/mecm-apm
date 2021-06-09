@@ -464,7 +464,8 @@ public final class ApmServiceHelper {
         AppTemplate appTemplate = new AppTemplate();
         for (Map.Entry<String, JsonElement> entry : entrySet) {
             AppTemplateInputAttr inputAttr = new Gson().fromJson(entry.getValue(), AppTemplateInputAttr.class);
-            if (entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR) != null) {
+            if (entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR) != null
+                    && !entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR).isJsonNull()) {
                 inputAttr.setDefaultValue(entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR).getAsString());
             }
             inputAttr.setName(entry.getKey());

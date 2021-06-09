@@ -1,15 +1,15 @@
 # mecm-apm
 
-#### Description
-Application package manager responsible for application package management including Onboarding, distributing package to edge etc.
+#### 描述
+应用包管理器负责应用包管理，包括入职、将包分发到边缘等。
 
-#### Compile and build
-The APM project is containerized based on docker, and it is divided into two steps during compilation and construction.
+#### 编译和构建
+APM项目基于docker容器化，在编译和构建过程中分为两个步骤。
 
-#### Compile
-APM is a Java program written based on jdk1.8 and maven. To compile, you only need to execute mvn install to compile and generate jar package
+#### 编译
+APM是基于jdk1.8和maven编写的Java程序。 编译只需执行 mvn install 即可编译生成jar包
 
-#### Build image
-The APM project provides a dockerfile file for mirroring. You can use the following commands when making a mirror
+#### 构建镜像
+APM 项目提供了一个用于镜像的 dockerfile 文件。 制作镜像时可以使用以下命令
 
-docker build -t edgegallery/mecm-apm:latest -f docker/Dockerfile .
+docker build -t edgegallery/mecm-apm:latest -f docker/Dockerfile 。

@@ -280,23 +280,18 @@ public class ApmService {
      * @param tenantId      tenant Id
      * @return list of image info
      */
-    public AppTemplate getApplicationTemplateInfo(AppPackageDto appPackageDto, String tenantId, String appDeployType) {
-        File yamlFile = null;
+    public AppTemplate getApplicationTemplateInfo(AppPackageDto appPackageDto, String tenantId) {
+        File yamlFile;
 
         try {
-            if ("container".equalsIgnoreCase(appDeployType)) {
-                yamlFile = getFileFromPackage(tenantId, appPackageDto.getAppPkgId(),
-                        "APPD/Definition/MainServiceTemplate.yaml", "yaml");
-            } else if ("vm".equalsIgnoreCase(appDeployType)) {
-                String appPkgDir = getLocalIntendedDir(appPackageDto.getAppPkgId(), tenantId);
+            String appPkgDir = getLocalIntendedDir(appPackageDto.getAppPkgId(), tenantId);
 
-                String mainServiceYaml = appPkgDir + "/" + getEntryDefinitionFromMetadata(appPkgDir);
+            String mainServiceYaml = appPkgDir + "/" + getEntryDefinitionFromMetadata(appPkgDir);
 
-                String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
-                ApmServiceHelper.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
+            String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
+            ApmServiceHelper.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
 
-                yamlFile = new File(appDefnDir + "/" + getEntryDefinitionFromMetadata(appDefnDir));
-            }
+            yamlFile = new File(appDefnDir + "/" + getEntryDefinitionFromMetadata(appDefnDir));
         } catch (ApmException e) {
             LOGGER.error("failed to get main service template yaml {}", e.getMessage());
             throw new ApmException("failed to get main service template yaml");

@@ -121,7 +121,7 @@ public class ApmServiceFacade {
             imageInfoList = apmService.getAppImageInfo(tenantId, localFilePath, appPackageDto.getAppPkgId());
             String appDeployType = apmService.getAppPackageDeploymentType(tenantId, appPackageDto.getAppPkgId());
 
-            AppTemplate appTemplate = apmService.getApplicationTemplateInfo(appPackageDto, tenantId, appDeployType);
+            AppTemplate appTemplate = apmService.getApplicationTemplateInfo(appPackageDto, tenantId);
             dbService.createOrUpdateAppTemplate(tenantId, appTemplate);
 
             if ("container".equalsIgnoreCase(appDeployType)) {
@@ -154,7 +154,7 @@ public class ApmServiceFacade {
                                                                           appPackageDto.getAppPkgId());
             String appDeployType = apmService.getAppPackageDeploymentType(tenantId, appPackageDto.getAppPkgId());
 
-            AppTemplate appTemplate = apmService.getApplicationTemplateInfo(appPackageDto, tenantId, appDeployType);
+            AppTemplate appTemplate = apmService.getApplicationTemplateInfo(appPackageDto, tenantId);
             dbService.createOrUpdateAppTemplate(tenantId, appTemplate);
 
             if ("container".equalsIgnoreCase(appDeployType)) {

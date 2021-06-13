@@ -102,7 +102,15 @@ public final class FileChecker {
         return Pattern.compile(REG).matcher(fileName).matches();
     }
 
-    static String sanitizeFileName(String entryName, String intendedDir) throws IOException {
+    /**
+     * Sanitizes the file name.
+     *
+     * @param entryName entry name
+     * @param intendedDir intended path
+     * @return String
+     * @throws IOException exception if failed to sanitize the file
+     */
+    public static String sanitizeFileName(String entryName, String intendedDir) throws IOException {
         File f = new File(intendedDir, entryName);
         String canonicalPath = f.getCanonicalPath();
         File intendDir = new File(intendedDir);

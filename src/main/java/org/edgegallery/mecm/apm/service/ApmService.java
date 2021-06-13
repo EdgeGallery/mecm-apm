@@ -23,7 +23,6 @@ import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getSwImageDescrInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isSuffixExist;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.unzipApplicationPacakge;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.updateRepoInfoInSwImageDescr;
 
 import com.github.dockerjava.api.DockerClient;
@@ -41,33 +40,18 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -81,7 +65,7 @@ import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
-import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
+import org.edgegallery.mecm.apm.utils.CompressUtility;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -289,7 +273,7 @@ public class ApmService {
             String mainServiceYaml = appPkgDir + "/" + getEntryDefinitionFromMetadata(appPkgDir);
 
             String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
-            ApmServiceHelper.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
+            CompressUtility.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
 
             yamlFile = new File(appDefnDir + "/" + getEntryDefinitionFromMetadata(appDefnDir));
         } catch (ApmException e) {
@@ -327,7 +311,7 @@ public class ApmService {
      */
     public List<SwImageDescr> getAppImageInfo(String tenantId, String localFilePath, String packageId) {
         String intendedDir = getLocalIntendedDir(packageId, tenantId);
-        unzipApplicationPacakge(localFilePath, intendedDir);
+        CompressUtility.unzipApplicationPacakge(localFilePath, intendedDir);
 
         FileUtils.deleteQuietly(new File(localFilePath));
 
@@ -395,7 +379,7 @@ public class ApmService {
 
         File chartsTar = getFileFromPackage(tenantId, packageId, "/Artifacts/Deployment/Charts/", "tar");
         try {
-            deCompress(chartsTar.getCanonicalFile().toString(),
+            CompressUtility.deCompress(chartsTar.getCanonicalFile().toString(),
                     new File(chartsTar.getCanonicalFile().getParent()));
 
             FileUtils.deleteQuietly(chartsTar);
@@ -424,7 +408,7 @@ public class ApmService {
             FileUtils.writeStringToFile(valuesYaml, json, StandardCharsets.UTF_8.name());
             LOGGER.info("imageLocation updated in values yaml {}", json);
 
-            compress(valuesYaml.getParent());
+            CompressUtility.compress(valuesYaml.getParent(), valuesYaml.getParent() + ".tgz");
 
             FileUtils.deleteQuietly(new File(valuesYaml.getParent()));
 
@@ -449,56 +433,6 @@ public class ApmService {
     }
 
     /**
-     * ZIP application package.
-     *
-     * @param packageId application package ID
-     */
-    public void compressAppPackage(String tenantId, String packageId) {
-        LOGGER.info("Compress application package");
-        String intendedDir = getLocalIntendedDir(packageId, tenantId);
-        final Path srcDir = Paths.get(intendedDir);
-        String zipFileName = intendedDir.concat(".csar");
-        try (ZipOutputStream os = new ZipOutputStream(new FileOutputStream(zipFileName))) {
-            Files.walkFileTree(srcDir, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs)
-                        throws IOException {
-                    if (!srcDir.equals(dir)) {
-                        os.putNextEntry(new ZipEntry(srcDir.relativize(dir).toString() + "/"));
-                        os.closeEntry();
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
-                    try {
-                        Path targetFile = srcDir.relativize(file);
-                        os.putNextEntry(new ZipEntry(targetFile.toString()));
-                        byte[] bytes = Files.readAllBytes(file);
-                        os.write(bytes, 0, bytes.length);
-                        os.closeEntry();
-                    } catch (IOException e) {
-                        throw new ApmException("failed to zip application package");
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            throw new ApmException("failed to zip application package IO exception");
-        }
-        try {
-            FileUtils.deleteQuietly(new File(intendedDir));
-            FileUtils.forceMkdir(new File(intendedDir));
-            FileUtils.moveFile(new File(zipFileName), new File(intendedDir + File.separator + packageId + ".csar"));
-            
-        } catch (IOException e) {
-            throw new ApmException("failed to delete redundant files from app package");
-        }
-        LOGGER.info("compressed application package successfully");
-    }
-
-    /**
      * Unzip docker images from application package.
      *
      * @param packageId package Id
@@ -510,7 +444,7 @@ public class ApmService {
                 "zip");
 
         try {
-            unzipApplicationPacakge(dockerZip.getCanonicalPath(), intendedDir + Constants.IMAGE_INPATH);
+            CompressUtility.unzipApplicationPacakge(dockerZip.getCanonicalPath(), intendedDir + Constants.IMAGE_INPATH);
             return FilenameUtils.removeExtension(dockerZip.getCanonicalPath());
         } catch (IOException e) {
             LOGGER.error("failed to get sw image descriptor file {}", e.getMessage());
@@ -548,103 +482,6 @@ public class ApmService {
             }
         }
         LOGGER.info("image load complete successfully");
-    }
-
-    /**
-     * Decompress tar file.
-     *
-     * @param tarFile  tar file
-     * @param destFile destination folder
-     */
-    private void deCompress(String tarFile, File destFile) {
-        TarArchiveInputStream tis = null;
-        try (FileInputStream fis = new FileInputStream(tarFile)) {
-
-            if (tarFile.contains(".tar")) {
-                tis = new TarArchiveInputStream(new BufferedInputStream(fis));
-            } else {
-                GZIPInputStream gzipInputStream = new GZIPInputStream(new BufferedInputStream(fis));
-                tis = new TarArchiveInputStream(gzipInputStream);
-            }
-
-            TarArchiveEntry tarEntry;
-            while ((tarEntry = tis.getNextTarEntry()) != null) {
-                if (tarEntry.isDirectory()) {
-                    LOGGER.debug("skip directory");
-                } else {
-                    if (!tarEntry.isDirectory()) {
-
-                        File outputFile = new File(destFile + File.separator + tarEntry.getName());
-                        LOGGER.info("deCompressing... {}", outputFile.getName());
-                        boolean result = outputFile.getParentFile().mkdirs();
-                        LOGGER.debug("create directory result {}", result);
-                        FileOutputStream fos = new FileOutputStream(outputFile);
-                        IOUtils.copy(tis, fos);
-                        fos.close();
-                    }
-                }
-            }
-        } catch (IOException ex) {
-            throw new ApmException("failed to decompress, IO exception " + ex.getMessage());
-        } finally {
-            if (tis != null) {
-                try {
-                    tis.close();
-                } catch (IOException ex) {
-                    LOGGER.error("failed to close tar input stream {} ", ex.getMessage());
-                }
-            }
-        }
-    }
-
-    private void compress(String sourceDir) {
-        if (sourceDir == null || sourceDir.isEmpty()) {
-            return;
-        }
-
-        File destination = new File(sourceDir);
-        try (FileOutputStream destOutStream = new FileOutputStream(destination.getCanonicalPath().concat(".tgz"));
-             GZIPOutputStream gipOutStream = new GZIPOutputStream(new BufferedOutputStream(destOutStream));
-             TarArchiveOutputStream outStream = new TarArchiveOutputStream(gipOutStream)) {
-
-            addFileToTar(sourceDir, "", outStream);
-
-        } catch (IOException e) {
-            throw new ApmException("failed to compress " + e.getMessage());
-        }
-    }
-
-    private void addFileToTar(String filePath, String parent, TarArchiveOutputStream tarArchive) throws IOException {
-
-        File file = new File(filePath);
-        LOGGER.info("compressing... {}", file.getName());
-        FileInputStream inputStream = null;
-        String entry = parent + file.getName();
-        try {
-            tarArchive.putArchiveEntry(new TarArchiveEntry(file, entry));
-            if (file.isFile()) {
-                inputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-
-                IOUtils.copy(bufferedInputStream, tarArchive);
-                tarArchive.closeArchiveEntry();
-                bufferedInputStream.close();
-            } else if (file.isDirectory()) {
-                tarArchive.closeArchiveEntry();
-                File[] files = file.listFiles();
-                if (files != null) {
-                    for (File f : files) {
-                        addFileToTar(f.getAbsolutePath(), entry + File.separator, tarArchive);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new ApmException("failed to compress " + e.getMessage());
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        }
     }
 
     /**
@@ -696,7 +533,7 @@ public class ApmService {
      * @param tenantId  tenantId
      * @return returns local intended dir path
      */
-    private String getLocalIntendedDir(String packageId, String tenantId) {
+    public String getLocalIntendedDir(String packageId, String tenantId) {
         if (tenantId != null) {
             return localDirPath + File.separator + packageId + tenantId;
         }

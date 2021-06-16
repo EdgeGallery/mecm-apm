@@ -243,47 +243,6 @@ public final class ApmServiceHelper {
     }
 
     /**
-     * Returns software image descriptor content in string format.
-     *
-     * @param localFilePath CSAR file path
-     * @param intendedDir   intended directory
-     */
-    public static void unzipApplicationPacakge(String localFilePath, String intendedDir) {
-
-        LOGGER.debug("unzip package....");
-        try (ZipFile zipFile = new ZipFile(localFilePath)) {
-            Enumeration<? extends ZipEntry> entries = zipFile.entries();
-            int entriesCount = 0;
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                if (entriesCount > TOO_MANY) {
-                    throw new IllegalStateException("too many files to unzip");
-                }
-                entriesCount++;
-                // sanitize file path
-                String fileName = sanitizeFileName(entry.getName(), intendedDir);
-                if (!entry.isDirectory()) {
-                    try (InputStream inputStream = zipFile.getInputStream(entry)) {
-                        if (inputStream.available() > TOO_BIG) {
-                            throw new IllegalStateException("file being unzipped is too big");
-                        }
-                        FileUtils.copyInputStreamToFile(inputStream, new File(fileName));
-                        LOGGER.info("unzip package... {}", entry.getName());
-                    }
-                } else {
-
-                    File dir = new File(fileName);
-                    boolean dirStatus = dir.mkdirs();
-                    LOGGER.debug("creating dir {}, status {}", fileName, dirStatus);
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.error(Constants.FAILED_TO_UNZIP_CSAR);
-            throw new ApmException(Constants.FAILED_TO_UNZIP_CSAR);
-        }
-    }
-
-    /**
      * Returns list of image details.
      *
      * @param mainServiceYaml main service template file content

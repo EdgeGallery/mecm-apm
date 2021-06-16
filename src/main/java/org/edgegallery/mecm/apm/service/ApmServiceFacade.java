@@ -50,6 +50,7 @@ import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.utils.CompressUtility;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +82,7 @@ public class ApmServiceFacade {
     private static final String PACKAGES_URL = "/packages/";
     private static final String HTTPS = "https://";
     private static final String PATH_DELIMITER = "/";
+    private static final String CSAR = ".csar";
 
     @Autowired
     private ApmService apmService;
@@ -202,7 +204,9 @@ public class ApmServiceFacade {
             syncDockerImagesFromSrcToMecmRepo(appPackageDto, imageInfoList, syncAppPkg, downloadImg, accessToken);
 
             apmService.updateAppPackageWithRepoInfo(tenantId, packageId);
-            apmService.compressAppPackage(tenantId, packageId);
+
+            String sourceDir = apmService.getLocalIntendedDir(packageId, tenantId);
+            CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + packageId + CSAR);
         } catch (ApmException | IllegalArgumentException ex) {
             LOGGER.error(DISTRIBUTION_FAILED, ex.getMessage());
             apmService.deleteAppPkgDockerImages(loadedImgs);
@@ -215,7 +219,8 @@ public class ApmServiceFacade {
 
     private void onboardVmBasedAppPkg(String accessToken, String tenantId, AppPackageDto appPackageDto) {
 
-        apmService.compressAppPackage(tenantId, appPackageDto.getAppPkgId());
+        String sourceDir = apmService.getLocalIntendedDir(appPackageDto.getAppPkgId(), tenantId);
+        CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + appPackageDto.getAppPkgId() + CSAR);
 
         distributeApplication(tenantId, appPackageDto, accessToken);
 
@@ -746,7 +751,8 @@ public class ApmServiceFacade {
             String appDeployType = apmService.getAppPackageDeploymentType(null, appPackageId);
 
             if ("vm".equalsIgnoreCase(appDeployType)) {
-                apmService.compressAppPackage(null, appPackageId);
+                String sourceDir = apmService.getLocalIntendedDir(appPackageId, null);
+                CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + appPackageId + CSAR);
                 dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
                         Constants.APP_IN_SYNC, Constants.SUCCESS);
                 return;
@@ -787,7 +793,7 @@ public class ApmServiceFacade {
             apmService.deleteAppPkgDockerImages(downloadedImgs);
             apmService.deleteAppPkgDockerImages(uploadedImgs);
         }
-
-        apmService.compressAppPackage(null, appPackageId);
+        String sourceDir = apmService.getLocalIntendedDir(appPackageId, null);
+        CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + appPackageId + CSAR);
     }
 }

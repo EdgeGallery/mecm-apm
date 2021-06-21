@@ -61,6 +61,9 @@ public class AppTemplate {
     @Column(name = "tenant_id")
     String tenantId;
 
+    @Column(name = "deploy_type")
+    String deployType;
+
     @OneToMany(mappedBy = "appTemplate", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<AppTemplateInputAttr> inputs;
 }

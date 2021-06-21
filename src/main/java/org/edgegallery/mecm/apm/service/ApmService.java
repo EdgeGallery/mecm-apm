@@ -262,9 +262,10 @@ public class ApmService {
      *
      * @param appPackageDto application package info
      * @param tenantId      tenant Id
+     * @param appDeployType deploy type
      * @return list of image info
      */
-    public AppTemplate getApplicationTemplateInfo(AppPackageDto appPackageDto, String tenantId) {
+    public AppTemplate getApplicationTemplateInfo(AppPackageDto appPackageDto, String tenantId, String appDeployType) {
         File yamlFile;
 
         try {
@@ -295,6 +296,8 @@ public class ApmService {
             appTemplate.setTenantId(tenantId);
             String appPkgId = appPackageDto.getAppPkgId().substring(appPackageDto.getAppPkgId().length() - 32);
             appTemplate.setAppPackageId(appPkgId);
+            appTemplate.setDeployType(appDeployType);
+
             return appTemplate;
         } catch (IOException e) {
             LOGGER.error("failed to get app template {}", e.getMessage());

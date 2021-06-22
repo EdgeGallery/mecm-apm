@@ -37,5 +37,6 @@ public class AppTemplateDto {
     private String version;
     private String appId;
     private String appPackageId;
+    private String deployType;
     private Set<AppTemplateInputAttrDto> inputs;
 }

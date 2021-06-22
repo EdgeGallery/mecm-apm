@@ -61,9 +61,10 @@
         template_id varchar(255) not null,
         app_name varchar(255) not null,
         version varchar(255) not null,
-        app_package_id varchar(255) not null,
-        app_id varchar(255) not null,
-        tenant_id varchar(255) not null,
+        app_package_id varchar(128) not null,
+        app_id varchar(128) not null,
+        tenant_id varchar(128) not null,
+        deploy_type varchar(128) not null,
         primary key (template_id)
     );
 

@@ -60,16 +60,6 @@ public class ApmApplication {
     @Value("${apm.async.queue-capacity}")
     private int queueCapacity;
 
-    @Value("${server.ssl.enabled:}")
-    private String isSslEnabled;
-
-    @Value("${server.ssl.trust-store:}")
-    private String trustStorePath;
-
-    @Value("${server.ssl.trust-store-password:}")
-    private String trustStorePasswd;
-
-
     /**
      * Application package management entry function.
      *

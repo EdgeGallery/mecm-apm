@@ -252,4 +252,15 @@ public class ApmServiceTest {
         apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs);
     }
 
+    @Test(expected = ApmException.class)
+    public void getAppPackageFileTest() {
+        apmService.getAppPackageFile("classpath:test.csar");
+
+    }
+
+    @Test(expected = ApmException.class)
+    public void deleteNullAppPackageFileTest(){
+        apmService.deleteAppPackageFile(null);
+    }
+
 }

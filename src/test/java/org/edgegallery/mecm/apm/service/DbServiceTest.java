@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
@@ -25,6 +26,7 @@ import org.edgegallery.mecm.apm.exception.ApmExceptionHandler;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
+import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
 import org.junit.Before;
@@ -274,5 +276,13 @@ public class DbServiceTest {
         AppPackageInfo appPackageInfo=new AppPackageInfo();
         appPackageInfo.setAppstoreIp("1.1.1.1");
         dbService.addAppSyncPackageInfoDB(appPackageInfo);
+    }
+
+    @Test
+    public void createAppTemplateTest(){
+        List<AppPackageInfoDto> list = new ArrayList<>();
+
+        dbService.deleteNonExistingPackages("119.8.63.144", list);
+
     }
 }

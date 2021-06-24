@@ -39,6 +39,7 @@ public class AppDtoTest {
     SyncUpdatedAppPackageDto syncUpdatedAppPackageDto = new SyncUpdatedAppPackageDto();
     AppPackageDto appPackageDto = new AppPackageDto();
     AppTemplateDto appTemplateDto = new AppTemplateDto();
+    AppTemplateInputAttrDto appTemplateInputAttrDto = new AppTemplateInputAttrDto();
 
     @Before
     public void setUp() {
@@ -66,6 +67,11 @@ public class AppDtoTest {
         appTemplateDto.setAppPackageId("appPackageId");
         appTemplateDto.setAppPkgName("appPackageName");
         appTemplateDto.setVersion("version");
+
+        appTemplateInputAttrDto.setDescription("description");
+        appTemplateInputAttrDto.setName("name");
+        appTemplateInputAttrDto.setDefaultValue("value");
+        appTemplateInputAttrDto.setType("type");
     }
 
     @Test
@@ -94,6 +100,12 @@ public class AppDtoTest {
         Assert.assertEquals("appPackageName", appTemplateDto.getAppPkgName());
         Assert.assertEquals("version", appTemplateDto.getVersion());
         Assert.assertNotNull(appTemplateDto.toString());
+
+        Assert.assertEquals("value", appTemplateInputAttrDto.getDefaultValue());
+        Assert.assertEquals("description", appTemplateInputAttrDto.getDescription());
+        Assert.assertEquals("type", appTemplateInputAttrDto.getType());
+        Assert.assertEquals("name", appTemplateInputAttrDto.getName());
+        Assert.assertNotNull(appTemplateInputAttrDto.toString());
 
     }
 }

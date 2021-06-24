@@ -262,13 +262,7 @@ public class DbService {
                         mecHostDto.getHostIp());
                 if (existingHost != null) {
                     LOGGER.info("host {} already exists, updating the record", mecHostDto.getHostIp());
-                    if (mecHostDto.getStatus() == null
-                            || !Constants.DISTRIBUTE_STATE_DISTRIBUTED.equals(existingHost.getDistributionStatus())) {
-                        existingHost.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
-                    } else {
-                        existingHost.setDistributionStatus(mecHostDto.getStatus());
-                    }
-                    host = existingHost;
+                    host = isExistingHost(mecHostDto, existingHost);
                 } else {
                     host = new MecHost();
                     host.setPkgHostKey(appPackageDto.getAppPkgId() + tenantId);
@@ -288,6 +282,16 @@ public class DbService {
                         tenantId, appPackageDto.getAppId(), appPackageDto.getAppPkgId(), mecHostDto.getHostIp());
             }
         }
+    }
+
+    private MecHost isExistingHost(MecHostDto mecHostDto, MecHost existingHost) {
+        if (mecHostDto.getStatus() == null
+                || !Constants.DISTRIBUTE_STATE_DISTRIBUTED.equals(existingHost.getDistributionStatus())) {
+            existingHost.setDistributionStatus(Constants.DISTRIBUTE_STATE_PROCESSING);
+        } else {
+            existingHost.setDistributionStatus(mecHostDto.getStatus());
+        }
+        return existingHost;
     }
 
     /**

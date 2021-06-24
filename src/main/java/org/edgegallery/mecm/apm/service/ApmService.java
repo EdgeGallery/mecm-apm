@@ -17,13 +17,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getApplicationTemplate;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getImageInfo;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getMainServiceYaml;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getSwImageDescrInfo;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isSuffixExist;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.updateRepoInfoInSwImageDescr;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
@@ -65,6 +59,7 @@ import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
+import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.CompressUtility;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.modelmapper.ModelMapper;
@@ -102,6 +97,8 @@ public class ApmService {
     private static final String NOT_FOUND_STATUS = "not found status ";
     private static final String FAILURE_RESPONSE_STATUS = "received failure response status {}";
     private static final String FAILURE_RESPONSE_STATUS_CODE = "received failure response status ";
+    private static final String FAILED_TO_GET_SW_IMAGE_FILE = "failed to get sw image descriptor file {}";
+    private static final String SW_IMAGE_FILE_FAILURE = "failed to get sw image descriptor file";
     private static final String HTTPS = "https://";
     private static final String SSL = "/usr/app/ssl";
 
@@ -237,14 +234,14 @@ public class ApmService {
      * @return list of image info
      */
     public List<String> getAppImageInfoFromMainService(String localFilePath, String packageId, String tenantId) {
-        String yaml = getMainServiceYaml(localFilePath, getLocalIntendedDir(packageId, tenantId));
-        return getImageInfo(yaml);
+        String yaml = ApmServiceHelper.getMainServiceYaml(localFilePath, getLocalIntendedDir(packageId, tenantId));
+        return ApmServiceHelper.getImageInfo(yaml);
     }
 
     private String getEntryDefinitionFromMetadata(String appPkgDir) {
         List<File> files = (List<File>) FileUtils.listFiles(new File(appPkgDir), null, true);
         for (File file: files) {
-            if (isSuffixExist(file.getName(), ".meta")) {
+            if (ApmServiceHelper.isSuffixExist(file.getName(), ".meta")) {
                 try (InputStream inputStream = new FileInputStream(file)) {
                     Yaml yaml = new Yaml(new SafeConstructor());
                     Map<String, Object> meatData = yaml.load(inputStream);
@@ -271,12 +268,12 @@ public class ApmService {
         try {
             String appPkgDir = getLocalIntendedDir(appPackageDto.getAppPkgId(), tenantId);
 
-            String mainServiceYaml = appPkgDir + "/" + getEntryDefinitionFromMetadata(appPkgDir);
+            String mainServiceYaml = appPkgDir + File.separator + getEntryDefinitionFromMetadata(appPkgDir);
 
             String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
             CompressUtility.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
 
-            yamlFile = new File(appDefnDir + "/" + getEntryDefinitionFromMetadata(appDefnDir));
+            yamlFile = new File(appDefnDir + File.separator + getEntryDefinitionFromMetadata(appDefnDir));
         } catch (ApmException e) {
             LOGGER.error("failed to get main service template yaml {}", e.getMessage());
             throw new ApmException("failed to get main service template yaml");
@@ -287,8 +284,8 @@ public class ApmService {
             if (byteArray.length > TOO_BIG) {
                 throw new IllegalStateException("file being unzipped is too big");
             }
-            AppTemplate appTemplate = getApplicationTemplate(new String(byteArray,
-                    StandardCharsets.UTF_8), tenantId, appPackageDto.getAppPkgId());
+            AppTemplate appTemplate = ApmServiceHelper.getApplicationTemplate(new String(byteArray,
+                    StandardCharsets.UTF_8));
 
             appTemplate.setAppId(appPackageDto.getAppId());
             appTemplate.setAppPkgName(appPackageDto.getAppPkgName());
@@ -320,10 +317,11 @@ public class ApmService {
 
         File swImageDesc = getFileFromPackage(tenantId, packageId, "Image/SwImageDesc", "json");
         try {
-            return getSwImageDescrInfo(FileUtils.readFileToString(swImageDesc, StandardCharsets.UTF_8));
+            return ApmServiceHelper.getSwImageDescrInfo(FileUtils.readFileToString(
+                    swImageDesc, StandardCharsets.UTF_8));
         } catch (IOException e) {
-            LOGGER.error("failed to get sw image descriptor file {}", e.getMessage());
-            throw new ApmException("failed to get sw image descriptor file");
+            LOGGER.error(FAILED_TO_GET_SW_IMAGE_FILE, e.getMessage());
+            throw new ApmException(SW_IMAGE_FILE_FAILURE);
         }
     }
 
@@ -341,7 +339,7 @@ public class ApmService {
             mf = getFileFromPackage(tenantId, packageId, ".mf", "mf");
         } catch (ApmException e) {
             LOGGER.error("failed to get deployment type {}", e.getMessage());
-            throw new ApmException("failed to get sw image descriptor file");
+            throw new ApmException(SW_IMAGE_FILE_FAILURE);
         }
 
         try (InputStream inputStream = new FileInputStream(new File(mf.getPath()))) {
@@ -363,7 +361,7 @@ public class ApmService {
             }
         } catch (ApmException | YAMLException e) {
             LOGGER.error("failed to get deployment type {}", e.getMessage());
-            throw new ApmException("failed to get sw image descriptor file");
+            throw new ApmException(SW_IMAGE_FILE_FAILURE);
         } catch (IOException ex) {
             LOGGER.error("failed to get deployment type");
             throw new ApmException("failed to get deployment type");
@@ -378,7 +376,7 @@ public class ApmService {
     public void updateAppPackageWithRepoInfo(String tenantId, String packageId) {
 
         File swImageDesc = getFileFromPackage(tenantId, packageId, "Image/SwImageDesc", "json");
-        updateRepoInfoInSwImageDescr(swImageDesc, mecmRepoEndpoint);
+        ApmServiceHelper.updateRepoInfoInSwImageDescr(swImageDesc, mecmRepoEndpoint);
 
         File chartsTar = getFileFromPackage(tenantId, packageId, "/Artifacts/Deployment/Charts/", "tar");
         try {
@@ -450,8 +448,8 @@ public class ApmService {
             CompressUtility.unzipApplicationPacakge(dockerZip.getCanonicalPath(), intendedDir + Constants.IMAGE_INPATH);
             return FilenameUtils.removeExtension(dockerZip.getCanonicalPath());
         } catch (IOException e) {
-            LOGGER.error("failed to get sw image descriptor file {}", e.getMessage());
-            throw new ApmException("failed to get sw image descriptor file");
+            LOGGER.error(FAILED_TO_GET_SW_IMAGE_FILE, e.getMessage());
+            throw new ApmException(SW_IMAGE_FILE_FAILURE);
         }
     }
 

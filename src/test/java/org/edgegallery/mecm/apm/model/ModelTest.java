@@ -38,6 +38,7 @@ public class ModelTest {
     MecHost mecHost=new MecHost();
     PkgSyncInfo pkgSyncInfo=new PkgSyncInfo();
     AppPackageSyncInfo appPackageSyncInfo=new AppPackageSyncInfo();
+    AppTemplate appTemplate = new AppTemplate();
 
     @Before
     public void setup(){
@@ -73,6 +74,13 @@ public class ModelTest {
         pkgSyncInfo.setRepoInfo(repoMap);
 
         appPackageSyncInfo.setRepoInfo(repoMap);
+
+        appTemplate.setAppId("appId");
+        appTemplate.setAppPackageId("appPackageId");
+        appTemplate.setAppPkgName("appPackageName");
+        appTemplate.setTenantId("tenantId");
+        appTemplate.setVersion("version");
+        appTemplate.setId("id");
     }
 
     @Test
@@ -112,6 +120,15 @@ public class ModelTest {
         Assert.assertNotNull(pkgSyncInfo.getRepoInfo());
         Assert.assertNotNull(pkgSyncInfo.toString());
         Assert.assertNotNull(appPackageSyncInfo.toString());
+
+        Assert.assertEquals("appId", appTemplate.getAppId());
+        Assert.assertEquals("appPackageId", appTemplate.getAppPackageId());
+        Assert.assertEquals("appPackageName", appTemplate.getAppPkgName());
+        Assert.assertEquals("tenantId", appTemplate.getTenantId());
+        Assert.assertEquals("version", appTemplate.getVersion());
+        Assert.assertEquals("id", appTemplate.getId());
+        Assert.assertNotNull(appTemplate.toString());
+
     }
 
     }

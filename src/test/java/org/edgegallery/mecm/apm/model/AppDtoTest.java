@@ -19,12 +19,8 @@ package org.edgegallery.mecm.apm.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.edgegallery.mecm.apm.model.dto.AppPackageDeletedDto;
-import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
-import org.edgegallery.mecm.apm.model.dto.AppPackageHostDeletedDto;
-import org.edgegallery.mecm.apm.model.dto.AppPackageRecordDto;
-import org.edgegallery.mecm.apm.model.dto.SyncDeletedAppPackageDto;
-import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
+
+import org.edgegallery.mecm.apm.model.dto.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +38,7 @@ public class AppDtoTest {
     SyncDeletedAppPackageDto syncDeletedAppPackageDto = new SyncDeletedAppPackageDto();
     SyncUpdatedAppPackageDto syncUpdatedAppPackageDto = new SyncUpdatedAppPackageDto();
     AppPackageDto appPackageDto = new AppPackageDto();
+    AppTemplateDto appTemplateDto = new AppTemplateDto();
 
     @Before
     public void setUp() {
@@ -64,6 +61,11 @@ public class AppDtoTest {
         List recList = new ArrayList<AppPackageRecordDto>();
         recList.add(appPackageRecordDto.getPackageId());
         syncUpdatedAppPackageDto.setAppPackageRecord(recList);
+
+        appTemplateDto.setAppId("appId");
+        appTemplateDto.setAppPackageId("appPackageId");
+        appTemplateDto.setAppPkgName("appPackageName");
+        appTemplateDto.setVersion("version");
     }
 
     @Test
@@ -86,5 +88,12 @@ public class AppDtoTest {
         Assert.assertNotNull(syncUpdatedAppPackageDto.toString());
 
         Assert.assertNotNull(appPackageDto.toString());
+
+        Assert.assertEquals("appId", appTemplateDto.getAppId());
+        Assert.assertEquals("appPackageId", appTemplateDto.getAppPackageId());
+        Assert.assertEquals("appPackageName", appTemplateDto.getAppPkgName());
+        Assert.assertEquals("version", appTemplateDto.getVersion());
+        Assert.assertNotNull(appTemplateDto.toString());
+
     }
 }

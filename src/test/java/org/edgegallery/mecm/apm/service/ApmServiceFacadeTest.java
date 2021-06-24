@@ -49,6 +49,7 @@ import org.springframework.util.ResourceUtils;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ApmApplicationTest.class)
 public class ApmServiceFacadeTest {
@@ -57,19 +58,19 @@ public class ApmServiceFacadeTest {
     private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
 
     private AppPackageDto packageDto = new AppPackageDto();
-	
-	private PkgSyncInfo syncAppPkg = new PkgSyncInfo();
+
+    private PkgSyncInfo syncAppPkg = new PkgSyncInfo();
 
     @Autowired
     private DbService dbServices;
 
     @Autowired
     private ApmServiceFacade facades;
-	
-	@Mock
-	private ApmService apmService;
-	
-	@Mock
+
+    @Mock
+    private ApmService apmService;
+
+    @Mock
     private DbService dbService;
 
     @InjectMocks
@@ -97,8 +98,8 @@ public class ApmServiceFacadeTest {
         hostDtos.add(hostDto);
         hostDtos.add(hostDto2);
         packageDto.setMecHostInfo(hostDtos);
-		syncAppPkg.setPackageId(PACKAGE_ID);
-		syncAppPkg.setAppstoreIp("OK");
+        syncAppPkg.setPackageId(PACKAGE_ID);
+        syncAppPkg.setAppstoreIp("OK");
     }
 
     @Test
@@ -116,42 +117,42 @@ public class ApmServiceFacadeTest {
         assertNotNull(stream);
         assertDoesNotThrow(() -> facades.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
-	
-	@Test
-	public void addAppSyncInfoDb() throws Exception {
-		
-		Object[] obj = {packageDto,syncAppPkg,Constants.SUCCESS};
-		Method method = ApmServiceFacade.class.getDeclaredMethod("addAppSyncInfoDb",AppPackageDto.class,PkgSyncInfo.class,String.class);
-		method.setAccessible(true);
-		method.invoke(facade,obj);
-	}
-	
-		
-	@Test
-	public void onboardApplication() {
-		String localFilePath = "/";
-		
-		facades.onboardApplication("access_token","tenant id",packageDto,syncAppPkg);
-		facades.onboardApplication("access_token","tenant id",packageDto,localFilePath,syncAppPkg);
-		facades.deleteDistributedAppPackage("tenant id","host ip","app package id","access_token");
-		facades.deleteDistributedAppPackageOnHost("tenant id","host ip","app package id","access_token");
-	}
+
+    @Test
+    public void addAppSyncInfoDb() throws Exception {
+
+        Object[] obj = {packageDto, syncAppPkg, Constants.SUCCESS};
+        Method method = ApmServiceFacade.class.getDeclaredMethod("addAppSyncInfoDb", AppPackageDto.class, PkgSyncInfo.class, String.class);
+        method.setAccessible(true);
+        method.invoke(facade, obj);
+    }
+
+
+    @Test
+    public void onboardApplication() {
+        String localFilePath = "/";
+
+        facades.onboardApplication("access_token", "tenant id", packageDto, syncAppPkg);
+        facades.onboardApplication("access_token", "tenant id", packageDto, localFilePath, syncAppPkg);
+        facades.deleteDistributedAppPackage("tenant id", "host ip", "app package id", "access_token");
+        facades.deleteDistributedAppPackageOnHost("tenant id", "host ip", "app package id", "access_token");
+    }
 
     @Test
     public void deleteAppPackageInHostTest() {
-        facades.deleteAppPackageInHost(TENANT_ID,PACKAGE_ID,"1.1.1.1");
+        facades.deleteAppPackageInHost(TENANT_ID, PACKAGE_ID, "1.1.1.1");
     }
 
     @Test(expected = ApmException.class)
     public void checkIfManifestPresentRepoTest() {
 
-        facades.checkIfManifestPresentRepo("repo", "repository", "tag" , "accessToken");
+        facades.checkIfManifestPresentRepo("repo", "repository", "tag", "accessToken");
     }
 
     @Test(expected = ApmException.class)
     public void checkIfManifestPresentRepoTests() {
 
-        facades.checkIfManifestPresentRepo("repo:test", "repository", "tag" , "accessToken");
+        facades.checkIfManifestPresentRepo("repo:test", "repository", "tag", "accessToken");
     }
 
     @Test
@@ -163,5 +164,12 @@ public class ApmServiceFacadeTest {
 
         facades.onboardApplication("access_token", "tenant id", packageDto, localFilePath, syncAppPkg);
     }
-
+    @Test
+    public void distributeApplicationPackageTest() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Object[] obj1 = {"mepmEndPoint", "tenantId", "pkgId", "1.1.1.1", "ACCESS_TOKEN"};
+        Method method1 = ApmServiceFacade.class.getDeclaredMethod("distributeApplicationPackage", String.class, String.class,String.class,String.class, String.class);
+        method1.setAccessible(true);
+        method1.invoke(facade, obj1);
     }
+
+}

@@ -152,21 +152,22 @@ public final class CompressUtility {
 
     private static void addFileToTar(String filePath, String parent,
                                      TarArchiveOutputStream tarArchive) throws IOException {
-
         File file = new File(filePath);
         LOGGER.info("compressing... {}", file.getName());
-        FileInputStream inputStream = null;
         String entry = parent + file.getName();
-        try {
-            tarArchive.putArchiveEntry(new TarArchiveEntry(file, entry));
-            if (file.isFile()) {
-                inputStream = new FileInputStream(file);
-                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-
+        tarArchive.putArchiveEntry(new TarArchiveEntry(file, entry));
+        if (file.isFile()) {
+            try (FileInputStream inputStream = new FileInputStream(file);
+                 BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);) {
                 IOUtils.copy(bufferedInputStream, tarArchive);
                 tarArchive.closeArchiveEntry();
                 bufferedInputStream.close();
-            } else if (file.isDirectory()) {
+                inputStream.close();
+            } catch (IOException e) {
+                throw new ApmException("failed to compress " + e.getMessage());
+            }
+        } else if (file.isDirectory()) {
+            try {
                 tarArchive.closeArchiveEntry();
                 File[] files = file.listFiles();
                 if (files != null) {
@@ -174,12 +175,8 @@ public final class CompressUtility {
                         addFileToTar(f.getAbsolutePath(), entry + File.separator, tarArchive);
                     }
                 }
-            }
-        } catch (IOException e) {
-            throw new ApmException("failed to compress " + e.getMessage());
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
+            } catch (IOException e) {
+                throw new ApmException("failed to compress " + e.getMessage());
             }
         }
     }

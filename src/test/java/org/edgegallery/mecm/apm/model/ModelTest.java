@@ -39,6 +39,7 @@ public class ModelTest {
     PkgSyncInfo pkgSyncInfo=new PkgSyncInfo();
     AppPackageSyncInfo appPackageSyncInfo=new AppPackageSyncInfo();
     AppTemplate appTemplate = new AppTemplate();
+    AppTemplateInputAttr appTemplateInputAttr = new AppTemplateInputAttr();
 
     @Before
     public void setup(){
@@ -81,6 +82,13 @@ public class ModelTest {
         appTemplate.setTenantId("tenantId");
         appTemplate.setVersion("version");
         appTemplate.setId("id");
+
+        appTemplateInputAttr.setAppTemplate(appTemplate);
+        appTemplateInputAttr.setName("name");
+        appTemplateInputAttr.setId(123);
+        appTemplateInputAttr.setDescription("description");
+        appTemplateInputAttr.setType("type");
+        appTemplateInputAttr.setDefaultValue("value");
     }
 
     @Test
@@ -129,6 +137,12 @@ public class ModelTest {
         Assert.assertEquals("id", appTemplate.getId());
         Assert.assertNotNull(appTemplate.toString());
 
+        Assert.assertEquals("name", appTemplateInputAttr.getName());
+        Assert.assertEquals(123, appTemplateInputAttr.getId());
+        Assert.assertEquals("value", appTemplateInputAttr.getDefaultValue());
+        Assert.assertEquals("description", appTemplateInputAttr.getDescription());
+        Assert.assertEquals(appTemplate, appTemplateInputAttr.getAppTemplate());
+        Assert.assertEquals("type", appTemplateInputAttr.getType());
+        Assert.assertNotNull(appTemplateInputAttr.toString());
     }
-
-    }
+}

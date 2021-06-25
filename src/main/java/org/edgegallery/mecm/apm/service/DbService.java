@@ -487,7 +487,7 @@ public class DbService {
      */
     public void addAppSyncPackageInfoDB(AppPackageInfo pkgInfo) {
         List<AppPackageInfo> appPkgInfosDb = appPkgSyncRepository.findByAppstoreId(pkgInfo.getAppstoreIp());
-        if (!appPkgInfosDb.isEmpty() && (appPkgInfosDb.size() >= Constants.MAX_APPS_PER_APPSTORE)) {
+        if (!appPkgInfosDb.isEmpty() && appPkgInfosDb.size() >= Constants.MAX_APPS_PER_APPSTORE) {
             throw new ApmException("failed to add application sync info to DB, max limit reached");
         }
         appPkgSyncRepository.save(pkgInfo);

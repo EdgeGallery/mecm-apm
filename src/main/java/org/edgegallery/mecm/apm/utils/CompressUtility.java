@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 public final class CompressUtility {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompressUtility.class);
+    private static final String COMPRESS_FAILED = "failed to compress";
     static final int TOO_MANY = 1024;
     static final int TOO_BIG = 104857600;
 
@@ -146,28 +147,27 @@ public final class CompressUtility {
             addFileToTar(sourceDir, "", outStream);
 
         } catch (IOException e) {
-            throw new ApmException("failed to compress " + e.getMessage());
+            throw new ApmException(COMPRESS_FAILED + e.getMessage());
         }
     }
 
     private static void addFileToTar(String filePath, String parent,
                                      TarArchiveOutputStream tarArchive) throws IOException {
+
         File file = new File(filePath);
         LOGGER.info("compressing... {}", file.getName());
+        FileInputStream inputStream = null;
         String entry = parent + file.getName();
-        tarArchive.putArchiveEntry(new TarArchiveEntry(file, entry));
-        if (file.isFile()) {
-            try (FileInputStream inputStream = new FileInputStream(file);
-                 BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);) {
+        try {
+            tarArchive.putArchiveEntry(new TarArchiveEntry(file, entry));
+            if (file.isFile()) {
+                inputStream = new FileInputStream(file);
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+
                 IOUtils.copy(bufferedInputStream, tarArchive);
                 tarArchive.closeArchiveEntry();
                 bufferedInputStream.close();
-                inputStream.close();
-            } catch (IOException e) {
-                throw new ApmException("failed to compress " + e.getMessage());
-            }
-        } else if (file.isDirectory()) {
-            try {
+            } else if (file.isDirectory()) {
                 tarArchive.closeArchiveEntry();
                 File[] files = file.listFiles();
                 if (files != null) {
@@ -175,8 +175,12 @@ public final class CompressUtility {
                         addFileToTar(f.getAbsolutePath(), entry + File.separator, tarArchive);
                     }
                 }
-            } catch (IOException e) {
-                throw new ApmException("failed to compress " + e.getMessage());
+            }
+        } catch (IOException e) {
+            throw new ApmException(COMPRESS_FAILED + e.getMessage());
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
             }
         }
     }

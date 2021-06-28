@@ -128,6 +128,7 @@ public class ApmServiceFacade {
                 addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
             } else if ("vm".equalsIgnoreCase(appDeployType)) {
                 onboardVmBasedAppPkg(accessToken, tenantId, appPackageDto);
+                addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
             }
         } catch (ApmException ex) {
             LOGGER.error(DISTRIBUTION_FAILED, ex.getMessage());
@@ -222,21 +223,24 @@ public class ApmServiceFacade {
     }
 
     private void addAppSyncInfoDb(AppPackageDto appPackageDto, PkgSyncInfo syncInfo, String operationalInfo) {
-        AppPackageInfo pkgInfo = new AppPackageInfo();
-        pkgInfo.setAppPkgInfoId(appPackageDto.getAppPkgId());
-        pkgInfo.setAppId(appPackageDto.getAppId());
-        pkgInfo.setPackageId(syncInfo.getPackageId());
-        pkgInfo.setName(appPackageDto.getAppPkgName());
-        pkgInfo.setSyncStatus(Constants.APP_IN_SYNC);
-        pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
-        pkgInfo.setOperationalInfo(operationalInfo);
-        pkgInfo.setShortDesc(appPackageDto.getAppPkgDesc());
-        pkgInfo.setProvider(appPackageDto.getAppProvider());
-        pkgInfo.setAffinity(appPackageDto.getAppPkgAffinity());
-        pkgInfo.setVersion(appPackageDto.getAppPkgVersion());
-        pkgInfo.setAppstoreEndpoint(syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort());
 
-        dbService.addAppSyncPackageInfoDB(pkgInfo);
+        //Check if app package sync info exist in DB.
+        if (!dbService.isAppPackageSyncInfoExistInDb(appPackageDto.getAppPkgId())) {
+            AppPackageInfo pkgInfo = new AppPackageInfo();
+            pkgInfo.setAppPkgInfoId(appPackageDto.getAppPkgId());
+            pkgInfo.setAppId(appPackageDto.getAppId());
+            pkgInfo.setPackageId(syncInfo.getPackageId());
+            pkgInfo.setName(appPackageDto.getAppPkgName());
+            pkgInfo.setSyncStatus(Constants.APP_IN_SYNC);
+            pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
+            pkgInfo.setOperationalInfo(operationalInfo);
+            pkgInfo.setShortDesc(appPackageDto.getAppPkgDesc());
+            pkgInfo.setProvider(appPackageDto.getAppProvider());
+            pkgInfo.setAffinity(appPackageDto.getAppPkgAffinity());
+            pkgInfo.setVersion(appPackageDto.getAppPkgVersion());
+            pkgInfo.setAppstoreEndpoint(syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort());
+            dbService.addAppSyncPackageInfoDB(pkgInfo);
+        }
     }
 
     /**

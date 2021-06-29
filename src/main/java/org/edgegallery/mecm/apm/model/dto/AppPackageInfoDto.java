@@ -31,6 +31,7 @@ public final class AppPackageInfoDto {
     private String size;
     private String format;
     private String createTime;
+    private String appstoreName;
     private String name;
     private String version;
     private String type;

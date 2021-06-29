@@ -38,6 +38,7 @@
         appstore_ip  varchar(255) not null,
         package_id  varchar(255) not null,
         name varchar(255) not null,
+        appstore_name varchar(255) not null,
         appstore_endpoint varchar(21) not null,
         pkg_size varchar(255),
         version varchar(255),
@@ -52,7 +53,8 @@
         test_task_id varchar(255),
         provider varchar(255),
         sync_status varchar(255),
-        created_time varchar(255),
+        created_time timestamp default current_timestamp,
+        updated_time timestamp default current_timestamp,
         operational_info varchar(255),
         primary key (id)
     );

@@ -455,7 +455,7 @@ public class ApmHandler {
                         service.getAppPackageInfoFromAppStore(
                                 appstore.getAppstoreIp() + ":" + appstore.getAppstorePort(),
                                 syncApp.getAppId(), syncApp.getPackageId(), accessToken);
-
+                appPkgInfoDto.setAppstoreName(appstore.getAppstoreName());
                 if (service.isAppPackageInfoExistInDB(key)) {
                     AppPackageInfo appPkgInfo = service.getAppPackageInfoDB(key);
                     if (Constants.APP_SYNC_INPROGRESS.equals(appPkgInfo.getSyncStatus())) {

@@ -32,6 +32,33 @@
         primary key (tenant)
     );
 
+    create table apppackageinfo (
+            id varchar(255) not null,
+            app_id  varchar(255) not null,
+            appstore_ip  varchar(255) not null,
+            package_id  varchar(255) not null,
+            name varchar(255) not null,
+            appstore_name varchar(255),
+            appstore_endpoint varchar(21) not null,
+            pkg_size varchar(255),
+            version varchar(255),
+            type varchar(255),
+            affinity varchar(255),
+            industry varchar(255),
+            contact varchar(255),
+            user_id varchar(255),
+            user_name varchar(255),
+            status varchar(255),
+            short_desc varchar(255),
+            test_task_id varchar(255),
+            provider varchar(255),
+            sync_status varchar(255),
+            created_time timestamp default current_timestamp,
+            updated_time timestamp default current_timestamp,
+            operational_info varchar(255),
+            primary key (id)
+        );
+
     create table apptemplate (
         template_id varchar(255) not null,
         app_name varchar(255) not null,

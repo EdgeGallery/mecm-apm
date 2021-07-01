@@ -16,17 +16,13 @@
 
 package org.edgegallery.mecm.apm.service;
 
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getLocalFilePath;
-import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getPackageDirPath;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isSuffixExist;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
-import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_IN_HOST_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.ERROR;
 
 import com.google.gson.Gson;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.InvalidPathException;
 import java.util.HashMap;
@@ -50,6 +46,7 @@ import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.CompressUtility;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
@@ -131,6 +128,7 @@ public class ApmServiceFacade {
                 addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
             } else if ("vm".equalsIgnoreCase(appDeployType)) {
                 onboardVmBasedAppPkg(accessToken, tenantId, appPackageDto);
+                addAppSyncInfoDb(appPackageDto, syncAppPkg, Constants.SUCCESS);
             }
         } catch (ApmException ex) {
             LOGGER.error(DISTRIBUTION_FAILED, ex.getMessage());
@@ -172,11 +170,8 @@ public class ApmServiceFacade {
     }
 
     private boolean isDockerImageAvailableInPkg(String dockerImage) {
-        if (isSuffixExist(dockerImage, ".tar") || isSuffixExist(dockerImage, TAR_GZ)
-                || isSuffixExist(dockerImage, ".tgz")) {
-            return true;
-        }
-        return false;
+        return isSuffixExist(dockerImage, ".tar") || isSuffixExist(dockerImage, TAR_GZ)
+                || isSuffixExist(dockerImage, ".tgz");
     }
 
     private void onboardContainerBasedAppPkg(String accessToken, String tenantId, AppPackageDto appPackageDto,
@@ -228,21 +223,24 @@ public class ApmServiceFacade {
     }
 
     private void addAppSyncInfoDb(AppPackageDto appPackageDto, PkgSyncInfo syncInfo, String operationalInfo) {
-        AppPackageInfo pkgInfo = new AppPackageInfo();
-        pkgInfo.setAppPkgInfoId(appPackageDto.getAppPkgId());
-        pkgInfo.setAppId(appPackageDto.getAppId());
-        pkgInfo.setPackageId(syncInfo.getPackageId());
-        pkgInfo.setName(appPackageDto.getAppPkgName());
-        pkgInfo.setSyncStatus(Constants.APP_IN_SYNC);
-        pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
-        pkgInfo.setOperationalInfo(operationalInfo);
-        pkgInfo.setShortDesc(appPackageDto.getAppPkgDesc());
-        pkgInfo.setProvider(appPackageDto.getAppProvider());
-        pkgInfo.setAffinity(appPackageDto.getAppPkgAffinity());
-        pkgInfo.setVersion(appPackageDto.getAppPkgVersion());
-        pkgInfo.setAppstoreEndpoint(syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort());
 
-        dbService.addAppSyncPackageInfoDB(pkgInfo);
+        //Check if app package sync info exist in DB.
+        if (!dbService.isAppPackageSyncInfoExistInDb(appPackageDto.getAppPkgId())) {
+            AppPackageInfo pkgInfo = new AppPackageInfo();
+            pkgInfo.setAppPkgInfoId(appPackageDto.getAppPkgId());
+            pkgInfo.setAppId(appPackageDto.getAppId());
+            pkgInfo.setPackageId(syncInfo.getPackageId());
+            pkgInfo.setName(appPackageDto.getAppPkgName());
+            pkgInfo.setSyncStatus(Constants.APP_IN_SYNC);
+            pkgInfo.setAppstoreIp(syncInfo.getAppstoreIp());
+            pkgInfo.setOperationalInfo(operationalInfo);
+            pkgInfo.setShortDesc(appPackageDto.getAppPkgDesc());
+            pkgInfo.setProvider(appPackageDto.getAppProvider());
+            pkgInfo.setAffinity(appPackageDto.getAppPkgAffinity());
+            pkgInfo.setVersion(appPackageDto.getAppPkgVersion());
+            pkgInfo.setAppstoreEndpoint(syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort());
+            dbService.addAppSyncPackageInfoDB(pkgInfo);
+        }
     }
 
     /**
@@ -277,7 +275,7 @@ public class ApmServiceFacade {
     public List<String> deleteAppPackage(String tenantId, String appPackageId) {
         dbService.deleteAppPackage(tenantId, appPackageId);
         List<String> hosts = dbService.deleteHost(tenantId, appPackageId);
-        apmService.deleteAppPackageFile(getPackageDirPath(localDirPath, appPackageId, tenantId));
+        apmService.deleteAppPackageFile(ApmServiceHelper.getPackageDirPath(localDirPath, appPackageId, tenantId));
         return hosts;
     }
 
@@ -356,7 +354,7 @@ public class ApmServiceFacade {
      * @return app package csar file
      */
     public InputStream getAppPackageFile(String tenantId, String packageId) {
-        return apmService.getAppPackageFile(getLocalFilePath(localDirPath, packageId, tenantId));
+        return apmService.getAppPackageFile(ApmServiceHelper.getLocalFilePath(localDirPath, packageId, tenantId));
     }
 
     /**
@@ -384,7 +382,7 @@ public class ApmServiceFacade {
                 imagesInSync = true;
             }
         } catch (NoSuchElementException ex) {
-            imagesInSync = false;
+            LOGGER.info("Image is not in sync");
         }
 
         try {
@@ -429,7 +427,7 @@ public class ApmServiceFacade {
             } catch (ApmException e) {
                 distributionStatus = ERROR;
                 error = e.getMessage();
-                LOGGER.error(DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
+                LOGGER.error(Constants.DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
                 dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(), distributionStatus,
                         error);
                 throw new ApmException(e.getMessage());
@@ -543,7 +541,7 @@ public class ApmServiceFacade {
         LOGGER.info("upload application package");
         String url = HTTPS + mepmEndPoint + LCMCONTROLLER_URL + tenantId + "/packages";
         try {
-            String packagePath = localDirPath + File.separator + pkgId + tenantId + PATH_DELIMITER + pkgId + ".csar";
+            String packagePath = localDirPath + File.separator + pkgId + tenantId + PATH_DELIMITER + pkgId + CSAR;
             FileSystemResource appPkgRes = new FileSystemResource(new File(packagePath));
 
             // Preparing request parts.

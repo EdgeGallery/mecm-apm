@@ -44,6 +44,8 @@ public final class AppPackageSyncStatusDto {
     private String testTaskId;
     private String provider;
     private String syncStatus;
+    private String appstoreName;
     private String createTime;
+    private String updateTime;
     private String operationalInfo;
 }

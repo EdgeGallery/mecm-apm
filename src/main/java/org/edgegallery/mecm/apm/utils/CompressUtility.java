@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 public final class CompressUtility {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompressUtility.class);
+    private static final String COMPRESS_FAILED = "failed to compress";
     static final int TOO_MANY = 1024;
     static final int TOO_BIG = 104857600;
 
@@ -146,7 +147,7 @@ public final class CompressUtility {
             addFileToTar(sourceDir, "", outStream);
 
         } catch (IOException e) {
-            throw new ApmException("failed to compress " + e.getMessage());
+            throw new ApmException(COMPRESS_FAILED + e.getMessage());
         }
     }
 
@@ -176,7 +177,7 @@ public final class CompressUtility {
                 }
             }
         } catch (IOException e) {
-            throw new ApmException("failed to compress " + e.getMessage());
+            throw new ApmException(COMPRESS_FAILED + e.getMessage());
         } finally {
             if (inputStream != null) {
                 inputStream.close();

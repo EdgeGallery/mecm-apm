@@ -402,7 +402,7 @@ public final class ApmServiceHelper {
      * @param mainServiceYaml main service template file content
      * @return list of image details
      */
-    public static AppTemplate getApplicationTemplate(String mainServiceYaml, String tenantId, String packageId) {
+    public static AppTemplate getApplicationTemplate(String mainServiceYaml) {
         ObjectMapper om = new ObjectMapper(new YAMLFactory());
         ObjectMapper jsonWriter = new ObjectMapper();
         String response;

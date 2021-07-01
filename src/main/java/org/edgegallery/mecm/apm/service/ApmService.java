@@ -238,10 +238,10 @@ public class ApmService {
         return ApmServiceHelper.getImageInfo(yaml);
     }
 
-    private String getEntryDefinitionFromMetadata(String appPkgDir) {
+    private String getEntryDefinitionFromMetadata(String appPkgDir, String metaFile) {
         List<File> files = (List<File>) FileUtils.listFiles(new File(appPkgDir), null, true);
         for (File file: files) {
-            if (ApmServiceHelper.isSuffixExist(file.getName(), ".meta")) {
+            if (ApmServiceHelper.isSuffixExist(file.getName(), metaFile)) {
                 try (InputStream inputStream = new FileInputStream(file)) {
                     Yaml yaml = new Yaml(new SafeConstructor());
                     Map<String, Object> meatData = yaml.load(inputStream);
@@ -268,12 +268,14 @@ public class ApmService {
         try {
             String appPkgDir = getLocalIntendedDir(appPackageDto.getAppPkgId(), tenantId);
 
-            String mainServiceYaml = appPkgDir + File.separator + getEntryDefinitionFromMetadata(appPkgDir);
+            String mainServiceYaml = appPkgDir + File.separator + getEntryDefinitionFromMetadata(appPkgDir,
+                                                                                         "TOSCA.meta");
 
             String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
             CompressUtility.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
 
-            yamlFile = new File(appDefnDir + File.separator + getEntryDefinitionFromMetadata(appDefnDir));
+            yamlFile = new File(appDefnDir + File.separator + getEntryDefinitionFromMetadata(appDefnDir,
+                                                                                        "TOSCA_VNFD.meta"));
         } catch (ApmException e) {
             LOGGER.error("failed to get main service template yaml {}", e.getMessage());
             throw new ApmException("failed to get main service template yaml");

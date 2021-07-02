@@ -421,6 +421,7 @@ public final class ApmServiceHelper {
         try {
             inputs = getChildJsonObject(topologyTemplate, "inputs");
         } catch (ApmException ex) {
+            appTemplate.setInputs(new HashSet<>());
             return appTemplate;
         }
 

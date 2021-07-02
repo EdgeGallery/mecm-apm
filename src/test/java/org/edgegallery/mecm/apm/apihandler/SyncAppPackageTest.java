@@ -132,7 +132,7 @@ public class SyncAppPackageTest {
     @Test
     @WithMockUser(roles = "MECM_ADMIN")
     public void syncAppPackageTest() throws Exception {
-        String url1 = "https://1.1.1.1:8080/inventory/v1/appstores/1.1.1.1";
+        String url1 = "https://1.1.1.1:8080/inventory/v1/appstore/1.1.1.1";
         String serviceResponseBody = "{'appstoreIp': '1.1.1.1', 'appstorePort': 1234, 'appstoreRepoUserName': "
                 + "'admin', 'appstoreRepoPassword': '12345', 'appstoreName': 'testAppStore' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);

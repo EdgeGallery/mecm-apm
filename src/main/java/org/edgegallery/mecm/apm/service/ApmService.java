@@ -672,7 +672,7 @@ public class ApmService {
     public AppStore getAppStoreCfgFromInventory(String appstoreIp, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append(INVENTORY_URL)
-                .append("/appstores/").append(appstoreIp).toString();
+                .append("/appstore/").append(appstoreIp).toString();
 
         String response = sendGetRequest(url, accessToken);
 
@@ -688,7 +688,7 @@ public class ApmService {
      */
     public List<AppStore> getAppStoreCfgFromInventory(String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append(INVENTORY_URL).append("/appstores").toString();
+                .append(inventoryPort).append(INVENTORY_URL).append("/appstore").toString();
 
         String response = sendGetRequest(url, accessToken);
 

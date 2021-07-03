@@ -56,6 +56,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
@@ -70,6 +71,10 @@ public class ApmHandlerTest {
     private static final String APP_ID1 = "f50358433cf8eb4719a62a49ed118c9c";
     private static final String PACKAGE_ID2 = "f60358433cf8eb4719a62a49ed118c9b";
     private static final String TIME = "Thu Nov 21 16:02:24 CST 2019";
+    private static final String APM_TENANT = "/apm/v1/tenants/";
+    private static final String SAMPLE_TOKEN = "SampleToken";
+    private static final String ACCESS_TOKEN = "access_token";
+
     @Autowired
     MockMvc mvc;
     @Autowired
@@ -443,5 +448,59 @@ public class ApmHandlerTest {
         MvcResult result = resultActions.andReturn();
         MockHttpServletResponse obj = result.getResponse();
         assertNotNull(obj.getContentAsString());
+    }
+
+
+    private void syncAppInstanceInfos(MockRestServiceServer server) throws Exception {
+        // Mocking get MEC host from inventory
+        String url = "http://1.1.1.1:8080/inventory/v1/mechosts/";
+        server.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("[{\"mechostIp\":\"1.1.1.1\",\"mechostName\":\"TestHost\","
+                                + "\"zipCode\":null,"
+                                + "\"city\":\"TestCity\","
+                                + "\"address\":\"Test Address\",\"affinity\":\"part1,part2\",\"userName\":null,\"edgerepoName\":null,"
+                                + "\"edgerepoIp\":\"1.1.1.1\",\"edgerepoPort\":\"10000\",\"edgerepoUsername\":null,"
+                                + "\"mepmIp\":\"1.1.1.1\"}]",
+                        MediaType.APPLICATION_JSON)); // host response , json response, mepm ip ... use mepm url
+
+        // Mocking get mepm from inventory
+        url = "http://1.1.1.1:8080/inventory/v1/mepms/1.1.1"
+                + ".1";
+        server.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"mepmIp\":\"1.1.1.1\",\"mepmPort\":\"10000\",\"userName\":\"Test\"}",
+                        MediaType.APPLICATION_JSON)); /// validate response , use this query , // mepm port ,
+
+        // Mocking get deleted app instance infos API
+        url = "http://1.1.1.1:10000/lcmcontroller/v1/tenants/" + TENANT_ID + "/packages/" +
+                "sync_deleted";
+        server.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess());
+
+        // Mocking get updated app instance infos API
+        url = "http://1.1.1.1:10000/lcmcontroller/v1/tenants/" + TENANT_ID + "/packages/" +
+                "sync_updated";
+        server.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess());
+    }
+
+    @Test
+    @WithMockUser(roles = "MECM_TENANT")
+    public void syncAppInstanceInfosTest() throws Exception {
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        syncAppInstanceInfos(mockServer);
+
+        // Sync app instance info
+        ResultActions postResult =
+                mvc.perform(MockMvcRequestBuilders.post(APM_TENANT + TENANT_ID + "/app_package_infos/sync")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON).with(csrf())
+                        .header(ACCESS_TOKEN, SAMPLE_TOKEN));
+        MvcResult postMvcResult = postResult.andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                .andReturn();
     }
 }

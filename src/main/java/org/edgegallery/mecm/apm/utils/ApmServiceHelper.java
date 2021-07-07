@@ -414,13 +414,18 @@ public final class ApmServiceHelper {
         }
 
         JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
-
         JsonObject topologyTemplate = getChildJsonObject(jsonObject, "topology_template");
-        JsonObject inputs = getChildJsonObject(topologyTemplate, "inputs");
+
+        AppTemplate appTemplate = new AppTemplate();
+        JsonObject inputs;
+        try {
+            inputs = getChildJsonObject(topologyTemplate, "inputs");
+        } catch (ApmException ex) {
+            return appTemplate;
+        }
 
         Set<Entry<String, JsonElement>> entrySet = inputs.entrySet();
         Set<AppTemplateInputAttr> inputAttrList = new HashSet<>();
-        AppTemplate appTemplate = new AppTemplate();
         for (Map.Entry<String, JsonElement> entry : entrySet) {
             AppTemplateInputAttr inputAttr = new Gson().fromJson(entry.getValue(), AppTemplateInputAttr.class);
             if (entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR) != null

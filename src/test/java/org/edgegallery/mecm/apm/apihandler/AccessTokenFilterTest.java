@@ -16,7 +16,6 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
@@ -29,7 +28,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

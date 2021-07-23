@@ -12,4 +12,4 @@ APM是基于jdk1.8和maven编写的Java程序。 编译只需执行 mvn install 
 #### 构建镜像
 APM 项目提供了一个用于镜像的 dockerfile 文件。 制作镜像时可以使用以下命令
 
-docker build -t edgegallery/mecm-apm:latest -f docker/Dockerfile 。
+docker build -t edgegallery/mecm-apm:latest -f docker/Dockerfile .

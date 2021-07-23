@@ -15,4 +15,4 @@ APM 项目提供了一个用于镜像的 dockerfile 文件。 制作镜像时可
 docker build -t edgegallery/mecm-apm:latest -f docker/Dockerfile .
 
 #### 文档资料
-更多内容，请点击[链接](http://docs.edgegallery.org/zh_CN/latest/Projects/MECM/MECM%2Ehtml)查阅详细内容。
+更多内容，请点击[链接](http://docs.edgegallery.org/zh_CN/latest/Projects/MECM/MECM%2Ehtml)查阅。

@@ -15,4 +15,4 @@ The APM project provides a dockerfile file for mirroring. You can use the follow
 docker build -t edgegallery/mecm-apm:latest -f docker/Dockerfile .
 
 #### Documentation
-[link](http://docs.edgegallery.org/zh_CN/latest/Projects/MECM/MECM%2Ehtml)
+For more content, please click on the [link](http://docs.edgegallery.org/zh_CN/latest/Projects/MECM/MECM%2Ehtml)to view.

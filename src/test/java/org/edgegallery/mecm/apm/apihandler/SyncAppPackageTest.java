@@ -28,10 +28,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
+import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
+import org.edgegallery.mecm.apm.model.AppRepo;
+import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
@@ -205,6 +208,25 @@ public class SyncAppPackageTest {
                         .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
         result = resultActions.andReturn();
         MockHttpServletResponse obj = result.getResponse();
-        mockServer.verify();
+
+        AppRepo appRepo = new AppRepo();
+        appRepo.setTenantId(TENANT_ID);
+
+        Map<String, AppRepo> repoMap = new HashMap<>();
+        repoMap.put("1", appRepo);
+
+        PkgSyncInfo pkgSyncInfo = new PkgSyncInfo();
+        pkgSyncInfo.setAppId(APP_ID1);
+        pkgSyncInfo.setPackageId(PACKAGE_ID1);
+        pkgSyncInfo.setRepoInfo(repoMap);
+        pkgSyncInfo.setAppstoreIp("1.1.1.1");
+        pkgSyncInfo.setAppstorePort("1001");
+
+        AppPackageSyncInfo syncInfos = new AppPackageSyncInfo();
+        List<PkgSyncInfo> pkgSyncInfos= new ArrayList<>();
+        pkgSyncInfos.add(pkgSyncInfo);
+        syncInfos.setSyncInfo(pkgSyncInfos);
+        syncInfos.setRepoInfo(repoMap);
+        apmServiceFacade.syncApplicationPackages("access_token", syncInfos);
     }
 }

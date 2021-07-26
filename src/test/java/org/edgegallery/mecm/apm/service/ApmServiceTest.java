@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -32,6 +33,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +44,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.github.dockerjava.api.exception.DockerClientException;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
@@ -46,15 +52,20 @@ import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.util.ResourceUtils;
@@ -72,7 +83,6 @@ public class ApmServiceTest {
 
     @Autowired
     private RestTemplate restTemplate;
-    RestClientHelper restClientHelper;
 
     private MockRestServiceServer mockServer;
 
@@ -233,8 +243,8 @@ public class ApmServiceTest {
 		}
     }
 
-    @Test(expected = ApmException.class)
-    public void downloadAppImageTest() {
+    @Test
+    public void testExceptionFlow() throws FileNotFoundException {
 
         Map<String, AppRepo> repoMap = new HashMap<>();
         repoMap.put("repoInfo" , appRepo);
@@ -249,18 +259,14 @@ public class ApmServiceTest {
         downloadedImgs.add("image1");
         downloadedImgs.add("image2");
 
-        apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs);
+        assertThrows(ApmException.class,() -> apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs));
+        assertThrows(ApmException.class,() -> apmService.loadDockerImages(PACKAGE_ID,imageInfoList,downloadedImgs));
+        assertThrows(DockerClientException.class,() -> apmService.uploadAppImage(pkgSyncInfo, imageInfoList, downloadedImgs));
+        assertThrows(ApmException.class,() -> apmService.deleteAppPackageFile(null));
+        assertThrows(ApmException.class,() -> apmService.getAppPackageFile("class"));
+
     }
 
-    @Test(expected = ApmException.class)
-    public void getAppPackageFileTest() {
-        apmService.getAppPackageFile("classpath:test.csar");
 
-    }
-
-    @Test(expected = ApmException.class)
-    public void deleteNullAppPackageFileTest(){
-        apmService.deleteAppPackageFile(null);
-    }
 
 }

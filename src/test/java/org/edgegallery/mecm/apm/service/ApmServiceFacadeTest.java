@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
@@ -35,7 +35,6 @@ import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.Constants;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -168,6 +167,42 @@ public class ApmServiceFacadeTest {
     public void distributeApplicationPackageTest() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Object[] obj1 = {"mepmEndPoint", "tenantId", "pkgId", "1.1.1.1", "ACCESS_TOKEN"};
         Method method1 = ApmServiceFacade.class.getDeclaredMethod("distributeApplicationPackage", String.class, String.class,String.class,String.class, String.class);
+        method1.setAccessible(true);
+        method1.invoke(facade, obj1);
+    }
+
+    @Test(expected = InvocationTargetException.class)
+    public void getImagesExcludingTest1() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+
+        swImageDescr.setSwImage("swImage");
+        swImageDescr.setVersion("1.0");
+        swImageDescr.setName("image:name");
+
+        List<SwImageDescr> imageInfoList= new ArrayList<>();
+        imageInfoList.add(swImageDescr);
+
+        Object[] obj1 = {imageInfoList, "ACCESS_TOKEN"};
+        Method method1 = ApmServiceFacade.class.getDeclaredMethod("getImagesExcludingAlreadyUploaded", List.class, String.class);
+        method1.setAccessible(true);
+        method1.invoke(facade, obj1);
+    }
+
+    @Test(expected = InvocationTargetException.class)
+    public void getImagesExcludingTest2() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+
+        Object[] obj1 = {null, "ACCESS_TOKEN"};
+        Method method1 = ApmServiceFacade.class.getDeclaredMethod("getImagesExcludingAlreadyUploaded", List.class, String.class);
+        method1.setAccessible(true);
+        method1.invoke(facade, obj1);
+    }
+
+    @Test(expected = InvocationTargetException.class)
+    public void onboardVmBasedAppPkgFailureTest() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+
+        AppPackageDto appPackageDto = new AppPackageDto();
+        appPackageDto.setAppPkgId(PACKAGE_ID);
+        Object[] obj1 = {"ACCESS_TOKEN", TENANT_ID, appPackageDto};
+        Method method1 = ApmServiceFacade.class.getDeclaredMethod("onboardVmBasedAppPkg", String.class, String.class, AppPackageDto.class);
         method1.setAccessible(true);
         method1.invoke(facade, obj1);
     }

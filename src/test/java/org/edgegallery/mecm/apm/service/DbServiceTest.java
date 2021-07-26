@@ -19,6 +19,8 @@ package org.edgegallery.mecm.apm.service;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
 import org.edgegallery.mecm.apm.exception.ApmException;
@@ -29,15 +31,19 @@ import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
+import org.edgegallery.mecm.apm.repository.AppPackageInfoRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit4.SpringRunner;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.NoSuchElementException;
@@ -66,6 +72,7 @@ public class DbServiceTest {
 
     RestServiceImpl restServiceImpl = new RestServiceImpl();
     ApmExceptionHandler apm = new ApmExceptionHandler();
+    RestClientHelper restClientHelper;
 
     @InjectMocks
     private AccessTokenFilter accessTokenFilter;
@@ -285,4 +292,21 @@ public class DbServiceTest {
         dbService.deleteNonExistingPackages("119.8.63.144", list);
 
     }
+
+    @Test
+    public void buildHttpClient() {
+        restClientHelper = new RestClientHelper(true, "path", "trust");
+        assertThrows(ApmException.class, () -> restClientHelper.buildHttpClient());
+        restClientHelper.setTrustStorePasswd("truststore");
+        restClientHelper.setSslEnabled(false);
+        restClientHelper.setTrustStorePath("text");
+        RestClientHelper restClientHelper2 = new RestClientHelper(restClientHelper.isSslEnabled(),
+                restClientHelper.getTrustStorePath(),
+                restClientHelper.getTrustStorePasswd());
+        CloseableHttpClient httpClient = restClientHelper2.buildHttpClient();
+        assertNotNull(httpClient);
+
+    }
+
+
 }

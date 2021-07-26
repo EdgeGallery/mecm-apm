@@ -18,6 +18,7 @@ package org.edgegallery.mecm.apm.apihandler;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -25,12 +26,12 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
 import java.io.File;
+
 import org.apache.commons.io.FileUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,8 @@ public class ApmHandlerUploadTest {
 
     private static final String TENANT_ID = "19db0283-3c67-4042-a708-a8e4a10c6b32";
     private static final String PACKAGE_ID1 = "f50358433cf8eb4719a62a49ed118c9b";
+    private static final String APP_ID1 = "f50358433cf8eb4719a62a49ed118c9c";
+    private static final String ACCESS_TOKEN = "access_token";
     String appPackageId = null;
     @Autowired
     MockMvc mvc;
@@ -71,6 +74,7 @@ public class ApmHandlerUploadTest {
     private AppPackageDto packageDto1 = new AppPackageDto();
     private AppPackageDto packageDto2 = new AppPackageDto();
 
+    private MockRestServiceServer server;
 
     @After
     public void cleanUp() {
@@ -79,12 +83,9 @@ public class ApmHandlerUploadTest {
         }
     }
 
-    @Test
-    @WithMockUser(roles = "MECM_ADMIN")
-    public void onBoardApplicationTest() throws Exception {
+    private void inventoryFlowUrls(MockRestServiceServer server)  throws Exception {
+
         String serviceResponseBody;
-
-
         String url1 = "https://1.1.1.1:8080/inventory/v1/apprepos";
         serviceResponseBody = "[{'repoEndPoint': '119.8.63.144', 'repoName': 'AppRepo1', 'repoUserName': "
                 + "'admin', 'repoPassword': '12345' }]";
@@ -117,6 +118,12 @@ public class ApmHandlerUploadTest {
         mockServer.expect(requestTo(url4))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @WithMockUser(roles = "MECM_ADMIN")
+    public void onBoardApplicationTest() throws Exception {
+        inventoryFlowUrls(server);
 
         // Testing csar upload
         File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913c.csar");
@@ -137,10 +144,7 @@ public class ApmHandlerUploadTest {
         String postResponse = postMvcResult.getResponse().getContentAsString();
         assertThat(postResponse, containsString("appPackageId"));
         assertThat(postResponse, containsString("appId"));
-
-
         Thread.sleep(10000);
-
         appPackageId = postResponse.substring(60, 124);
         String appId = postResponse.substring(10, 42);
 
@@ -153,4 +157,44 @@ public class ApmHandlerUploadTest {
                 .andReturn();*/
     }
 
+    @Test
+    @WithMockUser(roles = "MECM_ADMIN")
+    public void onBoardApplicationVMTest() throws Exception {
+
+        ResultActions getResult = mvc.perform(MockMvcRequestBuilders.get("/apm/v1/health"));
+        getResult.andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isOk()).andReturn();
+
+        inventoryFlowUrls(server);
+        // Testing csar upload
+        File file = ResourceUtils.getFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913d.csar");
+
+        ResultActions resultActions =
+                mvc.perform(multipart("/apm/v1/tenants/" + TENANT_ID + "/packages/upload")
+                        .file(new MockMultipartFile("file", "22406fba-fd5d-4f55-b3fa-89a45fee913d.csar", MediaType.TEXT_PLAIN_VALUE,
+                                FileUtils.openInputStream(file)))
+                        .with(csrf()).contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                        .param("appPackageName", "appPackageName")
+                        .param("appPackageVersion", "1.0")
+                        .param("hostList", "3.3.3.3")
+                        .header("access_token", "SampleToken"));
+
+        MvcResult postMvcResult = resultActions.andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+                .andReturn();
+        String postResponse = postMvcResult.getResponse().getContentAsString();
+
+        assertThat(postResponse, containsString("appPackageId"));
+        assertThat(postResponse, containsString("appId"));
+    }
+	
+	
+    @Test
+    public void testAppTemplatePkgInfo() {
+        ApmHandler handler = new ApmHandler();
+        assertThrows(NullPointerException.class, () -> handler.getAppTemplatePackageInfo(TENANT_ID, PACKAGE_ID1));
+        assertThrows(NullPointerException.class, () -> handler.deleteAppPackage(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1));
+        assertThrows(NullPointerException.class, () -> handler.deleteAppPackageInHost(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1, "1.1.1.1"));
+        assertThrows(NullPointerException.class, () -> handler.getAppPackageSyncStatus(ACCESS_TOKEN, APP_ID1, PACKAGE_ID1));
+    }
 }

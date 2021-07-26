@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -24,36 +25,44 @@ import static org.mockito.Mockito.mock;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.http.client.methods.RequestBuilder;
 import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.stringtemplate.v4.ST;
 
 @RunWith(MockitoJUnitRunner.class)
 @AutoConfigureMockMvc
 public class AccessTokenFilterTest {
 
     public static final String HEALTH_URI = "/apm/v1/health";
+    public static final String APP_URI = "/apm/v1/app";
 
     AccessTokenFilter filter;
-
     HttpServletRequest mockReq;
-
     HttpServletResponse mockResp;
-
     FilterChain mockFilterChain;
-
     FilterConfig mockFilterConfig;
-
     OAuth2AccessToken oAuth2AccessToken;
 
     @Before
@@ -65,7 +74,7 @@ public class AccessTokenFilterTest {
     }
 
     @Test
-    public void testDoFilter() throws ServletException, IOException {
+    public void testDoFilterHealthUri() throws ServletException, IOException {
         mockReq = mock(HttpServletRequest.class);
         mockResp = mock(HttpServletResponse.class);
 
@@ -74,6 +83,31 @@ public class AccessTokenFilterTest {
         //     Mockito.when(mockReq.getReader()).thenReturn(br);
 
         filter.doFilter(mockReq, mockResp, mockFilterChain);
+    }
+
+    @Test
+    public void testDoFilter() throws ServletException, IOException {
+        mockReq = mock(HttpServletRequest.class);
+        mockResp = mock(HttpServletResponse.class);
+
+        Mockito.when(mockReq.getRequestURI()).thenReturn(APP_URI);
+        filter.doFilter(mockReq, mockResp, mockFilterChain);
+    }
+
+    @Test
+    public void testDoFilterWithAccessToken() throws ServletException, IOException {
+        mockReq = mock(HttpServletRequest.class);
+        mockResp = mock(HttpServletResponse.class);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("access_token", "access_token");
+        Enumeration<String> header = Collections.enumeration(map.keySet());
+        Mockito.when(mockReq.getHeader("access_token")).thenReturn(String.valueOf(header));
+        Mockito.when(mockReq.getRequestURI()).thenReturn(APP_URI);
+
+        BufferedReader br = new BufferedReader(new StringReader("access_token"));
+		//need to check this further
+        assertThrows(NullPointerException.class, () -> filter.doFilter(mockReq, mockResp, mockFilterChain));
     }
 }
 

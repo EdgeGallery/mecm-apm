@@ -21,6 +21,8 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -48,5 +50,11 @@ class ApmApplicationTest {
                 filterChain.doFilter(request, response);
             }
         };
+    }
+
+    // Test class added ONLY to cover main() invocation not covered by application tests.
+    @Test
+    public void main() {
+        ApmApplication.main(new String[] {});
     }
 }

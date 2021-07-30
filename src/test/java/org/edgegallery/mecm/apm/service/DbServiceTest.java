@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.gson.JsonElement;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
@@ -32,6 +33,7 @@ import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
 import org.edgegallery.mecm.apm.repository.AppPackageInfoRepository;
+import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +46,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.json.JsonObject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.NoSuchElementException;
@@ -73,6 +76,7 @@ public class DbServiceTest {
     RestServiceImpl restServiceImpl = new RestServiceImpl();
     ApmExceptionHandler apm = new ApmExceptionHandler();
     RestClientHelper restClientHelper;
+    ApmServiceHelper apmServiceHelper;
 
     @InjectMocks
     private AccessTokenFilter accessTokenFilter;
@@ -308,5 +312,10 @@ public class DbServiceTest {
 
     }
 
+    @Test
+    public void testApmService() {
+        assertThrows(ApmException.class, () -> ApmServiceHelper.getHostList(null));
+        assertThrows(ApmException.class, () -> ApmServiceHelper.saveInputStreamToFile(null, "packageId", TENANT_ID, "path"));
+    }
 
 }

@@ -31,9 +31,12 @@ import org.apache.commons.io.FileUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
+import org.edgegallery.mecm.apm.service.DbService;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -66,7 +69,14 @@ public class ApmHandlerUploadTest {
     MockMvc mvc;
 
     @Autowired
+    @Mock
     private ApmServiceFacade apmServiceFacade;
+
+    @InjectMocks
+    ApmHandler apmHandler;
+
+    @Mock
+    DbService dbService;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -191,10 +201,10 @@ public class ApmHandlerUploadTest {
 	
     @Test
     public void testAppTemplatePkgInfo() {
-        ApmHandler handler = new ApmHandler();
-        assertThrows(NullPointerException.class, () -> handler.getAppTemplatePackageInfo(TENANT_ID, PACKAGE_ID1));
-        assertThrows(NullPointerException.class, () -> handler.deleteAppPackage(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1));
-        assertThrows(NullPointerException.class, () -> handler.deleteAppPackageInHost(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1, "1.1.1.1"));
-        assertThrows(NullPointerException.class, () -> handler.getAppPackageSyncStatus(ACCESS_TOKEN, APP_ID1, PACKAGE_ID1));
+        //ApmHandler handler = new ApmHandler();
+        assertThrows(IllegalArgumentException.class, () -> apmHandler.getAppTemplatePackageInfo(TENANT_ID, PACKAGE_ID1));
+        apmHandler.deleteAppPackage(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1);
+        apmHandler.deleteAppPackageInHost(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1, "1.1.1.1");
+        assertThrows(IllegalArgumentException.class, () -> apmHandler.getAppPackageSyncStatus(ACCESS_TOKEN, APP_ID1, PACKAGE_ID1));
     }
 }

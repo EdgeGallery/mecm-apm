@@ -20,6 +20,7 @@ import org.edgegallery.mecm.apm.model.dto.AppPackageDeletedDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageHostDeletedDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageRecordDto;
 import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
+import org.edgegallery.mecm.apm.service.DbService;
 import org.edgegallery.mecm.apm.service.RestServiceImpl;
 import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,9 @@ public class ApmSyncHandlerTest {
     AppPackageHostDeletedDto appPackageHostDeletedDto= new AppPackageHostDeletedDto();
 
     @Mock
+    private DbService dbService;
+
+    @Mock
     private RestServiceImpl restServiceImpl;
 
     @BeforeEach
@@ -69,7 +73,7 @@ public class ApmSyncHandlerTest {
         method1.invoke(apmSyncHandler, obj1);
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void testUpdateSyncAppPackageRecords() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         appPackageRecordDto.setPackageId(PACKAGE_ID);
         Object[] obj1 = {TENANT_ID, appPackageRecordDto};
@@ -94,7 +98,7 @@ public class ApmSyncHandlerTest {
         method1.invoke(apmSyncHandler, obj1);
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void testDeleteSyncAppPackageRecords() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         appPackageDeletedDto.setAppPackageId(PACKAGE_ID);
         Object[] obj1 = {TENANT_ID, appPackageDeletedDto};
@@ -103,7 +107,7 @@ public class ApmSyncHandlerTest {
         method1.invoke(apmSyncHandler, obj1);
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void testDeleteSyncAppPackageHostRecords() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         appPackageHostDeletedDto.setPackageId(PACKAGE_ID);
         Object[] obj1 = {TENANT_ID, appPackageHostDeletedDto};

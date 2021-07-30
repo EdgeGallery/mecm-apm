@@ -607,16 +607,6 @@ public class ApmServiceFacade {
     }
 
     /**
-     * Returns application store configuration.
-     *
-     * @return app store configuration
-     */
-    public List<AppStore> getAllAppstoreConfig(String accessToken) {
-
-        return apmService.getAppStoreCfgFromInventory(accessToken);
-    }
-
-    /**
      * Returns application repo configuration.
      *
      * @return app store configuration
@@ -624,18 +614,6 @@ public class ApmServiceFacade {
     public List<AppRepo> getAllAppRepoConfig(String accessToken) {
 
         return apmService.getAllAppRepoCfgFromInventory(accessToken);
-    }
-
-    /**
-     * Returns application repo configuration.
-     *
-     * @param tenantId tenant ID
-     * @param host     repo host
-     * @return app store configuration
-     */
-    public AppRepo getAppRepoConfig(String tenantId, String host, String accessToken) {
-
-        return apmService.getAppRepoCfgFromInventory(tenantId, host, accessToken);
     }
 
     /**

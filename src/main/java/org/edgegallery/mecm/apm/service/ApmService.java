@@ -686,28 +686,6 @@ public class ApmService {
      * @return returns all appstore configurations
      * @throws ApmException exception if failed to get appstore configuration details
      */
-    public List<AppStore> getAppStoreCfgFromInventory(String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append(INVENTORY_URL).append("/appstore").toString();
-
-        String response = sendGetRequest(url, accessToken);
-
-        List<AppStore> appStoreRecords = new LinkedList<>();
-        JsonArray appStoreRecs = new JsonParser().parse(response).getAsJsonArray();
-        for (JsonElement appStoreRec : appStoreRecs) {
-            AppStore appstore = new Gson().fromJson(appStoreRec, AppStore.class);
-            appStoreRecords.add(appstore);
-        }
-        return appStoreRecords;
-    }
-
-    /**
-     * Returns edge repository address.
-     *
-     * @param accessToken access token
-     * @return returns all appstore configurations
-     * @throws ApmException exception if failed to get appstore configuration details
-     */
     public List<AppRepo> getAllAppRepoCfgFromInventory(String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append(INVENTORY_URL).append("/apprepos").toString();
@@ -836,22 +814,6 @@ public class ApmService {
             LOGGER.error(FAILURE_RESPONSE_STATUS, response.getStatusCode());
             throw new ApmException(FAILURE_RESPONSE_STATUS_CODE + response.getStatusCode());
         }
-    }
-
-    /**
-     * Returns edge repository address.
-     *
-     * @param tenantId    tenant ID
-     * @param host        repo host
-     * @param accessToken access token
-     * @return returns  apprepo configurations
-     * @throws ApmException exception if failed to get appstore configuration details
-     */
-    public AppRepo getAppRepoCfgFromInventory(String tenantId, String host, String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append(INVENTORY_URL).append("/apprepos/").append(host).toString();
-
-        return new Gson().fromJson(sendGetRequest(url, accessToken), AppRepo.class);
     }
 
     /**

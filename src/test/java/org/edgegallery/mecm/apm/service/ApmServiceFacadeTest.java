@@ -19,11 +19,16 @@ package org.edgegallery.mecm.apm.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
@@ -43,8 +48,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.util.ResourceUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
@@ -55,6 +64,8 @@ public class ApmServiceFacadeTest {
 
     private static final String TENANT_ID = "18db0283-3c67-4042-a708-a8e4a10c6b32";
     private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
+    private static final String APP_ID1 = "f50358433cf8eb4719a62a49ed118c9c";
+    private static final String ACCESS_TOKEN = "access_token";
 
     private AppPackageDto packageDto = new AppPackageDto();
 
@@ -75,6 +86,12 @@ public class ApmServiceFacadeTest {
     @InjectMocks
     private ApmServiceFacade facade;
     SwImageDescr swImageDescr = new SwImageDescr();
+
+    @Autowired
+    @Mock
+    private RestTemplate restTemplate;
+
+    private MockRestServiceServer mockServer;
 
     @Before
     public void setUp() {
@@ -205,6 +222,38 @@ public class ApmServiceFacadeTest {
         Method method1 = ApmServiceFacade.class.getDeclaredMethod("onboardVmBasedAppPkg", String.class, String.class, AppPackageDto.class);
         method1.setAccessible(true);
         method1.invoke(facade, obj1);
+    }
+
+    private void inventoryFlowUrls(MockRestServiceServer server) throws Exception {
+
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"
+                + " 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        String url2 = "https://1.1.1.1:8080/inventory/v1/mepms/3.3.3.3";
+        String serviceResponseBody2 = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"
+                + " 'username': 'admin' }";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    public void getAppTemplateInfoTest() throws Exception {
+        facade.getAppTemplateInfo(TENANT_ID, PACKAGE_ID);
+        inventoryFlowUrls(mockServer);
+        facade.deleteDistributedAppPackageOnHost(TENANT_ID, "1.1.1.1", PACKAGE_ID, ACCESS_TOKEN);
+        facade.deleteDistributedAppPackage(TENANT_ID, "1.1.1.1", PACKAGE_ID, ACCESS_TOKEN);
+    }
+
+    @Test(expected = Exception.class)
+    public void uploadAndDistributeApplicationPackageTest() throws Exception {
+        inventoryFlowUrls(mockServer);
+        facade.uploadAndDistributeApplicationPackage(ACCESS_TOKEN,"1.1.1.1", TENANT_ID, APP_ID1, PACKAGE_ID);
     }
 
 }

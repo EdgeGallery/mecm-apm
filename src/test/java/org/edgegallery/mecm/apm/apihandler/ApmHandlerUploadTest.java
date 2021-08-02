@@ -16,8 +16,6 @@
 
 package org.edgegallery.mecm.apm.apihandler;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -47,7 +45,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
@@ -201,10 +198,12 @@ public class ApmHandlerUploadTest {
 	
     @Test
     public void testAppTemplatePkgInfo() {
-        //ApmHandler handler = new ApmHandler();
         assertThrows(IllegalArgumentException.class, () -> apmHandler.getAppTemplatePackageInfo(TENANT_ID, PACKAGE_ID1));
         apmHandler.deleteAppPackage(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1);
         apmHandler.deleteAppPackageInHost(ACCESS_TOKEN, TENANT_ID, PACKAGE_ID1, "1.1.1.1");
         assertThrows(IllegalArgumentException.class, () -> apmHandler.getAppPackageSyncStatus(ACCESS_TOKEN, APP_ID1, PACKAGE_ID1));
+        AppPackageDto appPackageDto = new AppPackageDto();
+        assertThrows(IllegalArgumentException.class, () -> apmHandler.onBoardAppPackage(ACCESS_TOKEN, PACKAGE_ID1, appPackageDto));
     }
+
 }

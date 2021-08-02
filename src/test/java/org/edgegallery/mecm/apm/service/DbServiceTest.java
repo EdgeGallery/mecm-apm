@@ -503,6 +503,12 @@ public class DbServiceTest {
         template.setAppId("appId");
         template.setAppPackageId(PACKAGE_ID);
         assertDoesNotThrow(() -> dbService.createOrUpdateAppTemplate(TENANT_ID, template));
+        assertThrows(ApmException.class, () -> dbService.updateAppPackage(TENANT_ID, packageDto));
+
+        Optional<AppPackageInfo> appPkgInfo = Optional.of(new AppPackageInfo());
+        when(appPkgSyncRepository.findById(Mockito.anyString())).thenReturn(appPkgInfo);
+
+        assertThrows(NoSuchElementException.class, () -> dbService.getAppPackageSyncInfo());
     }
 
 }

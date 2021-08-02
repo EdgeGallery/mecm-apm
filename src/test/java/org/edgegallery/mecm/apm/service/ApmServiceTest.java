@@ -16,7 +16,6 @@
 
 package org.edgegallery.mecm.apm.service;
 
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,10 +32,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,20 +47,17 @@ import org.edgegallery.mecm.apm.model.AppRepo;
 import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.util.ResourceUtils;
@@ -79,6 +71,7 @@ public class ApmServiceTest {
     private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
 
     @Autowired
+    @InjectMocks
     private ApmService apmService;
 
     @Autowired
@@ -91,6 +84,10 @@ public class ApmServiceTest {
     SwImageDescr swImageDescr =new SwImageDescr();
     AppRepo appRepo=new AppRepo();
 
+    @BeforeEach
+    void setUp() throws Exception{
+        MockitoAnnotations.initMocks(this);
+    }
 
 
     @Test
@@ -267,6 +264,105 @@ public class ApmServiceTest {
 
     }
 
+    @Test
+    public void getMepmCfgOfHostTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"
+                + " 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
+        String url2 = "https://1.1.1.1:8080/inventory/v1/mepms/3.3.3.3";
+        String serviceResponseBody2 = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"
+                + " 'username': 'admin' }";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
+
+        apmService.getMepmCfgOfHost("1.1.1.1", "access token");
+        mockServer.verify();
+    }
+
+    @Test
+    public void getMepmCfgOfHostMepmIpInvalidTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '', 'mepmPort': '808',"
+                + " 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getMepmCfgOfHostIpNullTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmPort': '808', 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getMepmCfgOfHostPortNullTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        String url2 = "https://1.1.1.1:8080/inventory/v1/mepms/3.3.3.3";
+        String serviceResponseBody2 = "{'mepmIp': '3.3.3.3', 'username': 'admin' }";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getMepmCfgOfMepmPortInvalidTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': 'mepmPort',"
+                + " 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        String url2 = "https://1.1.1.1:8080/inventory/v1/mepms/3.3.3.3";
+        String serviceResponseBody2 = "{'mepmIp': '3.3.3.3', 'mepmPort': 'mepmPort',"
+                + " 'username': 'admin' }";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getRepoInfoOfHostNullEdgeRepoPortTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'edgerepoUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+        assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
+                "access token"));
+        mockServer.verify();
+    }
 
 }

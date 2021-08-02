@@ -16,11 +16,17 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
@@ -32,21 +38,21 @@ import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
-import org.edgegallery.mecm.apm.repository.AppPackageInfoRepository;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
+import org.edgegallery.mecm.apm.utils.FileChecker;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.json.JsonObject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.NoSuchElementException;
@@ -76,10 +82,12 @@ public class DbServiceTest {
     RestServiceImpl restServiceImpl = new RestServiceImpl();
     ApmExceptionHandler apm = new ApmExceptionHandler();
     RestClientHelper restClientHelper;
-    ApmServiceHelper apmServiceHelper;
 
     @InjectMocks
     private AccessTokenFilter accessTokenFilter;
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
     public void setUp() {
@@ -244,53 +252,49 @@ public class DbServiceTest {
 
     @Test
     public void testupdateAppPackages() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        assertThrows(ApmException.class,() -> dbService.updateAppPackage(TENANT_ID,packageDto));
-        assertThrows(IllegalArgumentException.class,() -> dbService.getAppPackage(TENANT_ID,PACKAGE_ID));
+        assertThrows(ApmException.class, () -> dbService.updateAppPackage(TENANT_ID, packageDto));
+        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
         dbService.deleteAppPackageSyncInfoDb("OK");
-        dbService.deleteHostWithIp(TENANT_ID,PACKAGE_ID,"host");
+        dbService.deleteHostWithIp(TENANT_ID, PACKAGE_ID, "host");
 
-        Object[] obj={"app"};
-        Method method = DbService.class.getDeclaredMethod("deleteAppPackageSyncInfo",String.class);
+        Object[] obj = {"app"};
+        Method method = DbService.class.getDeclaredMethod("deleteAppPackageSyncInfo", String.class);
         method.setAccessible(true);
-        method.invoke(dbService,obj);
+        method.invoke(dbService, obj);
 
         HttpMethod m = HttpMethod.POST;
         try {
-            restServiceImpl.sendRequest("a",m,"b","b");
-        }
-        catch(Exception e)
-        {
+            restServiceImpl.sendRequest("a", m, "b", "b");
+        } catch (Exception e) {
             assertTrue(true);
         }
         try {
-            restServiceImpl.syncRecords("a",SyncUpdatedAppPackageDto.class,"b");
-        }
-        catch(Exception e)
-        {
+            restServiceImpl.syncRecords("a", SyncUpdatedAppPackageDto.class, "b");
+        } catch (Exception e) {
             assertTrue(true);
         }
-        AccessDeniedException ex=null;
-        RuntimeException ex1=null;
+        AccessDeniedException ex = null;
+        RuntimeException ex1 = null;
         NoSuchElementException ex2 = new NoSuchElementException("ok");
         apm.handleAccessDeniedException(ex);
         apm.handleRuntimeException(ex1);
         apm.handleNoSuchElementException(ex2);
 
-        Object[] obj1={"ok/success/yes"};
-        Method method1 = AccessTokenFilter.class.getDeclaredMethod("getTenantId",String.class);
+        Object[] obj1 = {"ok/success/yes"};
+        Method method1 = AccessTokenFilter.class.getDeclaredMethod("getTenantId", String.class);
         method1.setAccessible(true);
-        method1.invoke(accessTokenFilter,obj1);
+        method1.invoke(accessTokenFilter, obj1);
     }
 
     @Test(expected = RuntimeException.class)
     public void addAppSyncPackageInfoDBTest() {
-        AppPackageInfo appPackageInfo=new AppPackageInfo();
+        AppPackageInfo appPackageInfo = new AppPackageInfo();
         appPackageInfo.setAppstoreIp("1.1.1.1");
         dbService.addAppSyncPackageInfoDB(appPackageInfo);
     }
 
     @Test
-    public void createAppTemplateTest(){
+    public void createAppTemplateTest() {
         List<AppPackageInfoDto> list = new ArrayList<>();
 
         dbService.deleteNonExistingPackages("119.8.63.144", list);
@@ -316,6 +320,79 @@ public class DbServiceTest {
     public void testApmService() {
         assertThrows(ApmException.class, () -> ApmServiceHelper.getHostList(null));
         assertThrows(ApmException.class, () -> ApmServiceHelper.saveInputStreamToFile(null, "packageId", TENANT_ID, "path"));
+    }
+
+    @Test
+    public void testPackageDir() throws IOException {
+        File dir = folder.newFile("classpath:packages");
+        String path = ApmServiceHelper.getPackageDirPath(dir.getPath(), PACKAGE_ID, null);
+        assertNotNull(path);
+        File file = folder.newFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
+        FileInputStream fis = new FileInputStream(file.getPath());
+
+        MockMultipartFile multipartFile = new MockMultipartFile("22406fba-fd5d-4f55-b3fa-89a45fee913a.csar",
+                "app.csar", "", fis);
+        assertThrows(ApmException.class, () -> ApmServiceHelper.saveMultipartFile(multipartFile, PACKAGE_ID, null, dir.getPath()));
+    }
+
+    @Test(expected = InvocationTargetException.class)
+    public void testChildJsonObject() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        JsonParser parser = new JsonParser();
+        JsonNull jsonNull = null;
+        JsonElement jsonElement = parser.parse("{\"elememt\":\"package\",\"key\":" + jsonNull + "}");
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+        Object[] obj1 = {jsonObject, "place"};
+        Method method1 = ApmServiceHelper.class.getDeclaredMethod("getChildJsonObject", JsonObject.class, String.class);
+        method1.setAccessible(true);
+        method1.invoke(accessTokenFilter, obj1);
+    }
+
+    @Test(expected = InvocationTargetException.class)
+    public void testChildJsonObjectJsonNull() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        JsonParser parser = new JsonParser();
+        JsonNull jsonNull = null;
+        JsonElement jsonElement = parser.parse("{\"elememt\":\"package\",\"key\":" + jsonNull + "}");
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+        Object[] obj1 = {jsonObject, "key"};
+        Method method1 = ApmServiceHelper.class.getDeclaredMethod("getChildJsonObject", JsonObject.class, String.class);
+        method1.setAccessible(true);
+        method1.invoke(accessTokenFilter, obj1);
+    }
+
+    @Test(expected = InvocationTargetException.class)
+    public void testChildJsonObjectJsonValueNull() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        JsonParser parser = new JsonParser();
+        JsonNull jsonNull = null;
+        JsonElement jsonElement = parser.parse("{\"elememt\":\"package\",\"key\":" + jsonNull + "}");
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+        Object[] obj1 = {jsonObject, "key"};
+        Method method1 = ApmServiceHelper.class.getDeclaredMethod("getChildJsonObjectValue", JsonObject.class, String.class);
+        method1.setAccessible(true);
+        method1.invoke(accessTokenFilter, obj1);
+    }
+
+    @Test
+    public void testSanitizeFile() throws IOException {
+        File file = folder.newFile("classpath:22406fba-fd5d-4f55-b3fa-89a45fee913a.csar");
+        FileInputStream fis = new FileInputStream(file.getPath());
+
+        MockMultipartFile multipartFile = new MockMultipartFile("22406fba-fd5d-4f55-b3fa-89a45fee913a.csar",
+                "app file name is.csar", "", fis);
+        assertThrows(IllegalArgumentException.class, () -> FileChecker.check(multipartFile));
+    }
+
+    @Test
+    public void buildHttpClient2() throws IOException {
+        File dir = folder.newFile("classpath:packages");
+        restClientHelper = new RestClientHelper(true, dir.getPath(), "ABc@12!#xyz");
+        assertThrows(ApmException.class, () -> restClientHelper.buildHttpClient());
+
     }
 
 }

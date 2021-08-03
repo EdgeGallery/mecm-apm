@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -34,18 +36,28 @@ import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.exception.ApmExceptionHandler;
 import org.edgegallery.mecm.apm.model.AppPackage;
 import org.edgegallery.mecm.apm.model.AppPackageInfo;
+import org.edgegallery.mecm.apm.model.AppTemplate;
+import org.edgegallery.mecm.apm.model.MecHost;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
 import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
+import org.edgegallery.mecm.apm.repository.ApmTenantRepository;
+import org.edgegallery.mecm.apm.repository.AppPackageInfoRepository;
+import org.edgegallery.mecm.apm.repository.AppPackageRepository;
+import org.edgegallery.mecm.apm.repository.AppTemplateRepository;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.FileChecker;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
@@ -55,14 +67,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ApmApplicationTest.class)
@@ -76,18 +87,39 @@ public class DbServiceTest {
     private static final String TIME = "Thu Nov 21 16:02:24 CST 2019";
 
     private AppPackageDto packageDto = new AppPackageDto();
-    @Autowired
+
+    @InjectMocks
     private DbService dbService;
 
     RestServiceImpl restServiceImpl = new RestServiceImpl();
     ApmExceptionHandler apm = new ApmExceptionHandler();
     RestClientHelper restClientHelper;
 
+    @Autowired
+    private DbService dbServices;
+
     @InjectMocks
     private AccessTokenFilter accessTokenFilter;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+
+    @Mock
+    AppPackageInfoRepository appPkgSyncRepository;
+
+    @Mock
+    AppPackageRepository appPackageRepository;
+
+    @Mock
+    AppTemplateRepository appTemplateRepository;
+
+    @Mock
+    ApmTenantRepository tenantRepository;
+
+    @BeforeEach
+    public void setUpEach() {
+        MockitoAnnotations.initMocks(this);
+    }
 
     @Before
     public void setUp() {
@@ -113,8 +145,8 @@ public class DbServiceTest {
 
     @Test
     public void testCreateAppPackage() {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        AppPackage response = dbService.getAppPackage(TENANT_ID, PACKAGE_ID);
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        AppPackage response = dbServices.getAppPackage(TENANT_ID, PACKAGE_ID);
         assertNotNull(response);
         assertEquals(PACKAGE_ID, response.getAppPkgId());
         assertEquals("f50358433cf8eb4719a62a49ed118c9c", response.getAppId());
@@ -128,15 +160,15 @@ public class DbServiceTest {
         assertEquals("Huawei", response.getAppProvider());
 
         // clean up
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
-        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbServices.getAppPackage(TENANT_ID, PACKAGE_ID));
     }
 
     @Test
     public void testCreateHost() {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
-        AppPackageDto response = dbService.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createHost(TENANT_ID, packageDto));
+        AppPackageDto response = dbServices.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
         assertNotNull(response);
         List<MecHostDto> hostDtos = response.getMecHostInfo();
         assertNotNull(hostDtos);
@@ -144,23 +176,23 @@ public class DbServiceTest {
         assertEquals("1.1.1.1", hostDtos.get(0).getHostIp());
 
         // clean up
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
-        assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
-        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackageWithHost("18db0283-3c67-4042-a708"
+        assertDoesNotThrow(() -> dbServices.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteHost(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbServices.getAppPackageWithHost("18db0283-3c67-4042-a708"
                 + "-a8e4a10c6b32", PACKAGE_ID));
     }
 
     @Test
     public void testCreateHostDuplicateRecord() {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
-        AppPackageDto response = dbService.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createHost(TENANT_ID, packageDto));
+        AppPackageDto response = dbServices.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
         assertNotNull(response);
 
-        assertDoesNotThrow(() -> dbService.updateDistributionStatusOfAllHost(TENANT_ID, PACKAGE_ID,
+        assertDoesNotThrow(() -> dbServices.updateDistributionStatusOfAllHost(TENANT_ID, PACKAGE_ID,
                 ERROR, FAILED_TO_DISTRIBUTE));
 
-        List<AppPackageDto> packageDtos = dbService.getAllAppPackage(TENANT_ID);
+        List<AppPackageDto> packageDtos = dbServices.getAllAppPackage(TENANT_ID);
         assertNotNull(packageDtos);
         assertEquals(1, packageDtos.size());
         List<MecHostDto> hostDtos = packageDtos.get(0).getMecHostInfo();
@@ -170,9 +202,9 @@ public class DbServiceTest {
         assertEquals(FAILED_TO_DISTRIBUTE, hostDtos.get(0).getError());
         assertEquals(FAILED_TO_DISTRIBUTE, hostDtos.get(1).getError());
 
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
-        response = dbService.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createHost(TENANT_ID, packageDto));
+        response = dbServices.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
         assertNotNull(response);
 
         hostDtos = response.getMecHostInfo();
@@ -182,19 +214,19 @@ public class DbServiceTest {
         assertEquals("Processing", hostDtos.get(0).getStatus());
 
         // clean up
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
-        assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
-        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackageWithHost("18db0283-3c67-4042-a708"
+        assertDoesNotThrow(() -> dbServices.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteHost(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbServices.getAppPackageWithHost("18db0283-3c67-4042-a708"
                 + "-a8e4a10c6b32", PACKAGE_ID));
     }
 
     @Test
     public void testUpdateDistributionStatusOfAllHost() {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.updateDistributionStatusOfAllHost(TENANT_ID, PACKAGE_ID,
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createHost(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.updateDistributionStatusOfAllHost(TENANT_ID, PACKAGE_ID,
                 ERROR, FAILED_TO_DISTRIBUTE));
-        List<AppPackageDto> packageDtos = dbService.getAllAppPackage(TENANT_ID);
+        List<AppPackageDto> packageDtos = dbServices.getAllAppPackage(TENANT_ID);
         assertNotNull(packageDtos);
         assertEquals(1, packageDtos.size());
         List<MecHostDto> hostDtos = packageDtos.get(0).getMecHostInfo();
@@ -205,18 +237,18 @@ public class DbServiceTest {
         assertEquals(FAILED_TO_DISTRIBUTE, hostDtos.get(1).getError());
 
         // clean up
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
-        assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
-        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteHost(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbServices.getAppPackage(TENANT_ID, PACKAGE_ID));
     }
 
     @Test
     public void testUpdateDistributionStatusOfHost() {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.createHost(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.updateDistributionStatusOfHost(TENANT_ID, PACKAGE_ID, "2.2.2.2",
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createHost(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.updateDistributionStatusOfHost(TENANT_ID, PACKAGE_ID, "2.2.2.2",
                 ERROR, FAILED_TO_CONNECT));
-        AppPackageDto packageDtos = dbService.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
+        AppPackageDto packageDtos = dbServices.getAppPackageWithHost(TENANT_ID, PACKAGE_ID);
         assertNotNull(packageDtos);
         List<MecHostDto> hostDtos = packageDtos.getMecHostInfo();
         assertNotNull(hostDtos);
@@ -229,33 +261,36 @@ public class DbServiceTest {
         }
 
         // clean up
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
-        assertDoesNotThrow(() -> dbService.deleteHost(TENANT_ID, PACKAGE_ID));
-        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteHost(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbServices.getAppPackage(TENANT_ID, PACKAGE_ID));
     }
 
     @Test
     public void testCreateAppPackageRecordIfNotExist() {
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
-        assertDoesNotThrow(() -> dbService.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
+        assertDoesNotThrow(() -> dbServices.createAppPackage(TENANT_ID, packageDto));
 
         // clean up
-        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertDoesNotThrow(() -> dbServices.deleteAppPackage(TENANT_ID, PACKAGE_ID));
         assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage("18db0283-3c67-4042-a708"
                 + "-a8e4a10c6b32", PACKAGE_ID));
     }
 
     @Test
     public void testDeleteAppPackageRecordIfNotExist() {
-        assertThrows(IllegalArgumentException.class, () -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+        assertThrows(IllegalArgumentException.class, () -> dbServices.deleteAppPackage(TENANT_ID, PACKAGE_ID));
     }
 
     @Test
     public void testupdateAppPackages() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        assertThrows(ApmException.class, () -> dbService.updateAppPackage(TENANT_ID, packageDto));
-        assertThrows(IllegalArgumentException.class, () -> dbService.getAppPackage(TENANT_ID, PACKAGE_ID));
+        Optional<AppPackage> info = Optional.of(new AppPackage());
+        when(appPackageRepository.findById(Mockito.anyString())).thenReturn(info);
+
+        dbService.updateAppPackage(TENANT_ID, packageDto);
+        dbService.getAppPackage(TENANT_ID, PACKAGE_ID);
         dbService.deleteAppPackageSyncInfoDb("OK");
-        dbService.deleteHostWithIp(TENANT_ID, PACKAGE_ID, "host");
+        dbServices.deleteHostWithIp(TENANT_ID, PACKAGE_ID, "host");
 
         Object[] obj = {"app"};
         Method method = DbService.class.getDeclaredMethod("deleteAppPackageSyncInfo", String.class);
@@ -286,11 +321,15 @@ public class DbServiceTest {
         method1.invoke(accessTokenFilter, obj1);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void addAppSyncPackageInfoDBTest() {
-        AppPackageInfo appPackageInfo = new AppPackageInfo();
-        appPackageInfo.setAppstoreIp("1.1.1.1");
-        dbService.addAppSyncPackageInfoDB(appPackageInfo);
+        List<AppPackageInfo> appPkgInfosDb = new ArrayList<>();
+        AppPackageInfo packageInfo = new AppPackageInfo();
+        packageInfo.setPackageId(PACKAGE_ID);
+        packageInfo.setAppstoreIp("1.1.1.1");
+        appPkgInfosDb.add(packageInfo);
+        when(appPkgSyncRepository.findByAppstoreId(Mockito.anyString())).thenReturn(appPkgInfosDb);
+        dbService.addAppSyncPackageInfoDB(packageInfo);
     }
 
     @Test
@@ -392,7 +431,84 @@ public class DbServiceTest {
         File dir = folder.newFile("classpath:packages");
         restClientHelper = new RestClientHelper(true, dir.getPath(), "ABc@12!#xyz");
         assertThrows(ApmException.class, () -> restClientHelper.buildHttpClient());
+    }
 
+    @Test
+    public void testIsExistingHost() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        MecHostDto mecHostDto = new MecHostDto();
+        mecHostDto.setStatus("processing");
+        MecHost existingHost = new MecHost();
+        existingHost.setDistributionStatus("Distributed");
+        Object[] obj1 = {mecHostDto, existingHost};
+        Method method1 = DbService.class.getDeclaredMethod("isExistingHost", MecHostDto.class, MecHost.class);
+        method1.setAccessible(true);
+        method1.invoke(dbService, obj1);
+    }
+
+    @Test
+    public void testDeleteAppPackageSyncInfo() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        List<AppPackageInfo> appPkgInfosDb = new ArrayList<>();
+        AppPackageInfo packageInfo = new AppPackageInfo();
+        packageInfo.setPackageId(PACKAGE_ID);
+        packageInfo.setAppstoreIp("1.1.1.1");
+
+        AppPackageInfo packageInfo2 = new AppPackageInfo();
+        packageInfo.setPackageId("packageId");
+        packageInfo.setAppstoreIp("3.3.3.3");
+        packageInfo.setAppPkgInfoId("id2");
+
+        appPkgInfosDb.add(packageInfo);
+        appPkgInfosDb.add(packageInfo2);
+
+        when(appPkgSyncRepository.findByAppstoreId(Mockito.anyString())).thenReturn(appPkgInfosDb);
+        Object[] obj1 = {"1.1.1.1"};
+        Method method1 = DbService.class.getDeclaredMethod("deleteAppPackageSyncInfo", String.class);
+        method1.setAccessible(true);
+        method1.invoke(dbService, obj1);
+
+        Optional<AppPackage> appPackage = Optional.of(new AppPackage());
+        AppTemplate template = new AppTemplate();
+        template.setAppId("appId");
+        template.setAppPackageId(PACKAGE_ID);
+        Optional<AppTemplate> info = Optional.of(new AppTemplate());
+        when(appPackageRepository.findById(Mockito.anyString())).thenReturn(appPackage);
+        when(appTemplateRepository.findById(Mockito.anyString())).thenReturn(info);
+        List<AppPackage> record = new ArrayList<>();
+        AppPackage appPkg = new AppPackage();
+        appPkg.setTenantId(TENANT_ID);
+        record.add(appPkg);
+        when(appPackageRepository.findByTenantId(Mockito.anyString())).thenReturn(record);
+        assertDoesNotThrow(() -> dbService.deleteAppPackage(TENANT_ID, PACKAGE_ID));
+
+        AppPackageInfoDto infoDto = new AppPackageInfoDto();
+        infoDto.setAppId("appId");
+        infoDto.setPackageId(PACKAGE_ID);
+        List<AppPackageInfoDto> appPackageInfoDtos = new ArrayList<>();
+        appPackageInfoDtos.add(infoDto);
+        assertDoesNotThrow(() -> dbService.deleteNonExistingPackages("1.1.1.1", appPackageInfoDtos));
+
+        Optional<AppPackageInfo> appPkgInfo = Optional.of(new AppPackageInfo());
+        when(appPkgSyncRepository.findById(Mockito.anyString())).thenReturn(appPkgInfo);
+
+        AppPackageInfo appPackageInfo = dbService.getAppPackageSyncInfo("id1");
+        assertNotNull(appPackageInfo);
+
+        assertDoesNotThrow(() -> dbService.deleteAppPackageSyncInfoDb(packageInfo.getPackageId()));
+        assertDoesNotThrow(() -> dbService.createOrUpdateAppTemplate(TENANT_ID, template));
+    }
+
+    @Test
+    public void testCreateOrUpdateAppTemplate() {
+        AppTemplate template = new AppTemplate();
+        template.setAppId("appId");
+        template.setAppPackageId(PACKAGE_ID);
+        assertDoesNotThrow(() -> dbService.createOrUpdateAppTemplate(TENANT_ID, template));
+        assertThrows(ApmException.class, () -> dbService.updateAppPackage(TENANT_ID, packageDto));
+
+        Optional<AppPackageInfo> appPkgInfo = Optional.of(new AppPackageInfo());
+        when(appPkgSyncRepository.findById(Mockito.anyString())).thenReturn(appPkgInfo);
+
+        assertThrows(NoSuchElementException.class, () -> dbService.getAppPackageSyncInfo());
     }
 
 }

@@ -19,6 +19,7 @@ package org.edgegallery.mecm.apm.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -38,13 +39,16 @@ import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.repository.AppPackageInfoRepository;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -57,6 +61,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ApmApplicationTest.class)
@@ -64,7 +69,7 @@ public class ApmServiceFacadeTest {
 
     private static final String TENANT_ID = "18db0283-3c67-4042-a708-a8e4a10c6b32";
     private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
-    private static final String APP_ID1 = "f50358433cf8eb4719a62a49ed118c9c";
+    private static final String APP_ID = "f50358433cf8eb4719a62a49ed118c9c";
     private static final String ACCESS_TOKEN = "access_token";
 
     private AppPackageDto packageDto = new AppPackageDto();
@@ -77,21 +82,24 @@ public class ApmServiceFacadeTest {
     @Autowired
     private ApmServiceFacade facades;
 
+    @InjectMocks
+    private ApmServiceFacade facade;
+
     @Mock
     private ApmService apmService;
 
     @Mock
     private DbService dbService;
 
-    @InjectMocks
-    private ApmServiceFacade facade;
-    SwImageDescr swImageDescr = new SwImageDescr();
+    @Mock
+    AppPackageInfoRepository appPkgSyncRepository;
 
     @Autowired
     @Mock
     private RestTemplate restTemplate;
 
     private MockRestServiceServer mockServer;
+    SwImageDescr swImageDescr = new SwImageDescr();
 
     @Before
     public void setUp() {
@@ -117,6 +125,12 @@ public class ApmServiceFacadeTest {
         syncAppPkg.setPackageId(PACKAGE_ID);
         syncAppPkg.setAppstoreIp("OK");
     }
+
+    @BeforeEach
+    void setUpEach() {
+        MockitoAnnotations.initMocks(this);
+    }
+
 
     @Test
     public void getAppPackageFile() throws IOException {
@@ -253,7 +267,28 @@ public class ApmServiceFacadeTest {
     @Test(expected = Exception.class)
     public void uploadAndDistributeApplicationPackageTest() throws Exception {
         inventoryFlowUrls(mockServer);
-        facade.uploadAndDistributeApplicationPackage(ACCESS_TOKEN,"1.1.1.1", TENANT_ID, APP_ID1, PACKAGE_ID);
+        facade.uploadAndDistributeApplicationPackage(ACCESS_TOKEN,"1.1.1.1", TENANT_ID, APP_ID, PACKAGE_ID);
+    }
+
+    @Test
+    public void getImagesExcludingUploadedTest() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        swImageDescr.setSwImage("swImage");
+        List<SwImageDescr> imageInfoList= new ArrayList<>();
+        imageInfoList.add(swImageDescr);
+
+        Object[] obj = {imageInfoList, "ACCESS_TOKEN"};
+        Method swImageList = ApmServiceFacade.class.getDeclaredMethod("getImagesExcludingAlreadyUploaded", List.class, String.class);
+        swImageList.setAccessible(true);
+        swImageList.invoke(facade, obj);
+        assertNotNull(swImageList);
+    }
+
+
+    @Test
+    public void testGetAppPackageInfoDB() throws Exception {
+        Optional<AppPackageInfo> appPkgInfo = Optional.of(new AppPackageInfo());
+        when(appPkgSyncRepository.findById(Mockito.anyString())).thenReturn(appPkgInfo);
+        assertDoesNotThrow(() -> facade.getAppPackageInfoDB("id1"));
     }
 
 }

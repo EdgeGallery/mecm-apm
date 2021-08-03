@@ -32,6 +32,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -363,6 +365,18 @@ public class ApmServiceTest {
         assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
                 "access token"));
         mockServer.verify();
+    }
+
+
+    @Test(expected = InvocationTargetException.class)
+    public void unzipDockerImagesTest() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        assertThrows(IllegalArgumentException.class, () -> apmService.unzipDockerImages(PACKAGE_ID,
+                TENANT_ID));
+
+        Object[] obj1 = {"file"};
+        Method method1 = ApmService.class.getDeclaredMethod("getFileExtension", String.class);
+        method1.setAccessible(true);
+        method1.invoke(apmService, obj1);
     }
 
 }

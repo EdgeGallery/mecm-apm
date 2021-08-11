@@ -209,7 +209,7 @@ public class SyncAppPackageTest {
         result = resultActions.andReturn();
         MockHttpServletResponse obj = result.getResponse();
 
-        AppRepo appRepo = new AppRepo();
+       /* AppRepo appRepo = new AppRepo();
         appRepo.setTenantId(TENANT_ID);
 
         Map<String, AppRepo> repoMap = new HashMap<>();
@@ -227,6 +227,6 @@ public class SyncAppPackageTest {
         pkgSyncInfos.add(pkgSyncInfo);
         syncInfos.setSyncInfo(pkgSyncInfos);
         syncInfos.setRepoInfo(repoMap);
-        apmServiceFacade.syncApplicationPackages("access_token", syncInfos);
+        apmServiceFacade.syncApplicationPackages("access_token", syncInfos);*/
     }
 }

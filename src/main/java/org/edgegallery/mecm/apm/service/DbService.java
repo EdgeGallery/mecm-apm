@@ -135,7 +135,7 @@ public class DbService {
 
         appPackageRepository.save(appPackage);
 
-        LOGGER.info("app package record updated successfully",
+        LOGGER.info("app package record for tenant {} and package {} updated successfully",
                 tenantId, appPackageDto.getAppPkgId());
     }
 
@@ -171,7 +171,7 @@ public class DbService {
     /**
      * Returns app package record.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
      * @return app package record with mec host
      */
@@ -201,7 +201,7 @@ public class DbService {
     /**
      * Returns app package record.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
      * @return app package record
      */
@@ -297,7 +297,7 @@ public class DbService {
     /**
      * Delete host record.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
      * @return hostIp's of the deleted package
      */
@@ -319,9 +319,9 @@ public class DbService {
     /**
      * Deletes host record which matches host ip.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
-     * @param hostIp host ip
+     * @param hostIp    host ip
      */
     public void deleteHostWithIp(String tenantId, String packageId, String hostIp) {
         String id = packageId + tenantId;
@@ -338,9 +338,9 @@ public class DbService {
     /**
      * Returns host record which matches host ip, tenant ID and package ID.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
-     * @param hostIp host ip
+     * @param hostIp    host ip
      * @return host record which matches host ip, tenant ID and package ID
      */
     public MecHost findHostWithIp(String tenantId, String packageId, String hostIp) {
@@ -360,10 +360,10 @@ public class DbService {
     /**
      * Update distribution status of all hosts.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
-     * @param status distribution status
-     * @param error reason for failure
+     * @param status    distribution status
+     * @param error     reason for failure
      */
     public void updateDistributionStatusOfAllHost(String tenantId, String packageId,
                                                 String status, String error) {
@@ -380,11 +380,11 @@ public class DbService {
     /**
      * Updates distribution status of host which matches host ip.
      *
-     * @param tenantId tenant ID
+     * @param tenantId  tenant ID
      * @param packageId package ID
-     * @param hostIp host ip
-     * @param status distribution status
-     * @param error reason for failure
+     * @param hostIp    host ip
+     * @param status    distribution status
+     * @param error     reason for failure
      */
     public void updateDistributionStatusOfHost(String tenantId, String packageId,
                                                String hostIp, String status, String error) {
@@ -542,6 +542,7 @@ public class DbService {
     /**
      * Retrieves app package info records.
      *
+     * @param id ID
      * @return application package sync info
      */
     public AppPackageInfo getAppPackageSyncInfo(String id) {
@@ -557,6 +558,7 @@ public class DbService {
     /**
      * Retrieves app package info records.
      *
+     * @param id ID
      * @return application package sync info
      */
     public boolean isAppPackageSyncInfoExistInDb(String id) {
@@ -606,7 +608,7 @@ public class DbService {
                     tenantId, appTemplate.getAppPackageId());
             return;
         } catch (NoSuchElementException ex) {
-            LOGGER.info("Add app template record for tenant {} and package {}",
+            LOGGER.error("Add app template record for tenant {} and package {}",
                     tenantId, appTemplate.getAppPackageId());
         }
 

@@ -119,7 +119,8 @@ public class ApmSyncHandler {
 
     private void getSyncPackageUpdateRecords(String appLcmEndPoint, String tenantId, String accessToken) {
         try {
-            String uri = appLcmEndPoint + "/lcmcontroller/v1" + "/tenants/" + tenantId + "/packages/sync_updated";
+            String uri = new StringBuilder(appLcmEndPoint).append("/lcmcontroller/v1")
+                    .append("/tenants/").append(tenantId).append("/packages/sync_updated").toString();
 
             ResponseEntity<SyncUpdatedAppPackageDto> updateResponse = syncService.syncRecords(uri,
                     SyncUpdatedAppPackageDto.class, accessToken);
@@ -137,7 +138,8 @@ public class ApmSyncHandler {
 
     private void getSyncPackageStaleRecords(String appLcmEndPoint, String tenantId, String accessToken) {
         try {
-            String uri = appLcmEndPoint + "/lcmcontroller/v1" + "/tenants/" + tenantId + "/packages/sync_deleted";
+            String uri = new StringBuilder(appLcmEndPoint).append("/lcmcontroller/v1").append("/tenants/")
+                    .append(tenantId).append("/packages/sync_deleted").toString();
 
             ResponseEntity<SyncDeletedAppPackageDto> updateResponse = syncService.syncRecords(uri,
                     SyncDeletedAppPackageDto.class, accessToken);

@@ -78,7 +78,7 @@ public class ApmExceptionHandler {
     public ResponseEntity<ApmExceptionResponse> handleAccessDeniedException(AccessDeniedException ex) {
         ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(),
                 "Forbidden", Collections.singletonList("User is not authorized to perform this operation"));
-        LOGGER.info("User is not authorized to perform this operation", response);
+        LOGGER.info("User is not authorized to perform this operation: {}", response);
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 

@@ -17,18 +17,17 @@
 package org.edgegallery.mecm.apm.apihandler;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -37,6 +36,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.client.methods.RequestBuilder;
 import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
+import org.edgegallery.mecm.apm.model.AppPackage;
+import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
+import org.edgegallery.mecm.apm.service.DbService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,7 +48,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.stringtemplate.v4.ST;
@@ -108,6 +112,14 @@ public class AccessTokenFilterTest {
         BufferedReader br = new BufferedReader(new StringReader("access_token"));
 		//need to check this further
         assertThrows(NullPointerException.class, () -> filter.doFilter(mockReq, mockResp, mockFilterChain));
+    }
+
+    @Test
+    public void testupdateAppPackages() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        Object[] obj1 = {"ok/success/yes"};
+        Method method1 = AccessTokenFilter.class.getDeclaredMethod("getTenantId", String.class);
+        method1.setAccessible(true);
+        method1.invoke(filter, obj1);
     }
 }
 

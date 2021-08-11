@@ -260,7 +260,7 @@ public class ApmServiceTest {
 
         assertThrows(ApmException.class,() -> apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs));
         assertThrows(ApmException.class,() -> apmService.loadDockerImages(PACKAGE_ID,imageInfoList,downloadedImgs));
-        assertThrows(DockerClientException.class,() -> apmService.uploadAppImage(pkgSyncInfo, imageInfoList, downloadedImgs));
+        assertThrows(DockerClientException.class,() -> apmService.uploadAppImage(imageInfoList, downloadedImgs));
         assertThrows(ApmException.class,() -> apmService.deleteAppPackageFile(null));
         assertThrows(ApmException.class,() -> apmService.getAppPackageFile("class"));
 

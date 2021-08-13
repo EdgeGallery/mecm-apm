@@ -741,8 +741,6 @@ public class ApmServiceFacade {
             String appDeployType = apmService.getAppPackageDeploymentType(null, appPackageId);
 
             if ("vm".equalsIgnoreCase(appDeployType)) {
-                String sourceDir = apmService.getLocalIntendedDir(appPackageId, null);
-                CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + appPackageId + CSAR);
                 dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
                         Constants.APP_IN_SYNC, Constants.SUCCESS);
                 return;
@@ -767,12 +765,10 @@ public class ApmServiceFacade {
                 } else {
                     LOGGER.info("application package has image repo info to download...");
                     apmService.downloadAppImage(syncInfo, imageInfoList, downloadedImgs);
-
                 }
                 apmService.uploadAppImage(imageInfoList, uploadedImgs);
             }
 
-            apmService.updateAppPackageWithRepoInfo(null, appPackageId);
             dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
                     Constants.APP_IN_SYNC, Constants.SUCCESS);
         } catch (ApmException | IllegalArgumentException | NoSuchElementException e) {
@@ -782,8 +778,7 @@ public class ApmServiceFacade {
         } finally {
             apmService.deleteAppPkgDockerImages(downloadedImgs);
             apmService.deleteAppPkgDockerImages(uploadedImgs);
+            apmService.deleteAppPackageFile(appPkgPath);
         }
-        String sourceDir = apmService.getLocalIntendedDir(appPackageId, null);
-        CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + appPackageId + CSAR);
     }
 }

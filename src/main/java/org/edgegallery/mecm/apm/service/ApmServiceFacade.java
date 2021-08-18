@@ -111,7 +111,7 @@ public class ApmServiceFacade {
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto,
                                    PkgSyncInfo syncAppPkg) {
         String packageId = appPackageDto.getAppPkgId();
-        List<SwImageDescr> imageInfoList = null;
+        List<SwImageDescr> imageInfoList;
 
         try {
             InputStream stream = apmService.downloadAppPackage(appPackageDto.getAppPkgPath(), packageId, accessToken);
@@ -144,6 +144,7 @@ public class ApmServiceFacade {
      * @param tenantId      tenant ID
      * @param appPackageDto appPackage details
      * @param localFilePath local package path
+     * @param syncAppPkg    sync application package
      */
     @Async
     public void onboardApplication(String accessToken, String tenantId, AppPackageDto appPackageDto,
@@ -177,7 +178,7 @@ public class ApmServiceFacade {
     private void onboardContainerBasedAppPkg(String accessToken, String tenantId, AppPackageDto appPackageDto,
                                              PkgSyncInfo syncAppPkg, List<SwImageDescr> imageInfoList) {
         String packageId = appPackageDto.getAppPkgId();
-        String dockerImgspath = null;
+        String dockerImgspath;
         boolean downloadImg = true;
         Set<String> loadedImgs = new HashSet<>();
         try {
@@ -282,6 +283,7 @@ public class ApmServiceFacade {
     /**
      * Deletes distributed application package on host.
      *
+     * @param tenantId    tenant ID
      * @param hostIp      host ip
      * @param packageId   package ID
      * @param accessToken access token
@@ -298,13 +300,14 @@ public class ApmServiceFacade {
 
             apmService.sendDeleteRequest(url, accessToken);
         } catch (NoSuchElementException | ApmException ex) {
-            LOGGER.info("failed to delete package on host {}", hostIp);
+            LOGGER.error("failed to delete package on host {}", hostIp);
         }
     }
 
     /**
-     * Deletes application package on host.
+     * Deletes distributed application package.
      *
+     * @param tenantId    tenant ID
      * @param hostIp      host ip
      * @param packageId   package ID
      * @param accessToken access token
@@ -320,7 +323,7 @@ public class ApmServiceFacade {
 
             apmService.sendDeleteRequest(url, accessToken);
         } catch (NoSuchElementException | ApmException ex) {
-            LOGGER.info("failed to delete package on host {}", hostIp);
+            LOGGER.error("failed to delete package on host {}", hostIp);
         }
     }
 
@@ -382,7 +385,7 @@ public class ApmServiceFacade {
                 imagesInSync = true;
             }
         } catch (NoSuchElementException ex) {
-            LOGGER.info("Image is not in sync");
+            LOGGER.error("Image is not in sync");
         }
 
         try {
@@ -398,7 +401,7 @@ public class ApmServiceFacade {
                 }
 
                 uploadedImgs = new HashSet<>();
-                apmService.uploadAppImage(syncAppPkg, imageInfoList, uploadedImgs);
+                apmService.uploadAppImage(imageInfoList, uploadedImgs);
             }
         } catch (ApmException e) {
             throw new ApmException(e.getMessage());
@@ -482,6 +485,7 @@ public class ApmServiceFacade {
                 String tag = imageInfo.getVersion();
                 String name = imageInfo.getName();
                 if (tag == null || name == null) {
+                    LOGGER.error("could not find image name or image version in descriptor");
                     throw new ApmException("could not find image name or image version in descriptor");
                 }
                 String[] imageName = name.split(":");
@@ -492,7 +496,7 @@ public class ApmServiceFacade {
                 LOGGER.info("image is available in repo, skip download/upload {}", imageInfo.getSwImage());
             } catch (ApmException | NoSuchElementException ex) {
                 imagesLstExcImgsInRepo.add(imageInfo);
-                LOGGER.info("image is not available in repo, download image: {}", imageInfo.getSwImage());
+                LOGGER.error("image is not available in repo, download image: {}", imageInfo.getSwImage());
             }
         }
         return imagesLstExcImgsInRepo;
@@ -539,9 +543,11 @@ public class ApmServiceFacade {
     private void uploadApplicationPackage(String mepmEndPoint, String tenantId,
                                           String appId, String pkgId, String accessToken) {
         LOGGER.info("upload application package");
-        String url = HTTPS + mepmEndPoint + LCMCONTROLLER_URL + tenantId + "/packages";
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+                .append(LCMCONTROLLER_URL).append(tenantId).append("/packages").toString();
         try {
-            String packagePath = localDirPath + File.separator + pkgId + tenantId + PATH_DELIMITER + pkgId + CSAR;
+            String packagePath = new StringBuilder(localDirPath).append(File.separator).append(pkgId)
+                    .append(tenantId).append(PATH_DELIMITER).append(pkgId).append(CSAR).toString();
             FileSystemResource appPkgRes = new FileSystemResource(new File(packagePath));
 
             // Preparing request parts.
@@ -552,10 +558,10 @@ public class ApmServiceFacade {
 
             sendRequestWithMultipartFormData(url, parts, accessToken);
         } catch (InvalidPathException e) {
-            LOGGER.info("package ID is invalid");
+            LOGGER.error("package ID is invalid");
             throw new ApmException("invalid package path");
         } catch (ApmException e) {
-            LOGGER.info("failed to upload package  {}", e.getMessage());
+            LOGGER.error("failed to upload package  {}", e.getMessage());
             throw new ApmException("upload package failed " + e.getMessage());
         }
     }
@@ -598,7 +604,8 @@ public class ApmServiceFacade {
     /**
      * Returns application store configuration.
      *
-     * @param appstoreIp appstore IP
+     * @param appstoreIp  appstore IP
+     * @param accessToken access token
      * @return app store configuration
      */
     public AppStore getAppstoreConfig(String appstoreIp, String accessToken) {
@@ -609,6 +616,7 @@ public class ApmServiceFacade {
     /**
      * Returns application repo configuration.
      *
+     * @param accessToken access token
      * @return app store configuration
      */
     public List<AppRepo> getAllAppRepoConfig(String accessToken) {
@@ -620,6 +628,7 @@ public class ApmServiceFacade {
      * Returns application package info.
      *
      * @param appstoreEndPoint appstore end point
+     * @param accessToken      access token
      * @return app store configuration
      */
     public List<AppPackageInfoDto> getAppPackagesInfo(String appstoreEndPoint, String accessToken) {
@@ -664,6 +673,8 @@ public class ApmServiceFacade {
 
     /**
      * Retrieves all application package info.
+     *
+     * @return list of application package info
      */
     public List<AppPackageInfo> getAppPackageInfoDB() {
         return dbService.getAppPackageSyncInfo();
@@ -672,6 +683,7 @@ public class ApmServiceFacade {
     /**
      * Retrieve application package info.
      *
+     * @param id ID
      * @return application package info
      */
     public AppPackageInfo getAppPackageInfoDB(String id) {
@@ -681,6 +693,7 @@ public class ApmServiceFacade {
     /**
      * Returns true if package info exist in DB.
      *
+     * @param id ID
      * @return true if available, otherwise false
      */
     public boolean isAppPackageInfoExistInDB(String id) {
@@ -707,14 +720,15 @@ public class ApmServiceFacade {
         String host = syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort();
         String appPackageId = syncInfo.getAppId() + syncInfo.getPackageId();
 
-        String appPkgPath = HTTPS + host + "/mec/appstore/v1/apps/" + syncInfo.getAppId()
-                + PACKAGES_URL + syncInfo.getPackageId() + "/action/download";
+        String appPkgPath = new StringBuilder(Constants.HTTPS_PROTO).append(host).append("/mec/appstore/v1/apps/")
+                .append(syncInfo.getAppId()).append(PACKAGES_URL)
+                .append(syncInfo.getPackageId()).append("/action/download").toString();
 
         Set<String> uploadedImgs = new HashSet<>();
         Set<String> downloadedImgs = new HashSet<>();
         boolean isDockerImgAvailable = false;
         List<SwImageDescr> imageInfoList;
-        String dockerImgPath = null;
+        String dockerImgPath;
         InputStream stream;
         try {
             dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
@@ -727,8 +741,6 @@ public class ApmServiceFacade {
             String appDeployType = apmService.getAppPackageDeploymentType(null, appPackageId);
 
             if ("vm".equalsIgnoreCase(appDeployType)) {
-                String sourceDir = apmService.getLocalIntendedDir(appPackageId, null);
-                CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + appPackageId + CSAR);
                 dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
                         Constants.APP_IN_SYNC, Constants.SUCCESS);
                 return;
@@ -753,12 +765,10 @@ public class ApmServiceFacade {
                 } else {
                     LOGGER.info("application package has image repo info to download...");
                     apmService.downloadAppImage(syncInfo, imageInfoList, downloadedImgs);
-
                 }
-                apmService.uploadAppImage(syncInfo, imageInfoList, uploadedImgs);
+                apmService.uploadAppImage(imageInfoList, uploadedImgs);
             }
 
-            apmService.updateAppPackageWithRepoInfo(null, appPackageId);
             dbService.updateAppPackageSyncStatus(syncInfo.getAppId(), syncInfo.getPackageId(),
                     Constants.APP_IN_SYNC, Constants.SUCCESS);
         } catch (ApmException | IllegalArgumentException | NoSuchElementException e) {
@@ -768,8 +778,7 @@ public class ApmServiceFacade {
         } finally {
             apmService.deleteAppPkgDockerImages(downloadedImgs);
             apmService.deleteAppPkgDockerImages(uploadedImgs);
+            apmService.deleteAppPackageFile(appPkgPath);
         }
-        String sourceDir = apmService.getLocalIntendedDir(appPackageId, null);
-        CompressUtility.compressAppPackage(sourceDir, sourceDir + File.separator + appPackageId + CSAR);
     }
 }

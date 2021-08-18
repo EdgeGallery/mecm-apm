@@ -31,7 +31,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
-import org.edgegallery.mecm.apm.apihandler.access.AccessTokenFilter;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.exception.ApmExceptionHandler;
 import org.edgegallery.mecm.apm.model.AppPackage;
@@ -84,7 +83,6 @@ public class DbServiceTest {
     private static final String ERROR = "error";
     private static final String FAILED_TO_DISTRIBUTE = "failed to distribute";
     private static final String FAILED_TO_CONNECT = "failed to connect to app store";
-    private static final String TIME = "Thu Nov 21 16:02:24 CST 2019";
 
     private AppPackageDto packageDto = new AppPackageDto();
 
@@ -97,9 +95,6 @@ public class DbServiceTest {
 
     @Autowired
     private DbService dbServices;
-
-    @InjectMocks
-    private AccessTokenFilter accessTokenFilter;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -115,6 +110,9 @@ public class DbServiceTest {
 
     @Mock
     ApmTenantRepository tenantRepository;
+
+    @InjectMocks
+    ApmServiceHelper apmServiceHelper;
 
     @BeforeEach
     public void setUpEach() {
@@ -314,11 +312,6 @@ public class DbServiceTest {
         apm.handleAccessDeniedException(ex);
         apm.handleRuntimeException(ex1);
         apm.handleNoSuchElementException(ex2);
-
-        Object[] obj1 = {"ok/success/yes"};
-        Method method1 = AccessTokenFilter.class.getDeclaredMethod("getTenantId", String.class);
-        method1.setAccessible(true);
-        method1.invoke(accessTokenFilter, obj1);
     }
 
     @Test
@@ -385,7 +378,7 @@ public class DbServiceTest {
         Object[] obj1 = {jsonObject, "place"};
         Method method1 = ApmServiceHelper.class.getDeclaredMethod("getChildJsonObject", JsonObject.class, String.class);
         method1.setAccessible(true);
-        method1.invoke(accessTokenFilter, obj1);
+        method1.invoke(apmServiceHelper, obj1);
     }
 
     @Test(expected = InvocationTargetException.class)
@@ -399,7 +392,7 @@ public class DbServiceTest {
         Object[] obj1 = {jsonObject, "key"};
         Method method1 = ApmServiceHelper.class.getDeclaredMethod("getChildJsonObject", JsonObject.class, String.class);
         method1.setAccessible(true);
-        method1.invoke(accessTokenFilter, obj1);
+        method1.invoke(apmServiceHelper, obj1);
     }
 
     @Test(expected = InvocationTargetException.class)
@@ -413,7 +406,7 @@ public class DbServiceTest {
         Object[] obj1 = {jsonObject, "key"};
         Method method1 = ApmServiceHelper.class.getDeclaredMethod("getChildJsonObjectValue", JsonObject.class, String.class);
         method1.setAccessible(true);
-        method1.invoke(accessTokenFilter, obj1);
+        method1.invoke(apmServiceHelper, obj1);
     }
 
     @Test

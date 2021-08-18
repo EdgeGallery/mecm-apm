@@ -181,8 +181,9 @@ public class ApmService {
     /**
      * Downloads app image from repo.
      *
-     * @param syncInfo      sync app package details
-     * @param imageInfoList list of images
+     * @param syncInfo       sync app package details
+     * @param imageInfoList  list of images
+     * @param downloadedImgs downloaded images
      */
     public void downloadAppImage(PkgSyncInfo syncInfo, List<SwImageDescr> imageInfoList,
                                  Set<String> downloadedImgs) {
@@ -307,6 +308,7 @@ public class ApmService {
     /**
      * Returns list of image info.
      *
+     * @param tenantId      tenant ID
      * @param localFilePath csar file path
      * @param packageId     package Id
      * @return list of image info
@@ -330,7 +332,8 @@ public class ApmService {
     /**
      * Returns application deployment type.
      *
-     * @param packageId     package Id
+     * @param tenantId  tenant ID
+     * @param packageId package Id
      * @return app package deployment type
      */
     public String getAppPackageDeploymentType(String tenantId, String packageId) {
@@ -373,6 +376,7 @@ public class ApmService {
     /**
      * Update application package with MECM repo info.
      *
+     * @param tenantId  tenant ID
      * @param packageId package ID
      */
     public void updateAppPackageWithRepoInfo(String tenantId, String packageId) {
@@ -439,6 +443,7 @@ public class ApmService {
      * Unzip docker images from application package.
      *
      * @param packageId package Id
+     * @param tenantId  tenant ID
      * @return docker image path
      */
     public String unzipDockerImages(String packageId, String tenantId) {
@@ -490,6 +495,7 @@ public class ApmService {
     /**
      * Returns file from the package.
      *
+     * @param tenantId  tenant ID
      * @param packageId package Id
      * @param file      file/path to search
      * @param extension file extension
@@ -649,7 +655,7 @@ public class ApmService {
     }
 
     /**
-     * Returns app package csar file.
+     * Deletes app package csar file.
      *
      * @param localFilePath local file path
      */
@@ -699,7 +705,7 @@ public class ApmService {
                 appRepoRecords.add(apprepo);
             }
         } catch (NoSuchElementException | ApmException ex) {
-            LOGGER.info("failed to fetch app source repositories");
+            LOGGER.error("failed to fetch app source repositories");
         }
         return appRepoRecords;
     }
@@ -903,11 +909,10 @@ public class ApmService {
     /**
      * Uploads app image from repo.
      *
-     * @param syncInfo      app package sync info
      * @param imageInfoList list of images
      * @param uploadedImgs  uploaded images
      */
-    public void uploadAppImage(PkgSyncInfo syncInfo, List<SwImageDescr> imageInfoList,
+    public void uploadAppImage(List<SwImageDescr> imageInfoList,
                                Set<String> uploadedImgs) {
 
         for (SwImageDescr imageInfo : imageInfoList) {

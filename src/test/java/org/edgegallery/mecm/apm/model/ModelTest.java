@@ -40,6 +40,7 @@ public class ModelTest {
     AppPackageSyncInfo appPackageSyncInfo=new AppPackageSyncInfo();
     AppTemplate appTemplate = new AppTemplate();
     AppTemplateInputAttr appTemplateInputAttr = new AppTemplateInputAttr();
+    AppPackageMf appPackageMf = new AppPackageMf();
 
     @Before
     public void setup(){
@@ -89,6 +90,13 @@ public class ModelTest {
         appTemplateInputAttr.setDescription("description");
         appTemplateInputAttr.setType("type");
         appTemplateInputAttr.setDefaultValue("value");
+
+        appPackageMf.setApp_package_version("1.0");
+        appPackageMf.setApp_provider_id("id");
+        appPackageMf.setApp_package_description("description");
+        appPackageMf.setApp_type("app_type");
+        appPackageMf.setApp_product_name("product_name");
+        appPackageMf.setApp_release_data_time("data_time");
     }
 
     @Test
@@ -144,5 +152,15 @@ public class ModelTest {
         Assert.assertEquals(appTemplate, appTemplateInputAttr.getAppTemplate());
         Assert.assertEquals("type", appTemplateInputAttr.getType());
         Assert.assertNotNull(appTemplateInputAttr.toString());
+
+
+        Assert.assertEquals("1.0", appPackageMf.getApp_package_version());
+        Assert.assertEquals("id", appPackageMf.getApp_provider_id());
+        Assert.assertEquals("description", appPackageMf.getApp_package_description());
+        Assert.assertEquals("app_type", appPackageMf.getApp_type());
+        Assert.assertEquals("product_name", appPackageMf.getApp_product_name());
+        Assert.assertEquals("data_time", appPackageMf.getApp_release_data_time());
+        Assert.assertNotNull(appPackageMf.toString());
+
     }
 }

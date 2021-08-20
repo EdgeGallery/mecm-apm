@@ -32,6 +32,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.github.dockerjava.api.exception.DockerClientException;
 import org.apache.commons.io.IOUtils;
 import org.edgegallery.mecm.apm.ApmApplicationTest;
 import org.edgegallery.mecm.apm.exception.ApmException;
@@ -47,8 +50,10 @@ import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.InputStreamResource;
@@ -68,11 +73,11 @@ public class ApmServiceTest {
     private static final String PACKAGE_ID = "f50358433cf8eb4719a62a49ed118c9b";
 
     @Autowired
+    @InjectMocks
     private ApmService apmService;
 
     @Autowired
     private RestTemplate restTemplate;
-    RestClientHelper restClientHelper;
 
     private MockRestServiceServer mockServer;
 
@@ -81,6 +86,10 @@ public class ApmServiceTest {
     SwImageDescr swImageDescr =new SwImageDescr();
     AppRepo appRepo=new AppRepo();
 
+    @BeforeEach
+    void setUp() throws Exception{
+        MockitoAnnotations.initMocks(this);
+    }
 
 
     @Test
@@ -233,8 +242,8 @@ public class ApmServiceTest {
 		}
     }
 
-    @Test(expected = ApmException.class)
-    public void downloadAppImageTest() {
+    @Test
+    public void testExceptionFlow() throws FileNotFoundException {
 
         Map<String, AppRepo> repoMap = new HashMap<>();
         repoMap.put("repoInfo" , appRepo);
@@ -249,18 +258,125 @@ public class ApmServiceTest {
         downloadedImgs.add("image1");
         downloadedImgs.add("image2");
 
-        apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs);
+        assertThrows(ApmException.class,() -> apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs));
+        assertThrows(ApmException.class,() -> apmService.loadDockerImages(PACKAGE_ID,imageInfoList,downloadedImgs));
+        assertThrows(DockerClientException.class,() -> apmService.uploadAppImage(imageInfoList, downloadedImgs));
+        assertThrows(ApmException.class,() -> apmService.deleteAppPackageFile(null));
+        assertThrows(ApmException.class,() -> apmService.getAppPackageFile("class"));
+
     }
 
-    @Test(expected = ApmException.class)
-    public void getAppPackageFileTest() {
-        apmService.getAppPackageFile("classpath:test.csar");
+    @Test
+    public void getMepmCfgOfHostTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"
+                + " 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
+        String url2 = "https://1.1.1.1:8080/inventory/v1/mepms/3.3.3.3";
+        String serviceResponseBody2 = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"
+                + " 'username': 'admin' }";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
+
+        apmService.getMepmCfgOfHost("1.1.1.1", "access token");
+        mockServer.verify();
     }
 
-    @Test(expected = ApmException.class)
-    public void deleteNullAppPackageFileTest(){
-        apmService.deleteAppPackageFile(null);
+    @Test
+    public void getMepmCfgOfHostMepmIpInvalidTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '', 'mepmPort': '808',"
+                + " 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getMepmCfgOfHostIpNullTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmPort': '808', 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getMepmCfgOfHostPortNullTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        String url2 = "https://1.1.1.1:8080/inventory/v1/mepms/3.3.3.3";
+        String serviceResponseBody2 = "{'mepmIp': '3.3.3.3', 'username': 'admin' }";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getMepmCfgOfMepmPortInvalidTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': 'mepmPort',"
+                + " 'mepmUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+
+        String url2 = "https://1.1.1.1:8080/inventory/v1/mepms/3.3.3.3";
+        String serviceResponseBody2 = "{'mepmIp': '3.3.3.3', 'mepmPort': 'mepmPort',"
+                + " 'username': 'admin' }";
+        mockServer.expect(requestTo(url2))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
+
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        mockServer.verify();
+    }
+
+    @Test
+    public void getRepoInfoOfHostNullEdgeRepoPortTest() {
+        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String serviceResponseBody = "{'edgerepoUsername': 'admin' }";
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer.expect(requestTo(url))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
+        assertThrows(ApmException.class, () -> apmService.getRepoInfoOfHost("1.1.1.1",
+                "access token"));
+        mockServer.verify();
+    }
+
+
+    @Test(expected = InvocationTargetException.class)
+    public void unzipDockerImagesTest() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        assertThrows(IllegalArgumentException.class, () -> apmService.unzipDockerImages(PACKAGE_ID,
+                TENANT_ID));
+
+        Object[] obj1 = {"file"};
+        Method method1 = ApmService.class.getDeclaredMethod("getFileExtension", String.class);
+        method1.setAccessible(true);
+        method1.invoke(apmService, obj1);
     }
 
 }

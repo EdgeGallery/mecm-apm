@@ -20,6 +20,7 @@ package org.edgegallery.mecm.apm.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.checkerframework.checker.nullness.qual.AssertNonNullIfNonNull;
 import org.edgegallery.mecm.apm.model.dto.*;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,6 +41,7 @@ public class AppDtoTest {
     AppPackageDto appPackageDto = new AppPackageDto();
     AppTemplateDto appTemplateDto = new AppTemplateDto();
     AppTemplateInputAttrDto appTemplateInputAttrDto = new AppTemplateInputAttrDto();
+    SyncAppPackageDto syncAppPackageDto = new SyncAppPackageDto();
 
     @Before
     public void setUp() {
@@ -72,6 +74,7 @@ public class AppDtoTest {
         appTemplateInputAttrDto.setName("name");
         appTemplateInputAttrDto.setDefaultValue("value");
         appTemplateInputAttrDto.setType("type");
+        syncAppPackageDto.setPackageId("pkgid");
     }
 
     @Test
@@ -106,6 +109,7 @@ public class AppDtoTest {
         Assert.assertEquals("type", appTemplateInputAttrDto.getType());
         Assert.assertEquals("name", appTemplateInputAttrDto.getName());
         Assert.assertNotNull(appTemplateInputAttrDto.toString());
+        Assert.assertNotNull(syncAppPackageDto.toString());
 
     }
 }

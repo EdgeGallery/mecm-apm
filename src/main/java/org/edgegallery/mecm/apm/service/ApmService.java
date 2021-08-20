@@ -196,8 +196,9 @@ public class ApmService {
     /**
      * Downloads app image from repo.
      *
-     * @param syncInfo      sync app package details
-     * @param imageInfoList list of images
+     * @param syncInfo       sync app package details
+     * @param imageInfoList  list of images
+     * @param downloadedImgs downloaded images
      */
     public void downloadAppImage(PkgSyncInfo syncInfo, List<SwImageDescr> imageInfoList,
                                  Set<String> downloadedImgs) {
@@ -253,10 +254,10 @@ public class ApmService {
         return ApmServiceHelper.getImageInfo(yaml);
     }
 
-    private String getEntryDefinitionFromMetadata(String appPkgDir) {
+    private String getEntryDefinitionFromMetadata(String appPkgDir, String metaFile) {
         List<File> files = (List<File>) FileUtils.listFiles(new File(appPkgDir), null, true);
         for (File file: files) {
-            if (ApmServiceHelper.isSuffixExist(file.getName(), ".meta")) {
+            if (ApmServiceHelper.isSuffixExist(file.getName(), metaFile)) {
                 try (InputStream inputStream = new FileInputStream(file)) {
                     Yaml yaml = new Yaml(new SafeConstructor());
                     Map<String, Object> meatData = yaml.load(inputStream);
@@ -283,12 +284,14 @@ public class ApmService {
         try {
             String appPkgDir = getLocalIntendedDir(appPackageDto.getAppPkgId(), tenantId);
 
-            String mainServiceYaml = appPkgDir + File.separator + getEntryDefinitionFromMetadata(appPkgDir);
+            String mainServiceYaml = appPkgDir + File.separator + getEntryDefinitionFromMetadata(appPkgDir,
+                                                                                         "TOSCA.meta");
 
             String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
             CompressUtility.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
 
-            yamlFile = new File(appDefnDir + File.separator + getEntryDefinitionFromMetadata(appDefnDir));
+            yamlFile = new File(appDefnDir + File.separator + getEntryDefinitionFromMetadata(appDefnDir,
+                                                                                        "TOSCA_VNFD.meta"));
         } catch (ApmException e) {
             LOGGER.error("failed to get main service template yaml {}", e.getMessage());
             throw new ApmException("failed to get main service template yaml");
@@ -320,6 +323,7 @@ public class ApmService {
     /**
      * Returns list of image info.
      *
+     * @param tenantId      tenant ID
      * @param localFilePath csar file path
      * @param packageId     package Id
      * @return list of image info
@@ -343,7 +347,8 @@ public class ApmService {
     /**
      * Returns application deployment type.
      *
-     * @param packageId     package Id
+     * @param tenantId  tenant ID
+     * @param packageId package Id
      * @return app package deployment type
      */
     public String getAppPackageDeploymentType(String tenantId, String packageId) {
@@ -457,6 +462,7 @@ public class ApmService {
     /**
      * Update application package with MECM repo info.
      *
+     * @param tenantId  tenant ID
      * @param packageId package ID
      */
     public void updateAppPackageWithRepoInfo(String tenantId, String packageId) {
@@ -523,6 +529,7 @@ public class ApmService {
      * Unzip docker images from application package.
      *
      * @param packageId package Id
+     * @param tenantId  tenant ID
      * @return docker image path
      */
     public String unzipDockerImages(String packageId, String tenantId) {
@@ -574,6 +581,7 @@ public class ApmService {
     /**
      * Returns file from the package.
      *
+     * @param tenantId  tenant ID
      * @param packageId package Id
      * @param file      file/path to search
      * @param extension file extension
@@ -733,7 +741,7 @@ public class ApmService {
     }
 
     /**
-     * Returns app package csar file.
+     * Deletes app package csar file.
      *
      * @param localFilePath local file path
      */
@@ -756,33 +764,11 @@ public class ApmService {
     public AppStore getAppStoreCfgFromInventory(String appstoreIp, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
                 .append(inventoryPort).append(INVENTORY_URL)
-                .append("/appstores/").append(appstoreIp).toString();
+                .append("/appstore/").append(appstoreIp).toString();
 
         String response = sendGetRequest(url, accessToken);
 
         return new Gson().fromJson(response, AppStore.class);
-    }
-
-    /**
-     * Returns edge repository address.
-     *
-     * @param accessToken access token
-     * @return returns all appstore configurations
-     * @throws ApmException exception if failed to get appstore configuration details
-     */
-    public List<AppStore> getAppStoreCfgFromInventory(String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append(INVENTORY_URL).append("/appstores").toString();
-
-        String response = sendGetRequest(url, accessToken);
-
-        List<AppStore> appStoreRecords = new LinkedList<>();
-        JsonArray appStoreRecs = new JsonParser().parse(response).getAsJsonArray();
-        for (JsonElement appStoreRec : appStoreRecs) {
-            AppStore appstore = new Gson().fromJson(appStoreRec, AppStore.class);
-            appStoreRecords.add(appstore);
-        }
-        return appStoreRecords;
     }
 
     /**
@@ -805,7 +791,7 @@ public class ApmService {
                 appRepoRecords.add(apprepo);
             }
         } catch (NoSuchElementException | ApmException ex) {
-            LOGGER.info("failed to fetch app source repositories");
+            LOGGER.error("failed to fetch app source repositories");
         }
         return appRepoRecords;
     }
@@ -923,22 +909,6 @@ public class ApmService {
     }
 
     /**
-     * Returns edge repository address.
-     *
-     * @param tenantId    tenant ID
-     * @param host        repo host
-     * @param accessToken access token
-     * @return returns  apprepo configurations
-     * @throws ApmException exception if failed to get appstore configuration details
-     */
-    public AppRepo getAppRepoCfgFromInventory(String tenantId, String host, String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":")
-                .append(inventoryPort).append(INVENTORY_URL).append("/apprepos/").append(host).toString();
-
-        return new Gson().fromJson(sendGetRequest(url, accessToken), AppRepo.class);
-    }
-
-    /**
      * Returns application package info.
      *
      * @param appstoreEndpoint appstore endpoint
@@ -1025,11 +995,10 @@ public class ApmService {
     /**
      * Uploads app image from repo.
      *
-     * @param syncInfo      app package sync info
      * @param imageInfoList list of images
      * @param uploadedImgs  uploaded images
      */
-    public void uploadAppImage(PkgSyncInfo syncInfo, List<SwImageDescr> imageInfoList,
+    public void uploadAppImage(List<SwImageDescr> imageInfoList,
                                Set<String> uploadedImgs) {
 
         for (SwImageDescr imageInfo : imageInfoList) {

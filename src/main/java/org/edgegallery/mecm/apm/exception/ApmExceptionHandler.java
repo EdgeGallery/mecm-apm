@@ -37,17 +37,6 @@ public class ApmExceptionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmExceptionHandler.class);
 
     /**
-     * Returns error code and message for APM exception.
-     *
-     * @param ex exception while processing request
-     * @return response entity with error code and message
-     */
-    @ExceptionHandler(ApmException.class)
-    public ResponseEntity<String> handleApmException(ApmException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    /**
      * Returns response entity with error details when input validation is failed.
      *
      * @param ex exception while validating input
@@ -80,17 +69,6 @@ public class ApmExceptionHandler {
     }
 
     /**
-     * Returns error code and message for Inventory exception.
-     *
-     * @param ex exception while processing request
-     * @return response entity with error code and message
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgException(IllegalArgumentException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
-    }
-
-    /**
      * Returns error when access is denied.
      *
      * @param ex exception while processing request
@@ -100,7 +78,7 @@ public class ApmExceptionHandler {
     public ResponseEntity<ApmExceptionResponse> handleAccessDeniedException(AccessDeniedException ex) {
         ApmExceptionResponse response = new ApmExceptionResponse(LocalDateTime.now(),
                 "Forbidden", Collections.singletonList("User is not authorized to perform this operation"));
-        LOGGER.info("User is not authorized to perform this operation", response);
+        LOGGER.info("User is not authorized to perform this operation: {}", response);
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 

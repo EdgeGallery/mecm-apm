@@ -34,11 +34,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -49,6 +52,7 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackageMf;
 import org.edgegallery.mecm.apm.model.AppRepo;
@@ -101,6 +105,17 @@ public class ApmService {
     private static final String SW_IMAGE_FILE_FAILURE = "failed to get sw image descriptor file";
     private static final String HTTPS = "https://";
     private static final String SSL = "/usr/app/ssl";
+    private static final int BOUNDED_INPUTSTREAM_SIZE = 8 * 1024;
+    private static final int BUFFER_READER_SIZE = 2 * 1024;
+    private static final int LINE_MAX_LEN = 4 * 1024;
+    private static final int READ_MAX_LONG = 10;
+    private static final String MF_VERSION_META = "app_package_version";
+    private static final String MF_PRODUCT_NAME = "app_product_name";
+    private static final String MF_PROVIDER_META = "app_provider_id";
+    private static final String MF_APP_DATETIME = "app_release_data_time";
+    private static final String MF_APP_CLASS = "app_class";
+    private static final String MF_APP_TYPE ="app_type";
+    private static final String MF_APP_DESCRIPTION = "app_package_description";
 
     @Value("${apm.inventory-endpoint}")
     private String inventoryIp;
@@ -330,49 +345,113 @@ public class ApmService {
     /**
      * Returns application deployment type.
      *
-     * @param packageId     package Id
+     * @param tenantId  tenant ID
+     * @param packageId package Id
      * @return app package deployment type
      */
     public String getAppPackageDeploymentType(String tenantId, String packageId) {
-        Map<String, Object> mfFile;
         File mf;
-
         try {
             mf = getFileFromPackage(tenantId, packageId, ".mf", "mf");
         } catch (ApmException e) {
             LOGGER.error("failed to get deployment type {}", e.getMessage());
             throw new ApmException(SW_IMAGE_FILE_FAILURE);
         }
+        AppPackageMf appPkgMf = new AppPackageMf();
+         try  {
+             readManifest(new File(mf.getPath()), appPkgMf);
+             } catch (ApmException | YAMLException e) {
+                 LOGGER.error("failed to get deployment type {}", e.getMessage());
+                 throw new ApmException(SW_IMAGE_FILE_FAILURE);
+             }
+         return appPkgMf.getApp_class();
+    }
 
-        try (InputStream inputStream = new FileInputStream(new File(mf.getPath()))) {
-
-
-            Yaml yaml = new Yaml(new SafeConstructor());
-            mfFile = yaml.load(inputStream);
-
-            ModelMapper mapper = new ModelMapper();
-            AppPackageMf appPkgMf = mapper.map(mfFile, AppPackageMf.class);
-
-            String appClass = appPkgMf.getApp_class();
-            if ("container".equalsIgnoreCase(appClass)) {
-                return appClass;
-            } else if ("vm".equalsIgnoreCase(appClass)) {
-                return appClass;
-            } else {
-                throw new ApmException("invalid app class");
+    private void readManifest(File file, AppPackageMf appPkgMf) {
+        // Fix the package type to CSAR, temporary
+        try (BoundedInputStream boundedInput = new BoundedInputStream(FileUtils.openInputStream(file),
+            BOUNDED_INPUTSTREAM_SIZE);
+             InputStreamReader isr = new InputStreamReader(boundedInput, StandardCharsets.UTF_8);
+             BufferedReader reader = new BufferedReader(isr, BUFFER_READER_SIZE);) {
+            for (String tempString; (tempString = readLine(reader)) != null; ) {
+                // If line is empty, ignore
+                if ("".equals(tempString) || !tempString.contains(":")) {
+                    continue;
+                }
+                checkLines(tempString, appPkgMf);
             }
-        } catch (ApmException | YAMLException e) {
-            LOGGER.error("failed to get deployment type {}", e.getMessage());
-            throw new ApmException(SW_IMAGE_FILE_FAILURE);
-        } catch (IOException ex) {
-            LOGGER.error("failed to get deployment type");
-            throw new ApmException("failed to get deployment type");
+        } catch (IOException e) {
+            LOGGER.error("Exception while parsing manifest file: {}", e.getMessage());
         }
+    }
+
+
+    private void checkLines(String tempString, AppPackageMf appPkgMf) {
+        try {
+            int count1 = tempString.indexOf(':');
+            String meta = tempString.substring(0, count1).trim();
+            int count = tempString.indexOf(':') + 1;
+            String temp = tempString.substring(count).trim();
+            switch(meta) {
+                case MF_VERSION_META:
+                    appPkgMf.setApp_package_version(temp);
+                    break;
+                case MF_PRODUCT_NAME:
+                    appPkgMf.setApp_product_name(temp);
+                    break;
+                case MF_PROVIDER_META:
+                    appPkgMf.setApp_provider_id(temp);
+                    break;
+                case MF_APP_DATETIME:
+                    appPkgMf.setApp_release_data_time(temp);
+                    break;
+                case MF_APP_CLASS:
+                    appPkgMf.setApp_class(temp);
+                    break;
+                case MF_APP_TYPE:
+                    appPkgMf.setApp_type(temp);
+                    break;
+                case MF_APP_DESCRIPTION:
+                    appPkgMf.setApp_package_description(temp);
+                    break;
+            }
+        } catch (StringIndexOutOfBoundsException e) {
+            LOGGER.error("Nonstandard format: {}", e.getMessage());
+        }
+    }
+
+    private String readLine(BufferedReader br) throws IOException {
+        return read(br, LINE_MAX_LEN);
+    }
+
+    private String read(BufferedReader br, int lineMaxLen) throws IOException {
+        int intC = br.read();
+        if (-1 == intC) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(READ_MAX_LONG);
+        while (intC != -1) {
+            char c = (char) intC;
+            if (c == '\n') {
+                break;
+            }
+            if (sb.length() >= lineMaxLen) {
+                throw new IOException("line too long");
+            }
+            sb.append(c);
+            intC = br.read();
+        }
+        String str = sb.toString();
+        if (!str.isEmpty() && str.endsWith("\r")) {
+            str = str.substring(0, str.length() - 1);
+        }
+        return str;
     }
 
     /**
      * Update application package with MECM repo info.
      *
+     * @param tenantId  tenant ID
      * @param packageId package ID
      */
     public void updateAppPackageWithRepoInfo(String tenantId, String packageId) {

@@ -115,7 +115,7 @@ public class ApmService {
     private static final String MF_APP_DATETIME = "app_release_data_time";
     private static final String MF_APP_CLASS = "app_class";
     private static final String MF_APP_TYPE ="app_type";
-
+    private static final String MF_APP_DESCRIPTION = "app_package_description";
 
     @Value("${apm.inventory-endpoint}")
     private String inventoryIp;
@@ -361,7 +361,6 @@ public class ApmService {
         }
         AppPackageMf appPkgMf = new AppPackageMf();
          try  {
-             System.out.println("以行为单位读取文件内容，一次读一整行：");
              readManifest(new File(mf.getPath()), appPkgMf);
              } catch (ApmException | YAMLException e) {
                  LOGGER.error("failed to get deployment type {}", e.getMessage());
@@ -393,38 +392,30 @@ public class ApmService {
         try {
             int count1 = tempString.indexOf(':');
             String meta = tempString.substring(0, count1).trim();
-            if (meta.equalsIgnoreCase(MF_PRODUCT_NAME)) {
-                int count = tempString.indexOf(':') + 1;
-                appPkgMf.setApp_product_name(tempString.substring(count).trim());
-            }
-            // Check for the package provider name
-            if (meta.equalsIgnoreCase(MF_PROVIDER_META)) {
-                int count = tempString.indexOf(':') + 1;
-                appPkgMf.setApp_provider_id(tempString.substring(count).trim());
-            }
-            // Check for package version
-            if (meta.equalsIgnoreCase(MF_VERSION_META)) {
-                int count = tempString.indexOf(':') + 1;
-                appPkgMf.setApp_package_version(tempString.substring(count).trim());
-            }
-            // Check for package datetime
-            if (meta.equalsIgnoreCase(MF_APP_DATETIME)) {
-                int count = tempString.indexOf(':') + 1;
-                appPkgMf.setApp_release_data_time(tempString.substring(count).trim());
-            }
-            // Check for package class
-            if (meta.equalsIgnoreCase(MF_APP_CLASS)) {
-                int count = tempString.indexOf(':') + 1;
-                appPkgMf.setApp_class(tempString.substring(count).trim());
-            }
-            // Check for package class
-            if (meta.equalsIgnoreCase(MF_APP_CLASS)) {
-                int count = tempString.indexOf(':') + 1;
-                appPkgMf.setApp_class(tempString.substring(count).trim());
-            }
-            if (meta.equalsIgnoreCase(MF_APP_TYPE)) {
-                int count = tempString.indexOf(':') + 1;
-                appPkgMf.setApp_type(tempString.substring(count).trim());
+            int count = tempString.indexOf(':') + 1;
+            String temp = tempString.substring(count).trim();
+            switch(meta) {
+                case MF_VERSION_META:
+                    appPkgMf.setApp_package_version(temp);
+                    break;
+                case MF_PRODUCT_NAME:
+                    appPkgMf.setApp_product_name(temp);
+                    break;
+                case MF_PROVIDER_META:
+                    appPkgMf.setApp_provider_id(temp);
+                    break;
+                case MF_APP_DATETIME:
+                    appPkgMf.setApp_release_data_time(temp);
+                    break;
+                case MF_APP_CLASS:
+                    appPkgMf.setApp_class(temp);
+                    break;
+                case MF_APP_TYPE:
+                    appPkgMf.setApp_type(temp);
+                    break;
+                case MF_APP_DESCRIPTION:
+                    appPkgMf.setApp_package_description(temp);
+                    break;
             }
         } catch (StringIndexOutOfBoundsException e) {
             LOGGER.error("Nonstandard format: {}", e.getMessage());
@@ -918,7 +909,7 @@ public class ApmService {
      */
     public List<AppPackageInfoDto> getAppPackagesInfoFromAppStore(String appstoreEndpoint, String accessToken) {
         String appsUrl = new StringBuilder(HTTPS).append(appstoreEndpoint)
-                .append("/mec/appst.getMepmCfgOfHostore/v1/apps").toString();
+                .append("/mec/appstore/v1/apps").toString();
 
         String response = sendGetRequest(appsUrl, accessToken);
 

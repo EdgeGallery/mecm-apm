@@ -19,6 +19,7 @@ package org.edgegallery.mecm.apm.service;
 
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.ConflictException;
@@ -38,7 +39,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -334,8 +334,8 @@ public class ApmService {
 
         File swImageDesc = getFileFromPackage(tenantId, packageId, "Image/SwImageDesc", "json");
         try {
-            return ApmServiceHelper.getSwImageDescrInfo(FileUtils.readFileToString(
-                    swImageDesc, StandardCharsets.UTF_8));
+            return ApmServiceHelper
+                .getSwImageDescrInfo(FileUtils.readFileToString(swImageDesc, StandardCharsets.UTF_8));
         } catch (IOException e) {
             LOGGER.error(FAILED_TO_GET_SW_IMAGE_FILE, e.getMessage());
             throw new ApmException(SW_IMAGE_FILE_FAILURE);
@@ -345,7 +345,7 @@ public class ApmService {
     /**
      * Returns application deployment type.
      *
-     * @param tenantId  tenant ID
+     * @param tenantId tenant ID
      * @param packageId package Id
      * @return app package deployment type
      */
@@ -358,13 +358,13 @@ public class ApmService {
             throw new ApmException(SW_IMAGE_FILE_FAILURE);
         }
         AppPackageMf appPkgMf = new AppPackageMf();
-         try  {
-             readManifest(new File(mf.getPath()), appPkgMf);
-             } catch (ApmException | YAMLException e) {
-                 LOGGER.error("failed to get deployment type {}", e.getMessage());
-                 throw new ApmException(SW_IMAGE_FILE_FAILURE);
-             }
-         return appPkgMf.getApp_class();
+        try {
+            readManifest(new File(mf.getPath()), appPkgMf);
+        } catch (ApmException | YAMLException e) {
+            LOGGER.error("failed to get deployment type {}", e.getMessage());
+            throw new ApmException(SW_IMAGE_FILE_FAILURE);
+        }
+        return appPkgMf.getApp_class();
     }
 
     private void readManifest(File file, AppPackageMf appPkgMf) {
@@ -385,14 +385,13 @@ public class ApmService {
         }
     }
 
-
     private void checkLines(String tempString, AppPackageMf appPkgMf) {
         try {
             int count1 = tempString.indexOf(':');
             String meta = tempString.substring(0, count1).trim();
             int count = tempString.indexOf(':') + 1;
             String temp = tempString.substring(count).trim();
-            switch(meta) {
+            switch (meta) {
                 case MF_VERSION_META:
                     appPkgMf.setApp_package_version(temp);
                     break;
@@ -413,6 +412,8 @@ public class ApmService {
                     break;
                 case MF_APP_DESCRIPTION:
                     appPkgMf.setApp_package_description(temp);
+                    break;
+                default:
                     break;
             }
         } catch (StringIndexOutOfBoundsException e) {

@@ -19,7 +19,6 @@ package org.edgegallery.mecm.apm.service;
 
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.ConflictException;
@@ -114,7 +113,9 @@ public class ApmService {
     private static final String MF_PROVIDER_META = "app_provider_id";
     private static final String MF_APP_DATETIME = "app_release_data_time";
     private static final String MF_APP_CLASS = "app_class";
-    private static final String MF_APP_TYPE ="app_type";
+
+    private static final String MF_APP_TYPE = "app_type";
+
     private static final String MF_APP_DESCRIPTION = "app_package_description";
 
     @Value("${apm.inventory-endpoint}")

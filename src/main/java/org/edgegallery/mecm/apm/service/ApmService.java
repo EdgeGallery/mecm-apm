@@ -19,7 +19,6 @@ package org.edgegallery.mecm.apm.service;
 
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.ConflictException;

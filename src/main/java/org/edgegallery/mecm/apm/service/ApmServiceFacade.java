@@ -22,6 +22,9 @@ import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.ERROR;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.InvalidPathException;
@@ -32,6 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
@@ -417,17 +423,40 @@ public class ApmServiceFacade {
         for (MecHostDto host : appPackageDto.getMecHostInfo()) {
             String distributionStatus = "Distributed";
             String error = "";
-
+            String status = "";
+            final String[] response = new String[1];
             try {
+                LOGGER.info("Entering distribution flow");
                 uploadAndDistributeApplicationPackage(accessToken, host.getHostIp(), tenantId,
                         appPackageDto.getAppId(), packageId);
+                //  wait for distribution status to fetch from aapplcm
+                String mepmEndPoint = apmService.getMepmCfgOfHost(host.getHostIp(), accessToken);
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        response[0] = getdistributeApplicationPackage(mepmEndPoint, tenantId,
+                                packageId, host.getHostIp(), accessToken);
+                    }
+                };
+                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                scheduler.scheduleAtFixedRate(runnable, 0, 30, TimeUnit.SECONDS); //returns a ScheduledFuture
+                Thread.sleep(600000L);
+                scheduler.shutdown();
+                LOGGER.info("response is : {}", response[0]);
+                JsonArray json = new JsonParser().parse(String.valueOf(response[0])).getAsJsonArray();
+                JsonArray jsonarray = new JsonArray();
+                for (JsonElement hosts : json) {
+                    jsonarray = hosts.getAsJsonObject().get("mecHostInfo").getAsJsonArray();
+                }
+                for (JsonElement element : jsonarray) {
+                    status = element.getAsJsonObject().get("status").getAsString();
+                }
+                LOGGER.info("status is : {}", status);
 
                 dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(),
-                        distributionStatus, error);
+                        status, error);
+                LOGGER.info("Application package {}, on-boarding on {} completed...", packageId, host.getHostIp());
 
-                LOGGER.info("Application package {}, on-boading on {} completed...", packageId, host.getHostIp());
-
-            } catch (ApmException e) {
+            } catch (ApmException | InterruptedException e) {
                 distributionStatus = ERROR;
                 error = e.getMessage();
                 LOGGER.error(Constants.DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
@@ -436,6 +465,16 @@ public class ApmServiceFacade {
                 throw new ApmException(e.getMessage());
             }
         }
+    }
+
+    private String getdistributeApplicationPackage(String mepmEndPoint, String tenantId,
+                                                   String pkgId, String hostIp, String accessToken) {
+        LOGGER.info("distribute application package ");
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+                .append(LCMCONTROLLER_URL).append(tenantId)
+                .append(PACKAGES_URL).append(pkgId).toString();
+        String response = apmService.sendGetRequest(url, accessToken);
+        return response;
     }
 
     /**

@@ -35,9 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
@@ -419,39 +416,44 @@ public class ApmServiceFacade {
 
     private void distributeApplication(String tenantId, AppPackageDto appPackageDto, String accessToken) {
         String packageId = appPackageDto.getAppPkgId();
-
         for (MecHostDto host : appPackageDto.getMecHostInfo()) {
-            String distributionStatus = "Distributed";
+            String distributionStatus;
             String error = "";
             String status = "";
-            final String[] response = new String[1];
+            String[] response = new String[1];
+            boolean timeout = false;
             try {
                 LOGGER.info("Entering distribution flow");
                 uploadAndDistributeApplicationPackage(accessToken, host.getHostIp(), tenantId,
                         appPackageDto.getAppId(), packageId);
                 //  wait for distribution status to fetch from aapplcm
                 String mepmEndPoint = apmService.getMepmCfgOfHost(host.getHostIp(), accessToken);
-                Runnable runnable = new Runnable() {
-                    public void run() {
-                        response[0] = getdistributeApplicationPackage(mepmEndPoint, tenantId,
-                                packageId, host.getHostIp(), accessToken);
+                for (int i = 0; i < 20; i++) {
+                    response[0] = getdistributeApplicationPackage(mepmEndPoint, tenantId,
+                            packageId, host.getHostIp(), accessToken);
+                    LOGGER.info("response is : {} attempt no. {}", response[0], i);
+                    JsonArray json = new JsonParser().parse(String.valueOf(response[0])).getAsJsonArray();
+                    JsonArray jsonarray = new JsonArray();
+                    for (JsonElement hosts : json) {
+                        jsonarray = hosts.getAsJsonObject().get("mecHostInfo").getAsJsonArray();
                     }
-                };
-                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                scheduler.scheduleAtFixedRate(runnable, 0, 30, TimeUnit.SECONDS); //returns a ScheduledFuture
-                Thread.sleep(600000L);
-                scheduler.shutdown();
-                LOGGER.info("response is : {}", response[0]);
-                JsonArray json = new JsonParser().parse(String.valueOf(response[0])).getAsJsonArray();
-                JsonArray jsonarray = new JsonArray();
-                for (JsonElement hosts : json) {
-                    jsonarray = hosts.getAsJsonObject().get("mecHostInfo").getAsJsonArray();
+                    for (JsonElement element : jsonarray) {
+                        status = element.getAsJsonObject().get("status").getAsString();
+                    }
+                    if (status.equalsIgnoreCase("Distributing")) {
+                        Thread.sleep(30 * 1000L);
+                        timeout = true;
+                    }
+                    if (status.equalsIgnoreCase("Distributed") || status.equalsIgnoreCase("Error"))  {
+                        timeout = false;
+                        LOGGER.info("status is : {} attempt no. {}", status, i);
+                        break;
+                    }
+                    LOGGER.info("status is : {} attempt no. {}", status, i);
                 }
-                for (JsonElement element : jsonarray) {
-                    status = element.getAsJsonObject().get("status").getAsString();
+                if (timeout) {
+                    status = "Timeout";
                 }
-                LOGGER.info("status is : {}", status);
-
                 dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(),
                         status, error);
                 LOGGER.info("Application package {}, on-boarding on {} completed...", packageId, host.getHostIp());

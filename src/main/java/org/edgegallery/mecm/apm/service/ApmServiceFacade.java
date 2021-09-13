@@ -22,6 +22,9 @@ import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
 import static org.edgegallery.mecm.apm.utils.Constants.ERROR;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.InvalidPathException;
@@ -413,21 +416,49 @@ public class ApmServiceFacade {
 
     private void distributeApplication(String tenantId, AppPackageDto appPackageDto, String accessToken) {
         String packageId = appPackageDto.getAppPkgId();
-
         for (MecHostDto host : appPackageDto.getMecHostInfo()) {
-            String distributionStatus = "Distributed";
+            String distributionStatus;
             String error = "";
-
+            String status = "";
+            String[] response = new String[1];
+            boolean timeout = false;
             try {
+                LOGGER.info("Entering distribution flow");
                 uploadAndDistributeApplicationPackage(accessToken, host.getHostIp(), tenantId,
                         appPackageDto.getAppId(), packageId);
-
+                //  wait for distribution status to fetch from aapplcm
+                String mepmEndPoint = apmService.getMepmCfgOfHost(host.getHostIp(), accessToken);
+                for (int i = 0; i < 20; i++) {
+                    response[0] = getdistributeApplicationPackage(mepmEndPoint, tenantId,
+                            packageId, host.getHostIp(), accessToken);
+                    LOGGER.info("response is : {} attempt no. {}", response[0], i);
+                    JsonArray json = new JsonParser().parse(String.valueOf(response[0])).getAsJsonArray();
+                    JsonArray jsonarray = new JsonArray();
+                    for (JsonElement hosts : json) {
+                        jsonarray = hosts.getAsJsonObject().get("mecHostInfo").getAsJsonArray();
+                    }
+                    for (JsonElement element : jsonarray) {
+                        status = element.getAsJsonObject().get("status").getAsString();
+                    }
+                    if (status.equalsIgnoreCase("Distributing")) {
+                        Thread.sleep(30 * 1000L);
+                        timeout = true;
+                    }
+                    if (status.equalsIgnoreCase("Distributed") || status.equalsIgnoreCase("Error"))  {
+                        timeout = false;
+                        LOGGER.info("status is : {} attempt no. {}", status, i);
+                        break;
+                    }
+                    LOGGER.info("status is : {} attempt no. {}", status, i);
+                }
+                if (timeout) {
+                    status = "Timeout";
+                }
                 dbService.updateDistributionStatusOfHost(tenantId, packageId, host.getHostIp(),
-                        distributionStatus, error);
+                        status, error);
+                LOGGER.info("Application package {}, on-boarding on {} completed...", packageId, host.getHostIp());
 
-                LOGGER.info("Application package {}, on-boading on {} completed...", packageId, host.getHostIp());
-
-            } catch (ApmException e) {
+            } catch (ApmException | InterruptedException e) {
                 distributionStatus = ERROR;
                 error = e.getMessage();
                 LOGGER.error(Constants.DISTRIBUTION_IN_HOST_FAILED, packageId, host.getHostIp());
@@ -436,6 +467,16 @@ public class ApmServiceFacade {
                 throw new ApmException(e.getMessage());
             }
         }
+    }
+
+    private String getdistributeApplicationPackage(String mepmEndPoint, String tenantId,
+                                                   String pkgId, String hostIp, String accessToken) {
+        LOGGER.info("distribute application package ");
+        String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+                .append(LCMCONTROLLER_URL).append(tenantId)
+                .append(PACKAGES_URL).append(pkgId).toString();
+        String response = apmService.sendGetRequest(url, accessToken);
+        return response;
     }
 
     /**

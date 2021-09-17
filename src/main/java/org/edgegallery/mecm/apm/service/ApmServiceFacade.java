@@ -440,7 +440,9 @@ public class ApmServiceFacade {
                     for (JsonElement element : jsonarray) {
                         status = element.getAsJsonObject().get("status").getAsString();
                     }
-                    if (status.equalsIgnoreCase("Distributing")) {
+                    if (status.equalsIgnoreCase("Distributing")
+                            || status.equalsIgnoreCase("uploading")
+                            || status.equalsIgnoreCase("uploaded")) {
                         Thread.sleep(30 * 1000L);
                         timeout = true;
                     }

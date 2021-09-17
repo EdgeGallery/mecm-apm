@@ -243,30 +243,6 @@ public class ApmServiceTest {
     }
 
     @Test
-    public void testExceptionFlow() throws FileNotFoundException {
-
-        Map<String, AppRepo> repoMap = new HashMap<>();
-        repoMap.put("repoInfo" , appRepo);
-        pkgSyncInfo.setRepoInfo(repoMap);
-
-        swImageDescr.setSwImage("swImage");
-
-        List<SwImageDescr> imageInfoList= new ArrayList<>();
-        imageInfoList.add(swImageDescr);
-
-        Set<String> downloadedImgs = new HashSet<>();
-        downloadedImgs.add("image1");
-        downloadedImgs.add("image2");
-
-        assertThrows(ApmException.class,() -> apmService.downloadAppImage(pkgSyncInfo,imageInfoList,downloadedImgs));
-        assertThrows(ApmException.class,() -> apmService.loadDockerImages(PACKAGE_ID,imageInfoList,downloadedImgs));
-        assertThrows(DockerClientException.class,() -> apmService.uploadAppImage(imageInfoList, downloadedImgs));
-        assertThrows(ApmException.class,() -> apmService.deleteAppPackageFile(null));
-        assertThrows(ApmException.class,() -> apmService.getAppPackageFile("class"));
-
-    }
-
-    @Test
     public void getMepmCfgOfHostTest() {
         String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
         String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"

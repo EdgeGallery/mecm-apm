@@ -441,12 +441,13 @@ public class ApmServiceFacade {
                         status = element.getAsJsonObject().get("status").getAsString();
                     }
                     if (status.equalsIgnoreCase("Distributing")
-                            || status.equalsIgnoreCase("uploading")
-                            || status.equalsIgnoreCase("uploaded")) {
+                            || status.equalsIgnoreCase("uploading")) {
                         Thread.sleep(30 * 1000L);
                         timeout = true;
                     }
-                    if (status.equalsIgnoreCase("Distributed") || status.equalsIgnoreCase("Error"))  {
+                    if (status.equalsIgnoreCase("Distributed")
+                            || status.equalsIgnoreCase("Error")
+                            || status.equalsIgnoreCase("uploaded"))  {
                         timeout = false;
                         LOGGER.info("status is : {} attempt no. {}", status, i);
                         break;

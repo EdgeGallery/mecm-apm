@@ -420,7 +420,7 @@ public class ApmServiceFacade {
             String distributionStatus;
             String error = "";
             String status = "";
-            String[] response = new String[1];
+            String response = "";
             boolean timeout = false;
             try {
                 LOGGER.info("Entering distribution flow");
@@ -429,10 +429,10 @@ public class ApmServiceFacade {
                 //  wait for distribution status to fetch from aapplcm
                 String mepmEndPoint = apmService.getMepmCfgOfHost(host.getHostIp(), accessToken);
                 for (int i = 0; i < 20; i++) {
-                    response[0] = getdistributeApplicationPackage(mepmEndPoint, tenantId,
+                    response = getAppPkgDistributionStatus(mepmEndPoint, tenantId,
                             packageId, host.getHostIp(), accessToken);
-                    LOGGER.info("response is : {} attempt no. {}", response[0], i);
-                    JsonArray json = new JsonParser().parse(String.valueOf(response[0])).getAsJsonArray();
+                    LOGGER.info("response is : {} attempt no. {}", response, i);
+                    JsonArray json = new JsonParser().parse(response).getAsJsonArray();
                     JsonArray jsonarray = new JsonArray();
                     for (JsonElement hosts : json) {
                         jsonarray = hosts.getAsJsonObject().get("mecHostInfo").getAsJsonArray();
@@ -440,6 +440,7 @@ public class ApmServiceFacade {
                     for (JsonElement element : jsonarray) {
                         status = element.getAsJsonObject().get("status").getAsString();
                     }
+
                     if (status.equalsIgnoreCase("Distributing")
                             || status.equalsIgnoreCase("uploading")) {
                         Thread.sleep(30 * 1000L);
@@ -472,7 +473,7 @@ public class ApmServiceFacade {
         }
     }
 
-    private String getdistributeApplicationPackage(String mepmEndPoint, String tenantId,
+    private String getAppPkgDistributionStatus(String mepmEndPoint, String tenantId,
                                                    String pkgId, String hostIp, String accessToken) {
         LOGGER.info("distribute application package ");
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)

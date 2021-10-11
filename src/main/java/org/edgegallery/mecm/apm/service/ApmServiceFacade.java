@@ -80,6 +80,7 @@ public class ApmServiceFacade {
     private static final Logger LOGGER = LoggerFactory.getLogger(ApmServiceFacade.class);
     private static final String TAR_GZ = ".tar.gz";
     private static final String LCMCONTROLLER_URL = "/lcmcontroller/v1/tenants/";
+    private static final String LCMCONTROLLER_URL_V2 = "/lcmcontroller/v2/tenants/";
     private static final String PACKAGES_URL = "/packages/";
     private static final String HTTPS = "https://";
     private static final String PATH_DELIMITER = "/";
@@ -465,6 +466,7 @@ public class ApmServiceFacade {
                 try {
                     Thread.sleep(30 * 1000L);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     LOGGER.error("InterruptedException in updateDistributionStatus");
                 }
                 timeout = true;
@@ -491,7 +493,7 @@ public class ApmServiceFacade {
                                                String pkgId, String accessToken) {
         LOGGER.info("distribute application package ");
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
-                .append(LCMCONTROLLER_URL).append(tenantId)
+                .append(LCMCONTROLLER_URL_V2).append(tenantId)
                 .append(PACKAGES_URL).append(pkgId).toString();
         return apmService.sendGetRequest(url, accessToken);
     }

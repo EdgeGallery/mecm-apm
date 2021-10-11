@@ -333,6 +333,14 @@ public class DbService {
                         tenantId, packageId, hostIp);
             }
         });
+
+        List<MecHost> mecHost = mecHostRepository.findByPkgHostKey(id);
+        if (mecHost.isEmpty()) {
+            Optional<AppTemplate> template = appTemplateRepository.findById(id);
+            if (template.isPresent()) {
+                appTemplateRepository.delete(template.get());
+            }
+        }
     }
 
     /**

@@ -16,8 +16,14 @@
 
 package org.edgegallery.mecm.apm.repository;
 
+import java.util.List;
 import org.edgegallery.mecm.apm.model.MecHost;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 public interface MecHostRepository extends CrudRepository<MecHost, String> {
+
+    @Query(value = "SELECT * FROM apppackagehost m WHERE m.pkg_host_key=:pkgHostKey", nativeQuery = true)
+    List<MecHost> findByPkgHostKey(@Param("pkgHostKey") String pkgHostKey);
 }

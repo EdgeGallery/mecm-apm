@@ -466,6 +466,7 @@ public class ApmServiceFacade {
                 try {
                     Thread.sleep(30 * 1000L);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     LOGGER.error("InterruptedException in updateDistributionStatus");
                 }
                 timeout = true;

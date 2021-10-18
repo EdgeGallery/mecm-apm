@@ -473,14 +473,14 @@ public class ApmHandlerTest {
                         MediaType.APPLICATION_JSON)); /// validate response , use this query , // mepm port ,
 
         // Mocking get deleted app instance infos API
-        url = "http://1.1.1.1:10000/lcmcontroller/v1/tenants/" + TENANT_ID + "/packages/" +
+        url = "http://1.1.1.1:10000/lcmcontroller/v2/tenants/" + TENANT_ID + "/packages/" +
                 "sync_deleted";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess());
 
         // Mocking get updated app instance infos API
-        url = "http://1.1.1.1:10000/lcmcontroller/v1/tenants/" + TENANT_ID + "/packages/" +
+        url = "http://1.1.1.1:10000/lcmcontroller/v2/tenants/" + TENANT_ID + "/packages/" +
                 "sync_updated";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))

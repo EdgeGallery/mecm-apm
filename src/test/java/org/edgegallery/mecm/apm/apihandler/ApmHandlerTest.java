@@ -453,7 +453,7 @@ public class ApmHandlerTest {
 
     private void syncAppInstanceInfos(MockRestServiceServer server) throws Exception {
         // Mocking get MEC host from inventory
-        String url = "http://1.1.1.1:8080/inventory/v1/mechosts/";
+        String url = "http://1.1.1.1:8080/inventory/v1/tenants/" + TENANT_ID + "/mechosts/";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess("[{\"mechostIp\":\"1.1.1.1\",\"mechostName\":\"TestHost\","

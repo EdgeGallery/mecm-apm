@@ -244,7 +244,7 @@ public class ApmServiceTest {
 
     @Test
     public void getMepmCfgOfHostTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/tenants/"+ TENANT_ID + "/mechosts/1.1.1.1";
         String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': '808',"
                 + " 'mepmUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -259,13 +259,13 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
 
-        apmService.getMepmCfgOfHost("1.1.1.1", "access token");
+        apmService.getMepmCfgOfHost(TENANT_ID, "1.1.1.1", "access token");
         mockServer.verify();
     }
 
     @Test
     public void getMepmCfgOfHostMepmIpInvalidTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/tenants/" + TENANT_ID + "/mechosts/1.1.1.1";
         String serviceResponseBody = "{'mepmIp': '', 'mepmPort': '808',"
                 + " 'mepmUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -273,26 +273,26 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost(TENANT_ID, "1.1.1.1", "access token"));
         mockServer.verify();
     }
 
     @Test
     public void getMepmCfgOfHostIpNullTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/tenants/"+ TENANT_ID + "/mechosts/1.1.1.1";
         String serviceResponseBody = "{'mepmPort': '808', 'mepmUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost(TENANT_ID, "1.1.1.1", "access token"));
         mockServer.verify();
     }
 
     @Test
     public void getMepmCfgOfHostPortNullTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/tenants/" + TENANT_ID + "/mechosts/1.1.1.1";
         String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
         mockServer.expect(requestTo(url))
@@ -305,13 +305,13 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
 
-        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost(TENANT_ID, "1.1.1.1", "access token"));
         mockServer.verify();
     }
 
     @Test
     public void getMepmCfgOfMepmPortInvalidTest() {
-        String url = "https://1.1.1.1:8080/inventory/v1/mechosts/1.1.1.1";
+        String url = "https://1.1.1.1:8080/inventory/v1/tenants/"+ TENANT_ID + "/mechosts/1.1.1.1";
         String serviceResponseBody = "{'mepmIp': '3.3.3.3', 'mepmPort': 'mepmPort',"
                 + " 'mepmUsername': 'admin' }";
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -326,7 +326,7 @@ public class ApmServiceTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody2, MediaType.APPLICATION_JSON));
 
-        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost("1.1.1.1", "access token"));
+        assertThrows(ApmException.class, () -> apmService.getMepmCfgOfHost(TENANT_ID, "1.1.1.1", "access token"));
         mockServer.verify();
     }
 

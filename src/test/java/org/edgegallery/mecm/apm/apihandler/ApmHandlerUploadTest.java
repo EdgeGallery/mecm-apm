@@ -101,7 +101,7 @@ public class ApmHandlerUploadTest {
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(serviceResponseBody, MediaType.APPLICATION_JSON));
 
-        String url2 = "https://1.1.1.1:8080/inventory/v1/mechosts/3.3.3.3";
+        String url2 = "https://1.1.1.1:8080/inventory/v1/tenants/" + TENANT_ID + "/mechosts/3.3.3.3";
         serviceResponseBody = "{\"mechostIp\":\"3.3.3.3\",\"mechostName\":\"TestHost\","
                 + "\"zipCode\":null,"
                 + "\"city\":\"TestCity\","

@@ -687,14 +687,15 @@ public class ApmService {
     /**
      * Gets MEPM endpoint from inventory.
      *
+     * @param tenantId tenant ID
      * @param hostIp host ip
      * @param accessToken access token
      * @return returns MEPM config info
      * @throws ApmException exception if failed to get MEPM config details
      */
-    public String getMepmCfgOfHost(String hostIp, String accessToken) {
+    public String getMepmCfgOfHost(String tenantId, String hostIp, String accessToken) {
         String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":").append(inventoryPort)
-            .append(INVENTORY_URL).append("/mechosts/").append(hostIp).toString();
+            .append(INVENTORY_URL).append("/tenants/").append(tenantId).append("/mechosts/").append(hostIp).toString();
 
         String response = sendGetRequest(url, accessToken);
 

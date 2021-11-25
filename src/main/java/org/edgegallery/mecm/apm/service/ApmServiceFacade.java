@@ -296,7 +296,7 @@ public class ApmServiceFacade {
     public void deleteDistributedAppPackageOnHost(String tenantId, String hostIp,
                                                   String packageId, String accessToken) {
         try {
-            String mepmEndPoint = apmService.getMepmCfgOfHost(hostIp, accessToken);
+            String mepmEndPoint = apmService.getMepmCfgOfHost(tenantId, hostIp, accessToken);
 
             String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
                     .append(LCMCONTROLLER_URL).append(tenantId)
@@ -319,7 +319,7 @@ public class ApmServiceFacade {
      */
     public void deleteDistributedAppPackage(String tenantId, String hostIp, String packageId, String accessToken) {
         try {
-            String mepmEndPoint = apmService.getMepmCfgOfHost(hostIp, accessToken);
+            String mepmEndPoint = apmService.getMepmCfgOfHost(tenantId, hostIp, accessToken);
 
             String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
                     .append(LCMCONTROLLER_URL).append(tenantId)
@@ -425,7 +425,7 @@ public class ApmServiceFacade {
                 uploadAndDistributeApplicationPackage(accessToken, host.getHostIp(), tenantId,
                         appPackageDto.getAppId(), packageId);
                 //  wait for distribution status to fetch from aapplcm
-                String mepmEndPoint = apmService.getMepmCfgOfHost(host.getHostIp(), accessToken);
+                String mepmEndPoint = apmService.getMepmCfgOfHost(tenantId, host.getHostIp(), accessToken);
                 updateDistributionStatus(mepmEndPoint, tenantId, packageId, accessToken, error, host.getHostIp());
 
             } catch (ApmException e) {
@@ -574,7 +574,7 @@ public class ApmServiceFacade {
     public void uploadAndDistributeApplicationPackage(String accessToken, String hostIp, String tenantId,
                                                       String appId, String packageId) {
         try {
-            String mepmEndPoint = apmService.getMepmCfgOfHost(hostIp, accessToken);
+            String mepmEndPoint = apmService.getMepmCfgOfHost(tenantId, hostIp, accessToken);
 
             uploadApplicationPackage(mepmEndPoint, tenantId, appId, packageId, accessToken);
 

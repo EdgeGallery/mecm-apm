@@ -104,7 +104,7 @@ public class ApmSyncHandler {
     private void synchronizePackageMgmtDataFromEdges(String tenantId,  String accessToken) {
         LOGGER.info("Sync application package from edge");
         try {
-            Set<String> mepms = getInventoryMecHostsCfg(accessToken);
+            Set<String> mepms = getInventoryMecHostsCfg(tenantId, accessToken);
             for (String mepm: mepms) {
                 LOGGER.info("Sync application package infos from edge {}", mepm);
                 String appLcmEndPoint = getInventoryMepmCfg(mepm, accessToken);
@@ -230,14 +230,16 @@ public class ApmSyncHandler {
     /**
      * Gets MEPM configurations from inventory.
      *
+     * @param tenantId tenant ID
      * @param accessToken access token
      * @return returns MEPM configurations
      * @throws ApmException exception if failed to get edge repository details
      */
-    private Set<String> getInventoryMecHostsCfg(String accessToken) {
+    private Set<String> getInventoryMecHostsCfg(String tenantId, String accessToken) {
 
         String url = new StringBuilder(inventoryService).append(":")
-                .append(inventoryServicePort).append("/inventory/v1").append("/mechosts/").toString();
+                .append(inventoryServicePort).append("/inventory/v1").append("/tenants/").append(tenantId)
+                .append("/mechosts/").toString();
 
         ResponseEntity<String> response = syncService.sendRequest(url, HttpMethod.GET, accessToken, null);
 

@@ -26,7 +26,8 @@ RUN apk update &&\
     groupadd -r -g $GID $GROUP_NAME &&\
     useradd -r -u $UID -g $GID -d $APP_HOME -s /sbin/nologin -c "Docker image user" $USER_NAME
 
-RUN apk add docker
+RUN groupadd docker &&\
+    gpasswd -a $USER_NAME docker
 # Set the working directory.
 WORKDIR $APP_HOME
 

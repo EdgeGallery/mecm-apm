@@ -91,7 +91,8 @@ public final class FileChecker {
 
     static boolean isAllowedFileName(String originalFilename) {
         return isValid(originalFilename)
-                && "csar".equals(Files.getFileExtension(originalFilename.toLowerCase()));
+                && ("csar".equals(Files.getFileExtension(originalFilename.toLowerCase()))
+                || "zip".equals(Files.getFileExtension(originalFilename.toLowerCase())));
     }
 
     static boolean isValid(String fileName) {

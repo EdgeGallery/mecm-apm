@@ -30,7 +30,7 @@
     <spring-boot.version>2.3.3.RELEASE</spring-boot.version>
     <lombok.version>1.18.10</lombok.version>
     <spring-security-oauth2-autoconfigure.version>2.2.2.RELEASE</spring-security-oauth2-autoconfigure.version>
-    <log4j.version>2.15.0</log4j.version>
+    <log4j.version>2.17.0</log4j.version>
   </properties>
 
   <dependencyManagement>

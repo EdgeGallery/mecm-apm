@@ -27,12 +27,14 @@ import io.swagger.annotations.ApiParam;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -49,6 +51,7 @@ import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageSyncStatusDto;
 import org.edgegallery.mecm.apm.model.dto.AppTemplateDto;
+import org.edgegallery.mecm.apm.model.dto.AppTemplateInputAttrDto;
 import org.edgegallery.mecm.apm.model.dto.SyncAppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
@@ -248,6 +251,10 @@ public class ApmHandler {
         AppTemplate response = service.getAppTemplateInfo(tenantId, appPackageId);
         ModelMapper mapper = new ModelMapper();
         AppTemplateDto appTemplate = mapper.map(response, AppTemplateDto.class);
+        Set<AppTemplateInputAttrDto> sortMap = new TreeSet<>(
+            (o1, o2) -> o1.getName().compareTo(o2.getName()));
+        sortMap.addAll(appTemplate.getInputs());
+        appTemplate.setInputs(sortMap);
         return new ResponseEntity<>(appTemplate, HttpStatus.OK);
     }
 

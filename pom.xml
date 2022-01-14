@@ -30,7 +30,7 @@
     <spring-boot.version>2.3.3.RELEASE</spring-boot.version>
     <lombok.version>1.18.10</lombok.version>
     <spring-security-oauth2-autoconfigure.version>2.2.2.RELEASE</spring-security-oauth2-autoconfigure.version>
-    <log4j.version>2.17.0</log4j.version>
+    <log4j.version>2.17.1</log4j.version>
   </properties>
 
   <dependencyManagement>
@@ -38,7 +38,7 @@
       <dependency>
         <groupId>org.apache.servicecomb</groupId>
         <artifactId>java-chassis-dependencies-springboot2</artifactId>
-        <version>1.3.0</version>
+        <version>1.3.6</version>
         <exclusions>
           <exclusion>
             <groupId>org.springframework.boot</groupId>
@@ -325,7 +325,7 @@
     <dependency>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java</artifactId>
-      <version>3.2.10</version>
+      <version>3.2.12</version>
     </dependency>
   </dependencies>
 

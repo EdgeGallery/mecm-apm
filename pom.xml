@@ -497,6 +497,14 @@
           <artifactId>netty-transport-native-unix-common</artifactId>
           <groupId>io.netty</groupId>
         </exclusion>
+        <exclusion>
+          <artifactId>netty-transport-native-kqueue</artifactId>
+          <groupId>io.netty</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <groupId>io.netty</groupId>
+        </exclusion>
       </exclusions>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java</artifactId>

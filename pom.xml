@@ -295,7 +295,37 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-logging</artifactId>
         </exclusion>
+        <exclusion>
+          <artifactId>tomcat-embed-core</artifactId>
+          <groupId>org.apache.tomcat.embed</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>tomcat-embed-websocket</artifactId>
+          <groupId>org.apache.tomcat.embed</groupId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <artifactId>tomcat-embed-core</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>tomcat-annotations-api</artifactId>
+          <groupId>org.apache.tomcat</groupId>
+        </exclusion>
+      </exclusions>
+      <groupId>org.apache.tomcat.embed</groupId>
+      <version>9.0.56</version>
+    </dependency>
+    <dependency>
+      <artifactId>tomcat-embed-websocket</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>tomcat-embed-core</artifactId>
+          <groupId>org.apache.tomcat.embed</groupId>
+        </exclusion>
+      </exclusions>
+      <groupId>org.apache.tomcat.embed</groupId>
+      <version>9.0.56</version>
     </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
@@ -371,16 +401,36 @@
           <groupId>org.springframework.security</groupId>
           <artifactId>spring-security-config</artifactId>
         </exclusion>
+        <exclusion>
+          <artifactId>bcprov-jdk15on</artifactId>
+          <groupId>org.bouncycastle</groupId>
+        </exclusion>
       </exclusions>
         <groupId>org.springframework.security.oauth.boot</groupId>
         <artifactId>spring-security-oauth2-autoconfigure</artifactId>
         <version>${spring-security-oauth2-autoconfigure.version}</version>
     </dependency>
     <dependency>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <groupId>org.bouncycastle</groupId>
+      <version>1.68</version>
+    </dependency>
+    <dependency>
+        <exclusions>
+            <exclusion>
+                <artifactId>json-smart</artifactId>
+                <groupId>net.minidev</groupId>
+            </exclusion>
+        </exclusions>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-test</artifactId>
         <scope>test</scope>
         <version>${spring-boot.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>json-smart</artifactId>
+      <groupId>net.minidev</groupId>
+      <version>2.4.7</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
@@ -491,6 +541,20 @@
       <version>2.8.5</version>
     </dependency>
     <dependency>
+      <exclusions>
+        <exclusion>
+          <artifactId>netty-transport-native-unix-common</artifactId>
+          <groupId>io.netty</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>netty-transport-native-kqueue</artifactId>
+          <groupId>io.netty</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <groupId>io.netty</groupId>
+        </exclusion>
+      </exclusions>
       <groupId>com.github.docker-java</groupId>
       <artifactId>docker-java</artifactId>
       <version>3.2.12</version>

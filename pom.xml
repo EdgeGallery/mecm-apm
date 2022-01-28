@@ -28,10 +28,12 @@
     <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spring-boot.version>2.3.3.RELEASE</spring-boot.version>
+    <spring-framework.version>5.2.19.RELEASE</spring-framework.version>
     <lombok.version>1.18.10</lombok.version>
     <spring-security-oauth2-autoconfigure.version>2.2.2.RELEASE</spring-security-oauth2-autoconfigure.version>
     <log4j.version>2.17.1</log4j.version>
     <tomcat.embed.version>9.0.56</tomcat.embed.version>
+    <netty.version>4.1.72.Final</netty.version>
   </properties>
 
   <dependencyManagement>
@@ -82,18 +84,44 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-jdbc</artifactId>
-      <version>5.2.19.RELEASE</version>
+      <version>${spring-framework.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
-      <version>5.2.19.RELEASE</version>
+      <version>${spring-framework.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-tx</artifactId>
-      <version>5.2.19.RELEASE</version>
+      <version>${spring-framework.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>5.1.20.RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+        <version>${spring-framework.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aop</artifactId>
+      <version>${spring-framework.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+      <version>${spring-framework.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aop</artifactId>
+      <version>${spring-framework.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
@@ -103,52 +131,52 @@
     <dependency>
       <artifactId>netty-common</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-buffer</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-resolver</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-transport</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-codec</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-codec-dns</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-codec-http</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-codec-http2</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-codec-socks</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-handler</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
       <exclusions>
         <exclusion>
           <groupId>io.netty</groupId>
@@ -159,12 +187,12 @@
     <dependency>
       <artifactId>netty-handler-proxy</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
       <artifactId>netty-resolver-dns</artifactId>
       <groupId>io.netty</groupId>
-      <version>4.1.72.Final</version>
+      <version>${netty.version}</version>
     </dependency>
     <!-- ServiceComb -->
 
@@ -270,16 +298,7 @@
       <artifactId>snakeyaml</artifactId>
       <version>1.26</version>
     </dependency>
-    <dependency>
-      <artifactId>spring-web</artifactId>
-      <groupId>org.springframework</groupId>
-      <version>5.2.19.RELEASE</version>
-    </dependency>
-    <dependency>
-      <artifactId>spring-aop</artifactId>
-      <groupId>org.springframework</groupId>
-      <version>5.1.13.RELEASE</version>
-    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -371,12 +390,12 @@
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-core</artifactId>
-      <version>5.3.10.RELEASE</version>
+      <version>5.3.13.RELEASE</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-web</artifactId>
-      <version>5.3.8.RELEASE</version>
+      <version>5.3.13.RELEASE</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
@@ -438,16 +457,7 @@
       <version>5.3.13.RELEASE</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-core</artifactId>
-      <version>5.2.19.RELEASE</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-aop</artifactId>
-      <version>5.2.19.RELEASE</version>
-    </dependency>
+
     <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>

@@ -58,6 +58,8 @@ spring:
     url: jdbc:postgresql://${APM_DB_HOST:mecm-postgres}:${APM_DB_PORT:5432}/${APM_DB:apmdb}
     username: ${APM_DB_USER:apm}
     password: ${APM_DB_PASSWORD:}
+    initialization-mode: always
+    schema: classpath:db/migration/V1__Add_App_Package_Task_Table.sql
   jpa:
     properties:
       hibernate:

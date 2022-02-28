@@ -17,6 +17,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getProtocol;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isRegexMatched;
 
 import com.github.dockerjava.api.DockerClient;
@@ -163,6 +164,9 @@ public class ApmService {
     @Value("${apm.package-dir:/usr/app/packages}")
     private String localDirPath;
 
+    @Value("${server.ssl.enabled:false}")
+    private String isSslEnabled;
+
     /**
      * Downloads app package csar from app store and stores it locally.
      *
@@ -208,7 +212,7 @@ public class ApmService {
 
     private DockerClient getDockerClient(String repo, String userName, String password) {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().withDockerTlsVerify(true)
-            .withDockerCertPath(SSL).withRegistryUrl(Constants.HTTPS_PROTO + repo).withRegistryUsername(userName)
+            .withDockerCertPath(SSL).withRegistryUrl(getProtocol(isSslEnabled) + repo).withRegistryUsername(userName)
             .withRegistryPassword(password).build();
 
         return DockerClientBuilder.getInstance(config).build();
@@ -654,7 +658,8 @@ public class ApmService {
      * @throws ApmException exception if failed to get edge repository details
      */
     public String getRepoInfoOfHost(String hostIp, String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":").append(inventoryPort)
+
+        String url = new StringBuilder(getProtocol(isSslEnabled)).append(inventoryIp).append(":").append(inventoryPort)
             .append(INVENTORY_URL).append("/mechosts/").append(hostIp).toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -694,7 +699,8 @@ public class ApmService {
      * @throws ApmException exception if failed to get MEPM config details
      */
     public String getMepmCfgOfHost(String tenantId, String hostIp, String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":").append(inventoryPort)
+
+        String url = new StringBuilder(getProtocol(isSslEnabled)).append(inventoryIp).append(":").append(inventoryPort)
             .append(INVENTORY_URL).append("/tenants/").append(tenantId).append("/mechosts/").append(hostIp).toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -714,7 +720,7 @@ public class ApmService {
             throw new ApmException("MEPM ip is invalid for host " + hostIp);
         }
 
-        url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":").append(inventoryPort)
+        url = new StringBuilder(getProtocol(isSslEnabled)).append(inventoryIp).append(":").append(inventoryPort)
             .append(INVENTORY_URL).append("/mepms/").append(ip).toString();
         response = sendGetRequest(url, accessToken);
 
@@ -773,7 +779,8 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public AppStore getAppStoreCfgFromInventory(String appstoreIp, String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":").append(inventoryPort)
+
+        String url = new StringBuilder(getProtocol(isSslEnabled)).append(inventoryIp).append(":").append(inventoryPort)
             .append(INVENTORY_URL).append("/appstore/").append(appstoreIp).toString();
 
         String response = sendGetRequest(url, accessToken);
@@ -789,7 +796,8 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public List<AppRepo> getAllAppRepoCfgFromInventory(String accessToken) {
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(inventoryIp).append(":").append(inventoryPort)
+
+        String url = new StringBuilder(getProtocol(isSslEnabled)).append(inventoryIp).append(":").append(inventoryPort)
             .append(INVENTORY_URL).append("/apprepos").toString();
 
         List<AppRepo> appRepoRecords = new LinkedList<>();

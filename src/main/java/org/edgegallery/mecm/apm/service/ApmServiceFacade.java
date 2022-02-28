@@ -16,6 +16,7 @@
 
 package org.edgegallery.mecm.apm.service;
 
+import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.getProtocol;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.isSuffixExist;
 import static org.edgegallery.mecm.apm.utils.ApmServiceHelper.saveInputStreamToFile;
 import static org.edgegallery.mecm.apm.utils.Constants.DISTRIBUTION_FAILED;
@@ -102,6 +103,9 @@ public class ApmServiceFacade {
 
     @Value("${apm.push-image:}")
     private String uploadDockerImage;
+
+    @Value("${server.ssl.enabled:false}")
+    private String isSslEnabled;
 
     /**
      * Updates Db and distributes docker application image to host.
@@ -298,7 +302,7 @@ public class ApmServiceFacade {
         try {
             String mepmEndPoint = apmService.getMepmCfgOfHost(tenantId, hostIp, accessToken);
 
-            String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+            String url = new StringBuilder(getProtocol(isSslEnabled)).append(mepmEndPoint)
                     .append(LCMCONTROLLER_URL).append(tenantId)
                     .append(PACKAGES_URL).append(packageId).append("/hosts/").append(hostIp).toString();
 
@@ -321,7 +325,7 @@ public class ApmServiceFacade {
         try {
             String mepmEndPoint = apmService.getMepmCfgOfHost(tenantId, hostIp, accessToken);
 
-            String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+            String url = new StringBuilder(getProtocol(isSslEnabled)).append(mepmEndPoint)
                     .append(LCMCONTROLLER_URL).append(tenantId)
                     .append(PACKAGES_URL).append(packageId).toString();
 
@@ -491,7 +495,7 @@ public class ApmServiceFacade {
     private String getAppPkgDistributionStatus(String mepmEndPoint, String tenantId,
                                                String pkgId, String accessToken) {
         LOGGER.info("distribute application package ");
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+        String url = new StringBuilder(getProtocol(isSslEnabled)).append(mepmEndPoint)
                 .append(LCMCONTROLLER_URL).append(tenantId)
                 .append(PACKAGES_URL).append(pkgId).toString();
         return apmService.sendGetRequest(url, accessToken);
@@ -512,13 +516,13 @@ public class ApmServiceFacade {
         String[] repos = repo.split(":");
 
         if (repos.length == 1) {
-            url = new StringBuilder(Constants.HTTPS_PROTO).append(repo).append(":")
+            url = new StringBuilder(getProtocol(isSslEnabled)).append(repo).append(":")
                     .append("443").append("/v2")
                     .append(repository)
                     .append("/manifests/")
                     .append(tag).toString();
         } else {
-            url = new StringBuilder(Constants.HTTPS_PROTO).append(repo).append("/v2/")
+            url = new StringBuilder(getProtocol(isSslEnabled)).append(repo).append("/v2/")
                     .append(repository)
                     .append("/manifests/")
                     .append(tag).toString();
@@ -588,7 +592,7 @@ public class ApmServiceFacade {
     private void distributeApplicationPackage(String mepmEndPoint, String tenantId,
                                               String pkgId, String hostIp, String accessToken) {
         LOGGER.info("distribute application package");
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+        String url = new StringBuilder(getProtocol(isSslEnabled)).append(mepmEndPoint)
                 .append(LCMCONTROLLER_URL).append(tenantId)
                 .append(PACKAGES_URL).append(pkgId).toString();
 
@@ -602,7 +606,7 @@ public class ApmServiceFacade {
     private void uploadApplicationPackage(String mepmEndPoint, String tenantId,
                                           String appId, String pkgId, String accessToken) {
         LOGGER.info("upload application package");
-        String url = new StringBuilder(Constants.HTTPS_PROTO).append(mepmEndPoint)
+        String url = new StringBuilder(getProtocol(isSslEnabled)).append(mepmEndPoint)
                 .append(LCMCONTROLLER_URL).append(tenantId).append("/packages").toString();
         try {
             String packagePath = new StringBuilder(localDirPath).append(File.separator).append(pkgId)
@@ -779,7 +783,7 @@ public class ApmServiceFacade {
         String host = syncInfo.getAppstoreIp() + ":" + syncInfo.getAppstorePort();
         String appPackageId = syncInfo.getAppId() + syncInfo.getPackageId();
 
-        String appPkgPath = new StringBuilder(Constants.HTTPS_PROTO).append(host).append("/mec/appstore/v1/apps/")
+        String appPkgPath = new StringBuilder(getProtocol(isSslEnabled)).append(host).append("/mec/appstore/v1/apps/")
                 .append(syncInfo.getAppId()).append(PACKAGES_URL)
                 .append(syncInfo.getPackageId()).append("/action/download").toString();
 

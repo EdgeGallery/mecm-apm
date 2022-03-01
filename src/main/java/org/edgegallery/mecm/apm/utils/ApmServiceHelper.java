@@ -445,4 +445,17 @@ public final class ApmServiceHelper {
     public static boolean isSuffixExist(String str, String suffix) {
         return StringUtils.endsWith(str, suffix);
     }
+
+    /**
+     * Retrieves protocol based on SSL flag.
+     *
+     * @param isSslEnabled ssl flag
+     * @return protocol
+     */
+    public static String getProtocol(String isSslEnabled) {
+        if ("true".equals(isSslEnabled)) {
+            return Constants.HTTPS_PROTO;
+        }
+        return "http://";
+    }
 }

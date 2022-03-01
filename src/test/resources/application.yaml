@@ -1,6 +1,8 @@
 ###spring config######
 server:
   port: 8092
+  ssl:
+    enabled: true
 spring:
   datasource:
     url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE

@@ -453,7 +453,7 @@ public class ApmHandlerTest {
 
     private void syncAppInstanceInfos(MockRestServiceServer server) throws Exception {
         // Mocking get MEC host from inventory
-        String url = "http://1.1.1.1:8080/inventory/v1/tenants/" + TENANT_ID + "/mechosts/";
+        String url = "https://1.1.1.1:8080/inventory/v1/tenants/" + TENANT_ID + "/mechosts/";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess("[{\"mechostIp\":\"1.1.1.1\",\"mechostName\":\"TestHost\","
@@ -465,7 +465,7 @@ public class ApmHandlerTest {
                         MediaType.APPLICATION_JSON)); // host response , json response, mepm ip ... use mepm url
 
         // Mocking get mepm from inventory
-        url = "http://1.1.1.1:8080/inventory/v1/mepms/1.1.1"
+        url = "https://1.1.1.1:8080/inventory/v1/mepms/1.1.1"
                 + ".1";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
@@ -473,14 +473,14 @@ public class ApmHandlerTest {
                         MediaType.APPLICATION_JSON)); /// validate response , use this query , // mepm port ,
 
         // Mocking get deleted app instance infos API
-        url = "http://1.1.1.1:10000/lcmcontroller/v2/tenants/" + TENANT_ID + "/packages/" +
+        url = "https://1.1.1.1:10000/lcmcontroller/v2/tenants/" + TENANT_ID + "/packages/" +
                 "sync_deleted";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess());
 
         // Mocking get updated app instance infos API
-        url = "http://1.1.1.1:10000/lcmcontroller/v2/tenants/" + TENANT_ID + "/packages/" +
+        url = "https://1.1.1.1:10000/lcmcontroller/v2/tenants/" + TENANT_ID + "/packages/" +
                 "sync_updated";
         server.expect(requestTo(url))
                 .andExpect(method(HttpMethod.GET))

@@ -935,7 +935,8 @@ public class ApmService {
      * @throws ApmException exception if failed to get appstore configuration details
      */
     public List<AppPackageInfoDto> getAppPackagesInfoFromAppStore(String appstoreEndpoint, String accessToken) {
-        String appsUrl = new StringBuilder(HTTPS).append(appstoreEndpoint).append("/mec/appstore/v1/apps").toString();
+        String appsUrl = new StringBuilder(getProtocol(isSslEnabled)).append(appstoreEndpoint)
+                                                                     .append("/mec/appstore/v1/apps").toString();
 
         String response = sendGetRequest(appsUrl, accessToken);
 
@@ -974,8 +975,9 @@ public class ApmService {
      */
     public AppPackageInfoDto getAppPkgInfoFromAppStore(String appstoreEndpoint, String appId, String packageId,
         String accessToken) {
-        String appsUrl = new StringBuilder(HTTPS).append(appstoreEndpoint).append("/mec/appstore/v1/apps/")
-            .append(appId).append("/packages/").append(packageId).toString();
+        String appsUrl = new StringBuilder(getProtocol(isSslEnabled)).append(appstoreEndpoint)
+                                         .append("/mec/appstore/v1/apps/")
+                                         .append(appId).append("/packages/").append(packageId).toString();
 
         String response = sendGetRequest(appsUrl, accessToken);
         LOGGER.info("applications package info response: {}", response);
@@ -993,7 +995,8 @@ public class ApmService {
      */
     private List<AppPackageInfoDto> getAppPackagesInfoBasedOnAppId(String appstoreEndpoint, String appId,
         String accessToken) {
-        String appsUrl = new StringBuilder(HTTPS).append(appstoreEndpoint).append("/mec/appstore/v1/apps/")
+        String appsUrl = new StringBuilder(getProtocol(isSslEnabled)).append(appstoreEndpoint)
+                                                                     .append("/mec/appstore/v1/apps/")
             .append(appId).append("/packages").toString();
 
         String response = sendGetRequest(appsUrl, accessToken);

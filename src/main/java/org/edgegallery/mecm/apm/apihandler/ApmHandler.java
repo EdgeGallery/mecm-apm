@@ -27,7 +27,6 @@ import io.swagger.annotations.ApiParam;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +54,7 @@ import org.edgegallery.mecm.apm.model.dto.AppTemplateInputAttrDto;
 import org.edgegallery.mecm.apm.model.dto.SyncAppPackageDto;
 import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
+import org.edgegallery.mecm.apm.utils.ApmV2Response;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.hibernate.validator.constraints.Length;
 import org.modelmapper.ModelMapper;
@@ -540,5 +540,71 @@ public class ApmHandler {
         AppPackageSyncStatusDto statusInfoDto = mapper.map(statusInfo, AppPackageSyncStatusDto.class);
 
         return new ResponseEntity<>(statusInfoDto, HttpStatus.OK);
+    }
+
+    /**
+     * Retrieves all resources.
+     *
+     * @return application packages info
+     */
+    @ApiOperation(value = "Retrieves all resources", response = ApmV2Response.class)
+    @PostMapping(path = "/tenants/{tenant_id}/apps/resources",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN')")
+    public  ResponseEntity<ApmV2Response> resourceInfo(
+            @RequestHeader("access_token") String accessToken,
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @Valid @ApiParam(value = "app package info") @RequestBody AppPackageDto appPackageDto) {
+
+        ApmV2Response apmV2Response = service.resourceInfo(accessToken, tenantId, appPackageDto.getAppPkgId(),
+                appPackageDto.getAppPkgPath());
+
+        return new ResponseEntity<>(apmV2Response, HttpStatus.OK);
+    }
+
+    /**
+     * Retrieves resources templates.
+     *
+     * @return application packages info
+     */
+    @ApiOperation(value = "Retrieves resources templates", response = ApmV2Response.class)
+    @GetMapping(path = "/tenants/{tenant_id}/apps/{app_id}/packages/{app_package_id}/resourceTemplate",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
+    public ResponseEntity<ApmV2Response> getResourceTemplateInfo(
+            @RequestHeader("access_token") String accessToken,
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @ApiParam(value = "app id") @PathVariable("app_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appId,
+            @ApiParam(value = "app package id") @PathVariable("app_package_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = APP_PKG_ID_REGX) String appPackageId) {
+
+        ApmV2Response apmV2Response = service.getResourceTemplateInfo(accessToken, tenantId, appPackageId,
+                localDirPath);
+
+        return new ResponseEntity<>(apmV2Response, HttpStatus.OK);
+    }
+
+    /**
+     * Update resources templates.
+     *
+     * @return application packages info
+     */
+    @ApiOperation(value = "Update resources templates", response = ApmV2Response.class)
+    @PostMapping(path = "/tenants/{tenant_id}/customizeResource",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('MECM_TENANT') || hasRole('MECM_ADMIN') || hasRole('MECM_GUEST')")
+    public ResponseEntity<ApmV2Response> updateResourceTemplateInfo(@RequestHeader("access_token") String accessToken,
+            @ApiParam(value = "tenant id") @PathVariable("tenant_id")
+            @Size(max = Constants.MAX_COMMON_ID_LENGTH) @Pattern(regexp = TENENT_ID_REGEX) String tenantId,
+            @RequestBody AppTemplateDto appTemplateDto) {
+
+
+        ApmV2Response apmV2Response = service.updateResourceTemplateInfo(accessToken, tenantId,
+                appTemplateDto, localDirPath);
+
+        return new ResponseEntity<>(apmV2Response, HttpStatus.OK);
     }
 }

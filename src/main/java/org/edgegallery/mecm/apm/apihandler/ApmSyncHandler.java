@@ -25,7 +25,9 @@ import com.google.gson.JsonParser;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.validation.constraints.Pattern;
@@ -38,8 +40,10 @@ import org.edgegallery.mecm.apm.model.dto.AppPackageHostDeletedDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageRecordDto;
 import org.edgegallery.mecm.apm.model.dto.SyncDeletedAppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.SyncUpdatedAppPackageDto;
+import org.edgegallery.mecm.apm.service.ApmServiceFacade;
 import org.edgegallery.mecm.apm.service.DbService;
 import org.edgegallery.mecm.apm.service.RestServiceImpl;
+import org.edgegallery.mecm.apm.utils.Constants;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,5 +258,86 @@ public class ApmSyncHandler {
         }
 
         return mepms;
+    }
+
+    private Map<String, String> getInventoryMecHostsCfgforHost(String tenantId, String accessToken, String vim) {
+
+        String url = new StringBuilder(inventoryService).append(":")
+                .append(inventoryServicePort).append("/inventory/v1").append("/tenants/").append(tenantId)
+                .append("/mechosts/").toString();
+
+        ResponseEntity<String> response = syncService.sendRequest(url, HttpMethod.GET, accessToken, null);
+
+        LOGGER.info("response: {}", response);
+        JsonArray jsonArray = new JsonParser().parse(response.getBody()).getAsJsonArray();
+
+        Map<String, String> hostConfig = new HashMap<>();
+        String mecHost;
+        String mepm;
+        for (JsonElement host: jsonArray) {
+            mepm = host.getAsJsonObject().get("mepmIp").getAsString();
+            mecHost = host.getAsJsonObject().get("mechostIp").getAsString();
+            if (host.getAsJsonObject().get("vim").getAsString().equalsIgnoreCase(vim)) {
+                hostConfig.put(mecHost, mepm);
+            }
+        }
+        return hostConfig;
+    }
+
+    /**
+     * queryKpi.
+     */
+    public Map<String, String> queryKpi(String tenantId, String accessToken, String vim) {
+
+        Map<String, String> listData = new HashMap<>();
+        try {
+
+            Map<String, String> hostConfigs = getInventoryMecHostsCfgforHost(tenantId, accessToken, vim);
+            Set<Map.Entry<String, String>> entrySet = hostConfigs.entrySet();
+
+            for (Map.Entry<String, String> hostConfig : entrySet) {
+                LOGGER.info("Query kpi details from edge {}", hostConfig.getKey());
+                String appLcmEndPoint = getInventoryMepmCfg(hostConfig.getValue(), accessToken);
+                String url = null;
+                JsonObject jsonObject;
+
+                try {
+                    url = new StringBuilder(appLcmEndPoint).append("/lcmcontroller/v2").append("/tenants/")
+                            .append(tenantId).append(Constants.HOSTS).append(hostConfig.getKey() + "/kpi").toString();
+                    ResponseEntity<String> response = syncService.sendRequest(url, HttpMethod.GET, accessToken, null);
+                    jsonObject = new JsonParser().parse(response.getBody()).getAsJsonObject();
+                    JsonObject data = jsonObject.get("data").getAsJsonObject();
+                    LOGGER.info("data: {}", data);
+                    String integerMap = getRemainResourceInfo(data);
+                    listData.put(hostConfig.getKey(), integerMap);
+                } catch (ApmException ex) {
+                    LOGGER.info("couldn't get response from this {}", url);
+                }
+            }
+        } catch (ApmException ex) {
+            throw new ApmException("failed to synchronize app package management data from edge:" + ex.getMessage());
+        } catch (Exception ex) {
+            throw new ApmException("failed to synchronize app package management data from edge:" + ex.getMessage());
+        }
+        LOGGER.info("Final Query Kpi details: {}", listData);
+        return listData;
+
+    }
+
+    /**
+     * getRemainResourceInfo.
+     */
+    public String getRemainResourceInfo(JsonObject data) {
+
+        Map<String, Integer> remain = new HashMap<>();
+
+        remain.put("virtual_cpu_total", data.get("virtual_cpu_total").getAsInt());
+        remain.put("virtual_cpu_used", data.get("virtual_cpu_used").getAsInt());
+        remain.put("virtual_mem_total", data.get("virtual_mem_total").getAsInt());
+        remain.put("virtual_mem_used", data.get("virtual_mem_used").getAsInt());
+        remain.put("virtual_local_storage_total", data.get("virtual_local_storage_total").getAsInt());
+        remain.put("virtual_local_storage_used", data.get("virtual_local_storage_used").getAsInt());
+
+        return remain.toString();
     }
 }

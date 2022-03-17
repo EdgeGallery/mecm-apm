@@ -56,7 +56,10 @@ import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppTemplate;
 import org.edgegallery.mecm.apm.model.AppTemplateInputAttr;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
+import org.edgegallery.mecm.apm.model.dto.AppTemplateDto;
+import org.edgegallery.mecm.apm.model.dto.AppTemplateInputAttrDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.model.dto.templatedto.ResourceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
@@ -440,6 +443,160 @@ public final class ApmServiceHelper {
 
         appTemplate.setInputs(inputAttrList);
         return appTemplate;
+    }
+
+    /**
+     * Returns application Node template.
+     *
+     * @param mainServiceYaml main service template file content
+     * @return list of image details
+     */
+    public static ResourceInfo getApplicationNodeTemplate(String mainServiceYaml, AppTemplateDto appTemplateDto) {
+
+        int cpu = 0;
+        int mem = 0;
+        int disk = 0;
+
+        ObjectMapper om = new ObjectMapper(new YAMLFactory());
+        ObjectMapper jsonWriter = new ObjectMapper();
+        ResourceInfo resourceInfo = new ResourceInfo();
+        String response;
+        try {
+            response = jsonWriter.writeValueAsString(om.readValue(mainServiceYaml, Object.class));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(Constants.FAILED_TO_CONVERT_YAML_TO_JSON, e.getMessage());
+            throw new ApmException(Constants.FAILED_TO_CONVERT_YAML_TO_JSON);
+        }
+
+        JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
+        JsonObject topologyTemplate = getChildJsonObject(jsonObject, "topology_template");
+
+        JsonObject nodeTemplates;
+        try {
+            nodeTemplates = getChildJsonObject(topologyTemplate, "node_templates");
+        } catch (ApmException ex) {
+            LOGGER.info("couldn't find node_templates from the mainServiceYaml");
+            return resourceInfo;
+        }
+
+        Set<Entry<String, JsonElement>> entrySet = nodeTemplates.entrySet();
+        for (Map.Entry<String, JsonElement> entry : entrySet) {
+
+            if (entry.getValue().getAsJsonObject().get("type").getAsString().contains("Vdu.Compute")) {
+
+                JsonObject properties = entry.getValue().getAsJsonObject().get("capabilities")
+                        .getAsJsonObject().get("virtual_compute").getAsJsonObject().get("properties")
+                        .getAsJsonObject();
+
+                if (properties.get("virtual_memory").getAsJsonObject()
+                        .get("virtual_mem_size").toString().contains("MEM")) {
+                    mem = mem + defaultValueTopologyTemplate(appTemplateDto, "MEM");
+                } else {
+                    mem = mem + properties.get("virtual_memory").getAsJsonObject().get("virtual_mem_size")
+                            .getAsInt();
+                }
+
+                if (properties.get("virtual_cpu").getAsJsonObject().get("num_virtual_cpu")
+                        .toString().contains("CPU")) {
+                    cpu = cpu + defaultValueTopologyTemplate(appTemplateDto, "CPU");
+                } else {
+                    cpu = cpu + properties.get("virtual_cpu").getAsJsonObject().get("num_virtual_cpu").getAsInt();
+                }
+
+                if (properties.get("virtual_local_storage").getAsJsonObject().get("size_of_storage")
+                        .toString().contains("Disk")) {
+                    disk = disk + defaultValueTopologyTemplate(appTemplateDto, "Disk");
+                } else {
+                    disk = disk + properties.get("virtual_local_storage").getAsJsonObject().get("size_of_storage")
+                            .getAsInt();
+                }
+                resourceInfo.setVirtualMemSize(mem);
+                resourceInfo.setNumVirtualCpu(cpu);
+                resourceInfo.setSizeOfStorage(disk);
+            }
+        }
+        return resourceInfo;
+    }
+
+    /**
+     * Returns application template.
+     *
+     * @param mainServiceYaml main service template file content
+     * @return list of image details
+     */
+    public static AppTemplateDto getApplicationTopologyTemplate(String mainServiceYaml) {
+        ObjectMapper om = new ObjectMapper(new YAMLFactory());
+        ObjectMapper jsonWriter = new ObjectMapper();
+        String response;
+        try {
+            response = jsonWriter.writeValueAsString(om.readValue(mainServiceYaml, Object.class));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(Constants.FAILED_TO_CONVERT_YAML_TO_JSON, e.getMessage());
+            throw new ApmException(Constants.FAILED_TO_CONVERT_YAML_TO_JSON);
+        }
+
+        JsonObject jsonObject = new JsonParser().parse(response).getAsJsonObject();
+        JsonObject topologyTemplate = getChildJsonObject(jsonObject, "topology_template");
+
+        AppTemplateDto appTemplateDto = new AppTemplateDto();
+        JsonObject inputs;
+        try {
+            inputs = getChildJsonObject(topologyTemplate, "inputs");
+        } catch (ApmException ex) {
+            return appTemplateDto;
+        }
+
+        Set<Entry<String, JsonElement>> entrySet = inputs.entrySet();
+        Set<AppTemplateInputAttrDto> inputAttrList = new HashSet<>();
+        for (Map.Entry<String, JsonElement> entry : entrySet) {
+            if (entry.getKey().contains("VDU") && (entry.getKey().contains("CPU")
+                    || entry.getKey().contains("MEM") || entry.getKey().contains("Disk"))) {
+                AppTemplateInputAttrDto inputAttr = new Gson().fromJson(entry.getValue(),
+                        AppTemplateInputAttrDto.class);
+                if (entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR) != null
+                        && !entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR).isJsonNull()) {
+                    inputAttr.setDefaultValue(entry.getValue().getAsJsonObject().get(INPUT_DEFAULT_ATTR).getAsString());
+                }
+                inputAttr.setName(entry.getKey());
+                inputAttrList.add(inputAttr);
+            }
+        }
+
+        appTemplateDto.setInputs(inputAttrList);
+        LOGGER.info("getApplicationNodeTemplate apptemplateDto: {}", appTemplateDto);
+        return appTemplateDto;
+    }
+
+    /**
+     * defaultValueTopologyTemplate.
+     */
+    public static Integer defaultValueTopologyTemplate(AppTemplateDto appTemplateDto, String resource) {
+
+        Set<AppTemplateInputAttrDto> inputs = appTemplateDto.getInputs();
+        for (AppTemplateInputAttrDto attrDto: inputs) {
+            if (attrDto.getName().contains(resource)) {
+                return Integer.parseInt(attrDto.getDefaultValue());
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * getCsarPath.
+     */
+    public static String getCsarPath(String packageId, String tenantId,
+                                     String localDirBasePath) {
+        String localDirPath;
+        if (tenantId != null) {
+            localDirPath = createDir(localDirBasePath + File.separator + packageId + tenantId);
+        } else if (localDirBasePath == null) {
+            localDirPath = createDir(packageId);
+        } else {
+            localDirPath = createDir(localDirBasePath + File.separator + packageId);
+        }
+
+        String localFilePath = localDirPath + File.separator + packageId + CSAR;
+        return localFilePath;
     }
 
     public static boolean isSuffixExist(String str, String suffix) {

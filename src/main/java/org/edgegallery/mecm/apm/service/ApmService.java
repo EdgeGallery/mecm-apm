@@ -63,6 +63,8 @@ import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
+import org.edgegallery.mecm.apm.model.dto.AppTemplateDto;
+import org.edgegallery.mecm.apm.model.dto.templatedto.ResourceInfo;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
 import org.edgegallery.mecm.apm.utils.CompressUtility;
 import org.edgegallery.mecm.apm.utils.Constants;
@@ -1108,6 +1110,104 @@ public class ApmService {
             } catch (NotFoundException | ConflictException ex) {
                 LOGGER.error("docker image {} not found {}", image, ex.getMessage());
             }
+        }
+    }
+
+    /**
+     * Returns list of image info.
+     *
+     * @param tenantId      tenant ID
+     * @param localFilePath csar file path
+     * @param packageId     package Id
+     * @return list of image info
+     */
+    public ResourceInfo getVduComputeInfo(String tenantId, String localFilePath, String packageId,
+                                          AppTemplateDto appTemplateDto, Boolean customize) {
+        LOGGER.info("inside getVduComputeInfo function");
+        File yamlFile;
+
+        try {
+            String appPkgDir = getLocalIntendedDir(packageId, tenantId);
+            LOGGER.info("appPkgDir: {}", appPkgDir);
+
+            String mainServiceYaml = appPkgDir + File.separator + getEntryDefinitionFromMetadata(appPkgDir,
+                    "TOSCA.meta");
+
+            String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
+            CompressUtility.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
+
+            yamlFile = new File(
+                    appDefnDir + File.separator + getEntryDefinitionFromMetadata(appDefnDir, "TOSCA_VNFD.meta"));
+
+        } catch (ApmException e) {
+            LOGGER.error("failed to get main service template yaml {}", e.getMessage());
+            throw new ApmException("failed to get main service template yaml");
+        }
+
+        try (InputStream inputStream = new FileInputStream(yamlFile)) {
+            byte[] byteArray = IOUtils.toByteArray(inputStream);
+            if (byteArray.length > TOO_BIG) {
+                throw new IllegalStateException("file being unzipped is too big");
+            }
+
+            //To update topology template input into Dto
+            if (customize == false) {
+                appTemplateDto = ApmServiceHelper
+                        .getApplicationTopologyTemplate(new String(byteArray, StandardCharsets.UTF_8));
+            }
+
+            ResourceInfo resourceInfo = ApmServiceHelper
+                    .getApplicationNodeTemplate(new String(byteArray, StandardCharsets.UTF_8), appTemplateDto);
+
+            return resourceInfo;
+
+        } catch (IOException e) {
+            LOGGER.error("failed to get app template {}", e.getMessage());
+            throw new ApmException("failed to get app template");
+        }
+    }
+
+    /**
+     * Returns list of image info.
+     *
+     * @param tenantId      tenant ID
+     * @param localFilePath csar file path
+     * @param packageId     package Id
+     * @return list of image info
+     */
+    public AppTemplateDto getVduComputeTemplateInfo(String tenantId, String localFilePath, String packageId) {
+        File yamlFile;
+
+        try {
+            String appPkgDir = getLocalIntendedDir(packageId, tenantId);
+
+            String mainServiceYaml = appPkgDir + File.separator + getEntryDefinitionFromMetadata(appPkgDir,
+                    "TOSCA.meta");
+
+            String appDefnDir = FilenameUtils.removeExtension(mainServiceYaml);
+            CompressUtility.unzipApplicationPacakge(mainServiceYaml, appDefnDir);
+
+            yamlFile = new File(
+                    appDefnDir + File.separator + getEntryDefinitionFromMetadata(appDefnDir, "TOSCA_VNFD.meta"));
+
+        } catch (ApmException e) {
+            LOGGER.error("failed to get main service template yaml {}", e.getMessage());
+            throw new ApmException("failed to get main service template yaml");
+        }
+
+        try (InputStream inputStream = new FileInputStream(yamlFile)) {
+            byte[] byteArray = IOUtils.toByteArray(inputStream);
+            if (byteArray.length > TOO_BIG) {
+                throw new IllegalStateException("file being unzipped is too big");
+            }
+            AppTemplateDto appTemplateDto = ApmServiceHelper
+                    .getApplicationTopologyTemplate(new String(byteArray, StandardCharsets.UTF_8));
+
+            return appTemplateDto;
+
+        } catch (IOException e) {
+            LOGGER.error("failed to get app template {}", e.getMessage());
+            throw new ApmException("failed to get app template");
         }
     }
 }

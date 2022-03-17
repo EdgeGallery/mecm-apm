@@ -30,6 +30,7 @@ import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.InvalidPathException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -37,9 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeSet;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
+import org.edgegallery.mecm.apm.apihandler.ApmSyncHandler;
 import org.edgegallery.mecm.apm.exception.ApmException;
 import org.edgegallery.mecm.apm.model.AppPackageInfo;
 import org.edgegallery.mecm.apm.model.AppPackageSyncInfo;
@@ -50,8 +53,17 @@ import org.edgegallery.mecm.apm.model.PkgSyncInfo;
 import org.edgegallery.mecm.apm.model.SwImageDescr;
 import org.edgegallery.mecm.apm.model.dto.AppPackageDto;
 import org.edgegallery.mecm.apm.model.dto.AppPackageInfoDto;
+import org.edgegallery.mecm.apm.model.dto.AppTemplateDto;
+import org.edgegallery.mecm.apm.model.dto.AppTemplateInputAttrDto;
 import org.edgegallery.mecm.apm.model.dto.MecHostDto;
+import org.edgegallery.mecm.apm.model.dto.templatedto.Cpu;
+import org.edgegallery.mecm.apm.model.dto.templatedto.Disk;
+import org.edgegallery.mecm.apm.model.dto.templatedto.EdgeResourceInfo;
+import org.edgegallery.mecm.apm.model.dto.templatedto.Mem;
+import org.edgegallery.mecm.apm.model.dto.templatedto.Resource;
+import org.edgegallery.mecm.apm.model.dto.templatedto.ResourceInfo;
 import org.edgegallery.mecm.apm.utils.ApmServiceHelper;
+import org.edgegallery.mecm.apm.utils.ApmV2Response;
 import org.edgegallery.mecm.apm.utils.CompressUtility;
 import org.edgegallery.mecm.apm.utils.Constants;
 import org.slf4j.Logger;
@@ -90,10 +102,15 @@ public class ApmServiceFacade {
     private ApmService apmService;
 
     @Autowired
+    private ApmSyncHandler apmSyncHandler;
+
+    @Autowired
     private DbService dbService;
 
     @Value("${apm.package-dir:/usr/app/packages}")
     private String localDirPath;
+
+    private String localPackagePath;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -844,4 +861,176 @@ public class ApmServiceFacade {
             apmService.deleteAppPackageFile(appPkgPath);
         }
     }
+
+    /**
+     * resourceInfo.
+     */
+    public ApmV2Response resourceInfo(String accessToken, String tenantId, String packageId,
+                                               String appPkgPath) {
+        LOGGER.info("inside resoruce function");
+
+        AppTemplateDto appTemplateDto = new AppTemplateDto();
+
+        try {
+            InputStream stream = apmService.downloadAppPackage(appPkgPath, packageId, accessToken);
+            String localFilePath = saveInputStreamToFile(stream, packageId, tenantId, localDirPath);
+            LOGGER.info("localPath: {}", localFilePath);
+
+
+            //unzip app package
+            String intendedDir = apmService.getLocalIntendedDir(packageId, tenantId);
+            LOGGER.info("intendeDir: {}", intendedDir);
+            CompressUtility.unzipApplicationPacakge(localFilePath, intendedDir);
+
+            ResourceInfo resourceInfo = apmService.getVduComputeInfo(tenantId, appPkgPath, packageId, appTemplateDto,
+                    false);
+            LOGGER.info("resourceInfo: {}", resourceInfo);
+
+
+            String appDeployType = apmService.getAppPackageDeploymentType(tenantId, packageId);
+
+            List<EdgeResourceInfo> queryKpiList = Collections.EMPTY_LIST;
+
+            if ("container".equalsIgnoreCase(appDeployType)) {
+                LOGGER.info("container based not yet there");
+                throw new ApmException(Constants.MAX_LIMIT_REACHED_ERROR);
+            } else if ("vm".equalsIgnoreCase(appDeployType)) {
+                Map<String, String> queryKpi = apmSyncHandler.queryKpi(tenantId, accessToken, "openstack");
+                queryKpiList = getResourceUsedInfo(queryKpi, resourceInfo);
+            }
+
+            return new ApmV2Response(queryKpiList, HttpStatus.OK.value(), "success");
+
+        } catch (ApmException ex) {
+            LOGGER.error(DISTRIBUTION_FAILED, ex.getMessage());
+            return new ApmV2Response(null, HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        }
+    }
+
+    /**
+     * getResourceUsedInfo.
+     */
+    public static List<EdgeResourceInfo> getResourceUsedInfo(Map<String, String> queryKpi, ResourceInfo resourceInfo) {
+        List<EdgeResourceInfo> edgeDetails = new LinkedList<>();
+        EdgeResourceInfo edgeResourceInfo;
+        Resource resource;
+        Cpu cpu;
+        Mem mem;
+        Disk disk;
+
+        for (Map.Entry map : queryKpi.entrySet()) {
+
+            edgeResourceInfo = new EdgeResourceInfo();
+            resource = new Resource();
+
+            edgeResourceInfo.setEdge(map.getKey().toString());
+
+            JsonObject jsonObject = new JsonParser().parse(map.getValue().toString()).getAsJsonObject();
+            for (String keys : jsonObject.keySet()) {
+
+                if (keys.equals("virtual_cpu_total")) {
+                    int cpuRemain = jsonObject.get("virtual_cpu_total").getAsInt()
+                            - jsonObject.get("virtual_cpu_used").getAsInt();
+                    if (cpuRemain > resourceInfo.getNumVirtualCpu()) {
+                        cpu = new Cpu(jsonObject.get("virtual_cpu_used").toString(), jsonObject
+                                .get("virtual_cpu_total").toString(), cpuRemain,
+                                resourceInfo.getNumVirtualCpu());
+                    } else {
+                        cpu = new Cpu(jsonObject.get("virtual_cpu_used").toString(),
+                                jsonObject.get("virtual_cpu_total").toString(), cpuRemain,
+                                resourceInfo.getNumVirtualCpu());
+                    }
+                    resource.setCpu(cpu);
+                }
+                if (keys.equals("virtual_local_storage_total")) {
+                    int localStorageRemain = jsonObject.get("virtual_local_storage_total").getAsInt()
+                            - jsonObject.get("virtual_local_storage_used").getAsInt();
+                    if (localStorageRemain > resourceInfo.getSizeOfStorage()) {
+                        disk = new Disk(jsonObject.get("virtual_local_storage_used").toString(),
+                                jsonObject.get("virtual_local_storage_total").toString(), localStorageRemain,
+                                resourceInfo.getSizeOfStorage());
+                    } else {
+                        disk = new Disk(jsonObject.get("virtual_local_storage_used").toString(),
+                                jsonObject.get("virtual_local_storage_total").toString(), localStorageRemain,
+                                resourceInfo.getSizeOfStorage());
+                    }
+                    resource.setDisk(disk);
+                }
+                if (keys.equals("virtual_mem_total")) {
+                    int memRemain = jsonObject.get("virtual_mem_total").getAsInt()
+                            - jsonObject.get("virtual_mem_used").getAsInt();
+                    if (memRemain > resourceInfo.getVirtualMemSize()) {
+                        mem = new Mem(jsonObject.get("virtual_mem_used").toString(),
+                                jsonObject.get("virtual_mem_total").toString(), memRemain,
+                                resourceInfo.getVirtualMemSize());
+                    } else {
+                        mem = new Mem(jsonObject.get("virtual_mem_used").toString(),
+                                jsonObject.get("virtual_mem_total").toString(), memRemain,
+                                resourceInfo.getVirtualMemSize());
+                    }
+                    resource.setMem(mem);
+                }
+            }
+            edgeResourceInfo.setResource(resource);
+            edgeDetails.add(edgeResourceInfo);
+        }
+        LOGGER.info("edgeDetails: {}", edgeDetails);
+        return edgeDetails;
+    }
+
+    /**
+     * getResourceTemplateInfo.
+     */
+    public ApmV2Response getResourceTemplateInfo(String accessToken, String tenantId, String packageId,
+                                        String appPkgPath) {
+        LOGGER.info("inside getResourceTemplateInfo");
+        LOGGER.info("apppkgPath: {}", appPkgPath);
+
+        String localFilePath = ApmServiceHelper.getCsarPath(packageId, tenantId, appPkgPath);
+
+        try {
+            LOGGER.info("localFilePath: {}", localFilePath);
+            //unzip app package
+            String intendedDir = apmService.getLocalIntendedDir(packageId, tenantId);
+            CompressUtility.unzipApplicationPacakge(localFilePath, intendedDir);
+
+            AppTemplateDto appTemplateDto = apmService.getVduComputeTemplateInfo(tenantId, appPkgPath, packageId);
+            appTemplateDto.setAppPackageId(packageId);
+
+            Set<AppTemplateInputAttrDto> sortMap = new TreeSet<>(
+                (o1, o2) -> o1.getName().compareTo(o2.getName()));
+            sortMap.addAll(appTemplateDto.getInputs());
+            appTemplateDto.setInputs(sortMap);
+
+            return new ApmV2Response(appTemplateDto, HttpStatus.OK.value(), "success");
+        } catch (ApmException ex) {
+            LOGGER.error("failed to resource template from the package", ex.getMessage());
+            return new ApmV2Response(null, HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        }
+    }
+
+    /**
+     * updateResourceTemplateInfo.
+     */
+    public ApmV2Response updateResourceTemplateInfo(String accessToken, String tenantId, AppTemplateDto appTemplateDto,
+                                                   String appPkgPath) {
+
+        try {
+            String localFilePath = ApmServiceHelper.getCsarPath(appTemplateDto.getAppPackageId(), tenantId,
+                    localDirPath);
+
+            ResourceInfo resourceInfo = apmService.getVduComputeInfo(tenantId, localFilePath,
+                    appTemplateDto.getAppPackageId(), appTemplateDto, true);
+
+            Map<String, String> queryKpi = apmSyncHandler.queryKpi(tenantId, accessToken, "openstack");
+            List<EdgeResourceInfo> queryKpiList = getResourceUsedInfo(queryKpi, resourceInfo);
+
+            return new ApmV2Response(queryKpiList, HttpStatus.OK.value(), "success");
+
+        } catch (ApmException ex) {
+            LOGGER.error("failed to customize resources", ex.getMessage());
+            return new ApmV2Response(null, HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        }
+    }
+
 }
